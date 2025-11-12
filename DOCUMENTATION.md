@@ -1287,11 +1287,6 @@ Creates a default superAdmin user on first run:
 
 ---
 
-## 📝 License
-
-ISC
-
----
 
 ## 🤝 Contributing
 
@@ -1303,6 +1298,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 For issues and questions, please open an issue in the repository.
 
----
 
-**Last Updated**: November 12, 2024
