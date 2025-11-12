@@ -335,12 +335,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-## 📝 License
-
-This project is licensed under the ISC License - see the LICENSE file for details.
-
----
-
 ## 📧 Support
 
 If you have any questions or issues, please open an issue in the repository.
@@ -358,7 +352,5 @@ If you have any questions or issues, please open an issue in the repository.
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: November 12, 2024
 
 ⭐ If you find this helpful, please give it a star!
