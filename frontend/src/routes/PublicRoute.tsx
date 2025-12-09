@@ -1,15 +1,20 @@
-import AuthPage from "@/pages/Auth/AuthPage";
 import LoginPage from "@/pages/Auth/LoginPage";
 import SignUpPage from "@/pages/Auth/SignUpPage";
+import ForgotPasswordPage from "@/pages/Auth/ForgotPasswordPage";
+import OnboardingPage from "@/pages/Onboarding/OnboardingPage";
 import { Route } from "react-router-dom";
 
 function PublicRoutes() {
   return (
-      <Route element={<AuthPage />} key="auth">
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<SignUpPage />} />
-      </Route>
+    <>
+      <Route path="/login" element={<LoginPage />} key="login" />
+      <Route path="/signup" element={<SignUpPage />} key="signup" />
+      <Route path="/register" element={<SignUpPage />} key="register" />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} key="forgot-password" />
+      <Route path="/onboarding" element={<OnboardingPage />} key="onboarding" />
+    </>
   );
 }
 
 export default PublicRoutes;
+

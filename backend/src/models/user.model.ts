@@ -7,6 +7,12 @@ export interface IUser extends Document {
   role: string;
   password: string;
   refreshToken?: string;
+  // Onboarding fields
+  industry?: string;
+  useCase?: string;
+  skillLevel?: "beginner" | "intermediate" | "expert";
+  onboardingCompleted: boolean;
+  avatar?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,8 +25,18 @@ const userSchema = new Schema<IUser>(
     role: { type: String, default: "user" },
     password: { type: String, required: true },
     refreshToken: { type: String },
+    // Onboarding fields
+    industry: { type: String },
+    useCase: { type: String },
+    skillLevel: {
+      type: String,
+      enum: ["beginner", "intermediate", "expert"]
+    },
+    onboardingCompleted: { type: Boolean, default: false },
+    avatar: { type: String },
   },
   { timestamps: true }
 );
 
 export const UserModel = mongoose.model<IUser>("User", userSchema);
+
