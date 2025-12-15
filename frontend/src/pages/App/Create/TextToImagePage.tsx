@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
-    ArrowLeft, Sparkles, Download, Folder, RotateCw, Wand2,
-    Loader2, Image as ImageIcon, Grid3X3, Layers
+    Sparkles,
+    Loader2, Image as ImageIcon
 } from 'lucide-react';
 import { useGeneration, SAMPLE_IMAGES } from '@/components/generation/GenerationContext';
 import { AdvancedPanel, StyleSelector, AspectRatioSelector, SeedToggle } from '@/components/generation/AdvancedControls';
@@ -14,7 +13,7 @@ const imageStyles = [
 ];
 
 const TextToImagePage = () => {
-    const { addJob, queueVisible, setQueueVisible, jobs } = useGeneration();
+    const { addJob, jobs } = useGeneration();
 
     const [prompt, setPrompt] = useState('');
     const [style, setStyle] = useState('Cinematic');
@@ -71,62 +70,11 @@ const TextToImagePage = () => {
         handleGenerate();
     };
 
-    const renderingCount = jobs.filter(j => j.status === 'rendering').length;
+
 
     return (
         <div className="min-h-screen bg-[#0A0A0A]">
-            {/* Header */}
-            <header className="sticky top-0 z-40 bg-[#0A0A0A]/90 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        {/* Left: Back + Title */}
-                        <div className="flex items-center gap-4">
-                            <Link
-                                to="/app/dashboard"
-                                className="p-2 text-gray-400 hover:text-white transition-colors"
-                            >
-                                <ArrowLeft className="w-5 h-5" />
-                            </Link>
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                                    <ImageIcon className="w-4 h-4 text-white" />
-                                </div>
-                                <span className="text-lg font-semibold text-white">Text → Image</span>
-                            </div>
-                        </div>
-
-                        {/* Right: Actions */}
-                        <div className="flex items-center gap-3">
-                            <Link
-                                to="/app/create/text-to-video"
-                                className="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors"
-                            >
-                                Text → Video
-                            </Link>
-                            <Link
-                                to="/app/create/image-to-video"
-                                className="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors"
-                            >
-                                Image → Video
-                            </Link>
-                            <button
-                                onClick={() => setQueueVisible(true)}
-                                className="relative px-3 py-1.5 bg-[#1A1A1A] border border-white/10 rounded-lg text-gray-400 text-sm hover:text-white transition-colors"
-                            >
-                                <Layers className="w-4 h-4 inline mr-2" />
-                                Queue
-                                {renderingCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#00FF88] rounded-full text-[10px] text-[#0A0A0A] font-bold flex items-center justify-center">
-                                        {renderingCount}
-                                    </span>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <main className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-all ${queueVisible ? 'mr-80' : ''}`}>
+            <main className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-all`}>
                 {/* Prompt Section */}
                 <section className="mb-8">
                     <div className="bg-[#141414] border border-white/10 rounded-2xl p-6">

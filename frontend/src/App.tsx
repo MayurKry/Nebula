@@ -1,11 +1,14 @@
 import { HashRouter } from 'react-router-dom'
 import AppRoutes from './routes/AppRoute'
+import { GenerationProvider } from "@/components/generation/GenerationContext";
 
 function App() {
 
   return (
     <HashRouter>
-      <AppRoutes/>
+      <GenerationProvider>
+        <AppRoutes />
+      </GenerationProvider>
     </HashRouter>
 
   )

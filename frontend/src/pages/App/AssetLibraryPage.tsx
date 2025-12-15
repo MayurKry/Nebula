@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import {
-    Search, Bell, Grid, List, Folder, FolderPlus, Upload,
+    Search, Grid, List, Folder, FolderPlus, Upload,
     Video, Image, Layers, Music, Filter, SortDesc, X, Play,
-    Download, Trash2, MoreHorizontal, Clock, Info, Plus
+    Download, Trash2, MoreHorizontal, Clock, Info
 } from 'lucide-react';
 
 // Sample assets data
@@ -41,7 +40,6 @@ const typeColors = {
 };
 
 const AssetLibraryPage = () => {
-    const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [filterType, setFilterType] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -93,12 +91,7 @@ const AssetLibraryPage = () => {
             {/* Sidebar - Folders */}
             <aside className="w-64 border-r border-white/5 bg-[#0A0A0A] hidden lg:block">
                 <div className="p-4 border-b border-white/5">
-                    <Link to="/app/dashboard" className="flex items-center gap-2 mb-6">
-                        <div className="w-8 h-8 rounded-full bg-[#00FF88] flex items-center justify-center">
-                            <span className="text-[#0A0A0A] font-bold">N</span>
-                        </div>
-                        <span className="text-xl font-bold text-white">Nebula</span>
-                    </Link>
+                    <h2 className="text-lg font-semibold text-white mb-6 px-2">Library</h2>
                     <button
                         onClick={handleCreateFolder}
                         className="w-full flex items-center gap-2 px-3 py-2 bg-[#00FF88]/10 text-[#00FF88] rounded-lg text-sm font-medium hover:bg-[#00FF88]/20 transition-colors"
@@ -151,18 +144,6 @@ const AssetLibraryPage = () => {
                                     <Upload className="w-4 h-4" />
                                     Upload
                                 </button>
-                                <Link
-                                    to="/app/dashboard"
-                                    className="p-2 text-gray-400 hover:text-white transition-colors"
-                                >
-                                    <Bell className="w-5 h-5" />
-                                </Link>
-                                <Link
-                                    to="/app/dashboard"
-                                    className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-medium hover:ring-2 hover:ring-[#00FF88]/50 transition-all"
-                                >
-                                    JD
-                                </Link>
                             </div>
                         </div>
 

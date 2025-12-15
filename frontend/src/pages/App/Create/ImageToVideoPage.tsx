@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import {
-    ArrowLeft, Sparkles, Download, Folder, RotateCw, Play,
-    Loader2, Upload, Layers, Move, Wind, ZoomIn, Eye
+    Sparkles,
+    Loader2, Upload, Move, Wind, ZoomIn, Eye,
+    Layers, RotateCw, Folder, Play, Download
 } from 'lucide-react';
 import { useGeneration, SAMPLE_IMAGES, SAMPLE_VIDEO_THUMBS } from '@/components/generation/GenerationContext';
 import { AdvancedPanel } from '@/components/generation/AdvancedControls';
@@ -25,7 +25,7 @@ const cameraMoves = [
 ];
 
 const ImageToVideoPage = () => {
-    const { addJob, queueVisible, setQueueVisible, jobs } = useGeneration();
+    const { addJob, jobs } = useGeneration();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [sourceImage, setSourceImage] = useState<string | null>(null);
@@ -102,51 +102,11 @@ const ImageToVideoPage = () => {
         setIsGenerating(false);
     };
 
-    const renderingCount = jobs.filter(j => j.status === 'rendering').length;
+
 
     return (
         <div className="min-h-screen bg-[#0A0A0A]">
-            {/* Header */}
-            <header className="sticky top-0 z-40 bg-[#0A0A0A]/90 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        <div className="flex items-center gap-4">
-                            <Link to="/app/dashboard" className="p-2 text-gray-400 hover:text-white transition-colors">
-                                <ArrowLeft className="w-5 h-5" />
-                            </Link>
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-                                    <Move className="w-4 h-4 text-white" />
-                                </div>
-                                <span className="text-lg font-semibold text-white">Image → Video</span>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <Link to="/app/create/text-to-image" className="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
-                                Text → Image
-                            </Link>
-                            <Link to="/app/create/text-to-video" className="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
-                                Text → Video
-                            </Link>
-                            <button
-                                onClick={() => setQueueVisible(true)}
-                                className="relative px-3 py-1.5 bg-[#1A1A1A] border border-white/10 rounded-lg text-gray-400 text-sm hover:text-white transition-colors"
-                            >
-                                <Layers className="w-4 h-4 inline mr-2" />
-                                Queue
-                                {renderingCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#00FF88] rounded-full text-[10px] text-[#0A0A0A] font-bold flex items-center justify-center">
-                                        {renderingCount}
-                                    </span>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <main className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-all ${queueVisible ? 'mr-80' : ''}`}>
+            <main className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-all`}>
                 {/* Source Image Selection */}
                 <section className="mb-8">
                     <h2 className="text-lg font-semibold text-white mb-4">Select Source Image</h2>
