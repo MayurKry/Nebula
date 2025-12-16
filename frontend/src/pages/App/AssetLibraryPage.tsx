@@ -262,7 +262,6 @@ const AssetLibraryPage = () => {
                     ) : (
                         <div className="space-y-2">
                             {filteredAssets.map((asset) => {
-                                const TypeIcon = getTypeIcon(asset.type);
                                 return (
                                     <div
                                         key={asset.id}

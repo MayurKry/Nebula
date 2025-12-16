@@ -1,4 +1,4 @@
-import { AppSidebar } from "@/components/app-sidebar"
+import AppSidebar from '@/components/app-sidebar';
 import { Separator } from "@/components/ui/separator"
 import {
   SidebarInset,
@@ -26,7 +26,7 @@ export default function Layout() {
           </h1>
         </header>
         <div className="flex flex-1 flex-col overflow-y-auto p-5">
-          <Outlet/>
+          <Outlet />
         </div>
       </SidebarInset>
     </SidebarProvider>

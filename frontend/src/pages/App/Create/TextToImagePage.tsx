@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import {
     Sparkles,
-    Loader2, Image as ImageIcon
+    Loader2, Image as ImageIcon,
+    RotateCw, Folder, Wand2, Download, Grid3X3
 } from 'lucide-react';
 import { useGeneration, SAMPLE_IMAGES } from '@/components/generation/GenerationContext';
 import { AdvancedPanel, StyleSelector, AspectRatioSelector, SeedToggle } from '@/components/generation/AdvancedControls';
@@ -13,7 +14,7 @@ const imageStyles = [
 ];
 
 const TextToImagePage = () => {
-    const { addJob, jobs } = useGeneration();
+    const { addJob } = useGeneration();
 
     const [prompt, setPrompt] = useState('');
     const [style, setStyle] = useState('Cinematic');

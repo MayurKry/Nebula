@@ -158,7 +158,7 @@ const Pricing = () => {
                                                 ${plan.price[billingPeriod]}
                                             </span>
                                             <span className="text-[var(--marketing-muted)]">/month</span>
-                                            {billingPeriod === 'yearly' && plan.price.yearly !== 0 && (
+                                            {billingPeriod === 'yearly' && plan.price.yearly !== null && plan.price.yearly !== 0 && (
                                                 <p className="text-sm text-[var(--marketing-muted)] mt-1">
                                                     Billed annually (${plan.price.yearly * 12}/year)
                                                 </p>

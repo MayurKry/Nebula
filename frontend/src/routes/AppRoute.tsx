@@ -4,6 +4,8 @@ import DashboardPage from "@/pages/App/DashboardPage";
 import TextToImagePage from "@/pages/App/Create/TextToImagePage";
 import TextToVideoPage from "@/pages/App/Create/TextToVideoPage";
 import ImageToVideoPage from "@/pages/App/Create/ImageToVideoPage";
+import SceneEditorPage from "@/pages/App/Editor/SceneEditorPage";
+import ProfilePage from "@/pages/App/ProfilePage";
 
 function AppRoutes() {
   return (
@@ -13,6 +15,8 @@ function AppRoutes() {
         <Route path="create/text-to-image" element={<TextToImagePage />} />
         <Route path="create/text-to-video" element={<TextToVideoPage />} />
         <Route path="create/image-to-video" element={<ImageToVideoPage />} />
+        <Route path="editor/:projectId" element={<SceneEditorPage />} />
+        <Route path="profile" element={<ProfilePage />} />
         <Route index element={<Navigate to="/app/dashboard" replace />} />
       </Route>
       <Route path="*" element={<div className="text-white">404</div>} />

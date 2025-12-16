@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Megaphone, Film, GraduationCap, Gamepad2, Share2, ShoppingBag, MoreHorizontal,
-    Video, Image, BookOpen, Package, Users, Sparkles,
+    Video, BookOpen, Package, Users, Sparkles,
     User, UserCheck, Award
 } from 'lucide-react';
 
@@ -103,10 +103,10 @@ const OnboardingPage = () => {
                         <div
                             key={s}
                             className={`h-2 rounded-full transition-all duration-300 ${s === step
-                                    ? 'w-10 bg-[#00FF88]'
-                                    : s < step
-                                        ? 'w-10 bg-[#00FF88]/40'
-                                        : 'w-10 bg-white/10'
+                                ? 'w-10 bg-[#00FF88]'
+                                : s < step
+                                    ? 'w-10 bg-[#00FF88]/40'
+                                    : 'w-10 bg-white/10'
                                 }`}
                         />
                     ))}
@@ -129,20 +129,20 @@ const OnboardingPage = () => {
                                         key={industry.id}
                                         onClick={() => handleSelect('industry', industry.id)}
                                         className={`p-4 rounded-xl border transition-all flex flex-col items-center gap-3 hover:scale-[1.02] ${selections.industry === industry.id
-                                                ? 'border-[#00FF88] bg-[#00FF88]/10'
-                                                : 'border-white/10 bg-[#1A1A1A] hover:border-white/20'
+                                            ? 'border-[#00FF88] bg-[#00FF88]/10'
+                                            : 'border-white/10 bg-[#1A1A1A] hover:border-white/20'
                                             }`}
                                     >
                                         <industry.icon
                                             className={`w-8 h-8 ${selections.industry === industry.id
-                                                    ? 'text-[#00FF88]'
-                                                    : 'text-gray-400'
+                                                ? 'text-[#00FF88]'
+                                                : 'text-gray-400'
                                                 }`}
                                         />
                                         <span
                                             className={`text-sm font-medium text-center ${selections.industry === industry.id
-                                                    ? 'text-white'
-                                                    : 'text-gray-300'
+                                                ? 'text-white'
+                                                : 'text-gray-300'
                                                 }`}
                                         >
                                             {industry.label}
@@ -168,20 +168,20 @@ const OnboardingPage = () => {
                                         key={useCase.id}
                                         onClick={() => handleSelect('useCase', useCase.id)}
                                         className={`p-4 rounded-xl border transition-all flex flex-col items-center gap-3 hover:scale-[1.02] ${selections.useCase === useCase.id
-                                                ? 'border-[#00FF88] bg-[#00FF88]/10'
-                                                : 'border-white/10 bg-[#1A1A1A] hover:border-white/20'
+                                            ? 'border-[#00FF88] bg-[#00FF88]/10'
+                                            : 'border-white/10 bg-[#1A1A1A] hover:border-white/20'
                                             }`}
                                     >
                                         <useCase.icon
                                             className={`w-8 h-8 ${selections.useCase === useCase.id
-                                                    ? 'text-[#00FF88]'
-                                                    : 'text-gray-400'
+                                                ? 'text-[#00FF88]'
+                                                : 'text-gray-400'
                                                 }`}
                                         />
                                         <span
                                             className={`text-sm font-medium text-center ${selections.useCase === useCase.id
-                                                    ? 'text-white'
-                                                    : 'text-gray-300'
+                                                ? 'text-white'
+                                                : 'text-gray-300'
                                                 }`}
                                         >
                                             {useCase.label}
@@ -207,28 +207,28 @@ const OnboardingPage = () => {
                                         key={level.id}
                                         onClick={() => handleSelect('skillLevel', level.id)}
                                         className={`w-full p-5 rounded-xl border transition-all flex items-center gap-4 hover:scale-[1.01] ${selections.skillLevel === level.id
-                                                ? 'border-[#00FF88] bg-[#00FF88]/10'
-                                                : 'border-white/10 bg-[#1A1A1A] hover:border-white/20'
+                                            ? 'border-[#00FF88] bg-[#00FF88]/10'
+                                            : 'border-white/10 bg-[#1A1A1A] hover:border-white/20'
                                             }`}
                                     >
                                         <div
                                             className={`w-12 h-12 rounded-xl flex items-center justify-center ${selections.skillLevel === level.id
-                                                    ? 'bg-[#00FF88]/20'
-                                                    : 'bg-white/5'
+                                                ? 'bg-[#00FF88]/20'
+                                                : 'bg-white/5'
                                                 }`}
                                         >
                                             <level.icon
                                                 className={`w-6 h-6 ${selections.skillLevel === level.id
-                                                        ? 'text-[#00FF88]'
-                                                        : 'text-gray-400'
+                                                    ? 'text-[#00FF88]'
+                                                    : 'text-gray-400'
                                                     }`}
                                             />
                                         </div>
                                         <div className="text-left">
                                             <h3
                                                 className={`font-semibold ${selections.skillLevel === level.id
-                                                        ? 'text-white'
-                                                        : 'text-gray-300'
+                                                    ? 'text-white'
+                                                    : 'text-gray-300'
                                                     }`}
                                             >
                                                 {level.label}
