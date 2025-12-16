@@ -1,6 +1,6 @@
 import {
     Video, Image, Plus,
-    ArrowRight, Clock, Star, Users
+    ArrowRight, Clock, Star, Users, Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -59,21 +59,42 @@ const DashboardPage = () => {
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-10 animate-fade-in">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-                        Welcome back, {user?.name || 'Creator'}
-                    </h1>
-                    <p className="text-gray-400 mt-2">Ready to create something amazing today?</p>
+            {/* Hero Section */}
+            <div className="text-center space-y-6 py-12">
+                <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400">
+                    What will you create today?
+                </h1>
+
+                <div className="max-w-3xl mx-auto relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] rounded-2xl opacity-20 group-hover:opacity-30 blur transition-opacity" />
+                    <div className="relative bg-[#141414] border border-white/10 rounded-xl p-2 flex items-center shadow-2xl">
+                        <Sparkles className="w-6 h-6 text-[#00FF88] ml-3 mr-3" />
+                        <input
+                            type="text"
+                            placeholder="Describe your imagination... (e.g., 'A cyberpunk city with neon lights')"
+                            className="flex-1 bg-transparent border-none outline-none text-white text-lg placeholder-gray-500 h-10"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    navigate('/app/create/text-to-image', { state: { prompt: (e.target as HTMLInputElement).value } });
+                                }
+                            }}
+                        />
+                        <button
+                            className="px-6 py-2.5 bg-[#00FF88] hover:bg-[#00CC6A] text-[#0A0A0A] font-semibold rounded-lg transition-colors flex items-center gap-2"
+                            onClick={(e) => {
+                                const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                                navigate('/app/create/text-to-image', { state: { prompt: input.value } });
+                            }}
+                        >
+                            Generate
+                            <ArrowRight className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
-                <button
-                    onClick={() => navigate('/app/editor/new')}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#00FF88] text-black font-semibold rounded-xl hover:bg-[#00FF88]/90 transition-all shadow-[0_0_20px_rgba(0,255,136,0.3)] hover:shadow-[0_0_30px_rgba(0,255,136,0.5)] transform hover:scale-105"
-                >
-                    <Plus className="w-5 h-5" />
-                    New Project
-                </button>
+
+                <p className="text-gray-400 text-sm">
+                    Try: <button onClick={() => navigate('/app/create/text-to-image', { state: { prompt: 'Futuristic space station' } })} className="text-white hover:text-[#00FF88] transition-colors">Futuristic space station</button>, <button onClick={() => navigate('/app/create/text-to-image', { state: { prompt: 'Portrait of a warrior' } })} className="text-white hover:text-[#00FF88] transition-colors">Portrait of a warrior</button>
+                </p>
             </div>
 
             {/* Quick Actions Grid */}
