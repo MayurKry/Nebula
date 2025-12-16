@@ -4,12 +4,12 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useGeneration } from '@/context/GenerationContext';
+import { useGeneration } from '@/components/generation/GenerationContext';
 
 const DashboardPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const { generatedVideos } = useGeneration();
+    const { jobs } = useGeneration();
 
     // Quick Actions
     const quickActions = [
@@ -44,6 +44,16 @@ const DashboardPage = () => {
         // { id: 'voice', name: 'Voice Cloning', icon: Music, description: 'Clone your voice', badge: 'Soon', route: '/app/tools/voice' },
         // { id: 'enhance', name: 'Video Enhancer', icon: Star, description: 'Upscale & stabilize', badge: 'Soon', route: '/app/tools/enhance' },
     ];
+
+    // Map jobs to generated videos format
+    const generatedVideos = jobs.map(job => ({
+        id: job.id,
+        name: job.prompt,
+        type: job.type === 'text-to-video' ? 'Video' : 'Image',
+        date: job.createdAt.toLocaleDateString(), // simplified date
+        status: job.status === 'rendering' ? 'processing' : job.status === 'completed' ? 'ready' : job.status,
+        thumbnail: job.thumbnail || 'https://picsum.photos/seed/placeholder/300/200'
+    }));
 
     // Mock Recent Projects (Fallback if no generated videos)
     const recentProjects = generatedVideos.length > 0 ? generatedVideos : [

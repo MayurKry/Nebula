@@ -25,7 +25,7 @@ const cameraMoves = [
 ];
 
 const ImageToVideoPage = () => {
-    const { addJob } = useGeneration();
+    const { addJob, jobs } = useGeneration();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [sourceImage, setSourceImage] = useState<string | null>(null);

@@ -5,12 +5,12 @@ import {
 
 interface AdvancedPanelProps {
     settings: {
-        cameraAngle: string;
-        depth: number;
-        fidelity: number;
-        colorTemperature: number;
+        cameraAngle?: string;
+        depth?: number;
+        fidelity?: number;
+        colorTemperature?: number;
     };
-    onChange: (settings: any) => void;
+    onChange: (settings: any) => void; // Using any to allow flexible updates
 }
 
 const cameraAngles = [
@@ -40,76 +40,84 @@ export const AdvancedPanel: React.FC<AdvancedPanelProps> = ({ settings, onChange
             {isOpen && (
                 <div className="p-4 bg-[#141414] space-y-4 animate-slideDown">
                     {/* Camera Angle */}
-                    <div>
-                        <label className="block text-sm text-gray-400 mb-2">Camera Angle</label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {cameraAngles.map((angle) => (
-                                <button
-                                    key={angle}
-                                    onClick={() => onChange({ ...settings, cameraAngle: angle })}
-                                    className={`px-3 py-2 text-xs rounded-lg border transition-all ${settings.cameraAngle === angle
-                                        ? 'border-[#00FF88] bg-[#00FF88]/10 text-[#00FF88]'
-                                        : 'border-white/10 text-gray-400 hover:border-white/20'
-                                        }`}
-                                >
-                                    {angle}
-                                </button>
-                            ))}
+                    {settings.cameraAngle !== undefined && (
+                        <div>
+                            <label className="block text-sm text-gray-400 mb-2">Camera Angle</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {cameraAngles.map((angle) => (
+                                    <button
+                                        key={angle}
+                                        onClick={() => onChange({ ...settings, cameraAngle: angle })}
+                                        className={`px-3 py-2 text-xs rounded-lg border transition-all ${settings.cameraAngle === angle
+                                            ? 'border-[#00FF88] bg-[#00FF88]/10 text-[#00FF88]'
+                                            : 'border-white/10 text-gray-400 hover:border-white/20'
+                                            }`}
+                                    >
+                                        {angle}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Depth/Intensity */}
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="text-sm text-gray-400">Depth / Intensity</label>
-                            <span className="text-xs text-[#00FF88]">{settings.depth}%</span>
-                        </div>
-                        <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={settings.depth}
-                            onChange={(e) => onChange({ ...settings, depth: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-[#1A1A1A] rounded-lg appearance-none cursor-pointer accent-[#00FF88]"
-                        />
-                    </div>
-
-                    {/* Rendering Fidelity */}
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="text-sm text-gray-400">Rendering Fidelity</label>
-                            <span className="text-xs text-[#00FF88]">{settings.fidelity}%</span>
-                        </div>
-                        <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={settings.fidelity}
-                            onChange={(e) => onChange({ ...settings, fidelity: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-[#1A1A1A] rounded-lg appearance-none cursor-pointer accent-[#00FF88]"
-                        />
-                    </div>
-
-                    {/* Color Temperature */}
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="text-sm text-gray-400">Color Temperature</label>
-                            <span className="text-xs text-[#00FF88]">
-                                {settings.colorTemperature < 50 ? 'Cool' : settings.colorTemperature > 50 ? 'Warm' : 'Neutral'}
-                            </span>
-                        </div>
-                        <div className="relative">
-                            <div className="absolute inset-0 h-2 rounded-lg bg-gradient-to-r from-blue-500 via-white to-orange-500 opacity-30" />
+                    {settings.depth !== undefined && (
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-sm text-gray-400">Depth / Intensity</label>
+                                <span className="text-xs text-[#00FF88]">{settings.depth}%</span>
+                            </div>
                             <input
                                 type="range"
                                 min="0"
                                 max="100"
-                                value={settings.colorTemperature}
-                                onChange={(e) => onChange({ ...settings, colorTemperature: parseInt(e.target.value) })}
-                                className="relative w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer accent-[#00FF88]"
+                                value={settings.depth}
+                                onChange={(e) => onChange({ ...settings, depth: parseInt(e.target.value) })}
+                                className="w-full h-2 bg-[#1A1A1A] rounded-lg appearance-none cursor-pointer accent-[#00FF88]"
                             />
                         </div>
-                    </div>
+                    )}
+
+                    {/* Rendering Fidelity */}
+                    {settings.fidelity !== undefined && (
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-sm text-gray-400">Rendering Fidelity</label>
+                                <span className="text-xs text-[#00FF88]">{settings.fidelity}%</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={settings.fidelity}
+                                onChange={(e) => onChange({ ...settings, fidelity: parseInt(e.target.value) })}
+                                className="w-full h-2 bg-[#1A1A1A] rounded-lg appearance-none cursor-pointer accent-[#00FF88]"
+                            />
+                        </div>
+                    )}
+
+                    {/* Color Temperature */}
+                    {settings.colorTemperature !== undefined && (
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-sm text-gray-400">Color Temperature</label>
+                                <span className="text-xs text-[#00FF88]">
+                                    {settings.colorTemperature < 50 ? 'Cool' : settings.colorTemperature > 50 ? 'Warm' : 'Neutral'}
+                                </span>
+                            </div>
+                            <div className="relative">
+                                <div className="absolute inset-0 h-2 rounded-lg bg-gradient-to-r from-blue-500 via-white to-orange-500 opacity-30" />
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={settings.colorTemperature}
+                                    onChange={(e) => onChange({ ...settings, colorTemperature: parseInt(e.target.value) })}
+                                    className="relative w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer accent-[#00FF88]"
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
