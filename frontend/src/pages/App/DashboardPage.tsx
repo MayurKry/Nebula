@@ -1,5 +1,5 @@
 import {
-    Video, Image, Plus,
+    Video, Image,
     ArrowRight, Clock, Star, Users, Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useGeneration } from '@/components/generation/GenerationContext';
 
 const DashboardPage = () => {
-    const { user } = useAuth();
+    useAuth();
     const navigate = useNavigate();
     const { jobs } = useGeneration();
 

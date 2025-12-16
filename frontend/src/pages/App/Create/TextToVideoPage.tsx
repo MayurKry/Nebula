@@ -24,7 +24,7 @@ const durations = [
 ];
 
 const TextToVideoPage = () => {
-    const { addJob, jobs } = useGeneration();
+    const { addJob } = useGeneration();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [prompt, setPrompt] = useState('');

@@ -14,7 +14,7 @@ const imageStyles = [
 ];
 
 const TextToImagePage = () => {
-    const { addJob, jobs } = useGeneration();
+    const { addJob } = useGeneration();
 
     const [prompt, setPrompt] = useState('');
     const [style, setStyle] = useState('Cinematic');
