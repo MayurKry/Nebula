@@ -19,7 +19,8 @@ function AppRoutes() {
         <Route path="profile" element={<ProfilePage />} />
         <Route index element={<Navigate to="/app/dashboard" replace />} />
       </Route>
-      <Route path="*" element={<div className="text-white">404</div>} />
+      <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
+      <Route path="*" element={<div className="text-foreground p-4">404 - Page Not Found</div>} />
     </Routes>
   );
 }
