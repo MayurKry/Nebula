@@ -1,15 +1,19 @@
 import {
     Video, Image,
-    ArrowRight, Clock, Star, Users, Sparkles
+    ArrowRight, Clock, Star, Users,
+    Paperclip, Wand2, ChevronDown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useGeneration } from '@/components/generation/GenerationContext';
+import { useState } from 'react';
 
 const DashboardPage = () => {
     useAuth();
     const navigate = useNavigate();
     const { jobs } = useGeneration();
+    const [prompt, setPrompt] = useState('');
+    const [selectedModel, setSelectedModel] = useState('Nebula Turbo');
 
     // Quick Actions
     const quickActions = [
@@ -19,7 +23,7 @@ const DashboardPage = () => {
             icon: Video,
             description: 'Convert scripts to video',
             color: 'from-purple-500 to-pink-500',
-            route: '/app/tools/text-to-video'
+            route: '/app/create/text-to-video'
         },
         {
             id: 'image-to-video',
@@ -27,7 +31,7 @@ const DashboardPage = () => {
             icon: Image,
             description: 'Animate static images',
             color: 'from-blue-500 to-cyan-500',
-            route: '/app/tools/image-to-video'
+            route: '/app/create/image-to-video'
         },
         {
             id: 'text-to-image',
@@ -35,7 +39,7 @@ const DashboardPage = () => {
             icon: Image,
             description: 'Generate AI images',
             color: 'from-amber-500 to-orange-500',
-            route: '/app/tools/text-to-image'
+            route: '/app/create/text-to-image'
         },
     ];
 
@@ -67,43 +71,93 @@ const DashboardPage = () => {
         navigate(route);
     };
 
+    const handleGenerate = () => {
+        if (!prompt.trim()) return;
+        navigate('/app/create/text-to-image', { state: { prompt } });
+    };
+
+    // Mock function for enhancing prompt
+    const enhancePrompt = () => {
+        if (!prompt) return;
+        setPrompt(prev => prev + " in 8k resolution, cinematic lighting, hyper-realistic, highly detailed");
+    };
+
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-10 animate-fade-in">
+        <div className="p-8 max-w-7xl mx-auto space-y-10 animate-fade-in transition-all">
             {/* Hero Section */}
-            <div className="text-center space-y-6 py-12">
+            <div className="text-center space-y-8 py-12">
                 <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400">
                     What will you create today?
                 </h1>
 
                 <div className="max-w-3xl mx-auto relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] rounded-2xl opacity-20 group-hover:opacity-30 blur transition-opacity" />
-                    <div className="relative bg-[#141414] border border-white/10 rounded-xl p-2 flex items-center shadow-2xl">
-                        <Sparkles className="w-6 h-6 text-[#00FF88] ml-3 mr-3" />
-                        <input
-                            type="text"
+
+                    <div className="relative bg-[#141414] border border-white/10 rounded-2xl p-4 flex flex-col shadow-2xl">
+                        <textarea
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
                             placeholder="Describe your imagination... (e.g., 'A cyberpunk city with neon lights')"
-                            className="flex-1 bg-transparent border-none outline-none text-white text-lg placeholder-gray-500 h-10"
+                            className="bg-transparent border-none outline-none text-white text-lg placeholder-gray-500 min-h-[100px] resize-none w-full p-2"
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    navigate('/app/create/text-to-image', { state: { prompt: (e.target as HTMLInputElement).value } });
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleGenerate();
                                 }
                             }}
                         />
-                        <button
-                            className="px-6 py-2.5 bg-[#00FF88] hover:bg-[#00CC6A] text-[#0A0A0A] font-semibold rounded-lg transition-colors flex items-center gap-2"
-                            onClick={(e) => {
-                                const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                                navigate('/app/create/text-to-image', { state: { prompt: input.value } });
-                            }}
-                        >
-                            Generate
-                            <ArrowRight className="w-4 h-4" />
-                        </button>
+
+                        <div className="flex items-center justify-between border-t border-white/5 pt-4 mt-2">
+                            <div className="flex items-center gap-3">
+                                {/* Model Selector */}
+                                <div className="relative group/model">
+                                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-gray-300 transition-colors border border-white/5">
+                                        <span>{selectedModel}</span>
+                                        <ChevronDown className="w-4 h-4 text-gray-500" />
+                                    </button>
+                                    {/* Dropdown (Mock) */}
+                                    <div className="absolute top-full left-0 mt-2 w-48 bg-[#1A1A1A] border border-white/10 rounded-xl overflow-hidden hidden group-hover/model:block z-50 shadow-xl">
+                                        {['Nebula Turbo', 'Nebula V1', 'Nebula Pro'].map(model => (
+                                            <button
+                                                key={model}
+                                                onClick={() => setSelectedModel(model)}
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                                            >
+                                                {model}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Attach File */}
+                                <button className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors" title="Attach Image/Video">
+                                    <Paperclip className="w-5 h-5" />
+                                </button>
+
+                                {/* Enhance */}
+                                <button
+                                    onClick={enhancePrompt}
+                                    className="p-2 rounded-lg hover:bg-white/5 text-[#00FF88] hover:text-[#00FF88]/80 transition-colors flex items-center gap-2 group/enhance"
+                                    title="Enhance Prompt"
+                                >
+                                    <Wand2 className="w-5 h-5 transition-transform group-hover/enhance:rotate-12" />
+                                    <span className="text-sm font-medium hidden sm:inline">Enhance</span>
+                                </button>
+                            </div>
+
+                            <button
+                                className="px-6 py-2.5 bg-[#00FF88] hover:bg-[#00CC6A] text-[#0A0A0A] font-semibold rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-[#00FF88]/20"
+                                onClick={handleGenerate}
+                            >
+                                Generate
+                                <ArrowRight className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <p className="text-gray-400 text-sm">
-                    Try: <button onClick={() => navigate('/app/create/text-to-image', { state: { prompt: 'Futuristic space station' } })} className="text-white hover:text-[#00FF88] transition-colors">Futuristic space station</button>, <button onClick={() => navigate('/app/create/text-to-image', { state: { prompt: 'Portrait of a warrior' } })} className="text-white hover:text-[#00FF88] transition-colors">Portrait of a warrior</button>
+                    Try: <button onClick={() => setPrompt('Futuristic space station')} className="text-white hover:text-[#00FF88] transition-colors">Futuristic space station</button>, <button onClick={() => setPrompt('Portrait of a warrior')} className="text-white hover:text-[#00FF88] transition-colors">Portrait of a warrior</button>
                 </p>
             </div>
 
@@ -208,5 +262,4 @@ const DashboardPage = () => {
         </div>
     );
 };
-
 export default DashboardPage;

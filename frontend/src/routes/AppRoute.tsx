@@ -7,11 +7,13 @@ import ImageToVideoPage from "@/pages/App/Create/ImageToVideoPage";
 import SceneEditorPage from "@/pages/App/Editor/SceneEditorPage";
 import ProfilePage from "@/pages/App/ProfilePage";
 import MarketingRoutes from "./MarketingRoute";
+import PublicRoutes from "./PublicRoute";
 
 function AppRoutes() {
   return (
     <Routes>
       {MarketingRoutes()}
+      {PublicRoutes()}
 
       <Route path="/app" element={<AppLayout />}>
         <Route path="dashboard" element={<DashboardPage />} />
