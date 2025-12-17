@@ -2,9 +2,8 @@ import { useState, useRef } from 'react';
 import {
     Sparkles,
     Loader2, Video as VideoIcon, Upload, Camera, Film,
-    RotateCw, Folder, Wand2, Download, Play, Music,
-    Edit3, GripHorizontal, ChevronRight, ChevronLeft,
-    SkipBack, SkipForward
+    RotateCw, Wand2, Download, Play, Music,
+    Edit3, GripHorizontal, SkipBack, SkipForward
 } from 'lucide-react';
 import { useGeneration } from '@/components/generation/GenerationContext';
 import { AdvancedPanel, StyleSelector } from '@/components/generation/AdvancedControls';
@@ -35,7 +34,6 @@ const TextToVideoPage = () => {
     const [style, setStyle] = useState('Cinematic');
     const [cameraPath, setCameraPath] = useState('Slow Pan');
     const [duration, setDuration] = useState(30);
-    const [motionLevel, setMotionLevel] = useState(50);
     const [referenceImage, setReferenceImage] = useState<string | null>(null);
     const [advancedSettings, setAdvancedSettings] = useState({
         cameraAngle: 'Eye Level',
@@ -125,12 +123,9 @@ const TextToVideoPage = () => {
     };
 
     // Editor View
-    // Editor View
     if (project) {
         const activeScene = project.scenes.find(s => s.id === activeSceneId) || project.scenes[0];
 
-        // Mock timeline calculations
-        const timelineWidth = duration * 20; // 20px per second
 
         return (
             <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
@@ -241,6 +236,22 @@ const TextToVideoPage = () => {
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Text Prompt for Active Scene */}
+                        <div className="px-6 pb-4">
+                            <div className="bg-[#1A1A1A] p-2 rounded-lg border border-white/5 flex gap-2">
+                                <input
+                                    type="text"
+                                    value={activeScene.description}
+                                    onChange={(e) => handleSceneUpdate(activeScene.id, { description: e.target.value })}
+                                    className="flex-1 bg-transparent text-xs text-gray-300 outline-none px-2"
+                                    placeholder="Scene description..."
+                                />
+                                <button className="p-1.5 bg-purple-500/20 text-purple-400 rounded hover:bg-purple-500/30">
+                                    <Wand2 className="w-3 h-3" />
+                                </button>
                             </div>
                         </div>
 
