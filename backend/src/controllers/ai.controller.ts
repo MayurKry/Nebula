@@ -1,24 +1,70 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { responseHandler } from "../utils/responseHandler";
+import { aiImageService } from "../services/ai-image.service";
 
-// Mock AI Image Generation
+// AI Image Generation with multiple providers
 export const generateImage = asyncHandler(async (req: Request, res: Response) => {
-    const { prompt, style, width = 1024, height = 1024 } = req.body;
+    const { prompt, style, width = 1024, height = 1024, seed, negativePrompt, count = 2 } = req.body;
 
-    // Simulate processing delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    if (!prompt) {
+        return responseHandler(res, 400, "Prompt is required");
+    }
 
-    // Return mock generated image URL (using placeholder)
-    const mockImageUrl = `https://picsum.photos/seed/${Date.now()}/${width}/${height}`;
+    try {
+        // Generate multiple images using AI service (with automatic fallback)
+        const imageCount = Math.min(Math.max(1, count), 4); // Limit between 1-4 images
 
-    return responseHandler(res, 200, "Image generated successfully", {
-        url: mockImageUrl,
-        prompt,
-        style,
-        width,
-        height,
-        generatedAt: new Date().toISOString(),
+        // Generate images with different seeds to ensure variety
+        const promises = Array.from({ length: imageCount }, (_, index) => {
+            // Use provided seed or generate random seed, but make each image different
+            const imageSeed = seed ? seed + index : Math.floor(Math.random() * 1000000) + index;
+
+            return aiImageService.generateImage({
+                prompt,
+                style,
+                width,
+                height,
+                seed: imageSeed,
+                negativePrompt,
+            });
+        });
+
+        const results = await Promise.all(promises);
+
+        return responseHandler(res, 200, "Images generated successfully", {
+            images: results.map(result => ({
+                url: result.url,
+                width: result.width,
+                height: result.height,
+                seed: result.seed,
+                provider: result.provider,
+            })),
+            prompt,
+            style,
+            count: results.length,
+            provider: results[0]?.provider,
+            generatedAt: new Date().toISOString(),
+        });
+    } catch (error: any) {
+        console.error("Image generation error:", error);
+
+        // Provide more detailed error message
+        const errorMessage = error.message || "Failed to generate image";
+        const statusCode = error.response?.status === 401 || error.response?.status === 403 ? 401 : 500;
+
+        return responseHandler(res, statusCode, errorMessage);
+    }
+});
+
+// Get available AI providers
+export const getAIProviders = asyncHandler(async (req: Request, res: Response) => {
+    const availableProviders = aiImageService.getAvailableProviders();
+
+    return responseHandler(res, 200, "AI providers retrieved successfully", {
+        providers: availableProviders,
+        total: availableProviders.length,
+        primary: availableProviders[0] || "none",
     });
 });
 
@@ -63,6 +109,113 @@ export const checkVideoStatus = asyncHandler(async (req: Request, res: Response)
         progress: Math.floor(Math.random() * 80) + 10,
     });
 });
+
+// Generate Full Video Project (Script -> Storyboard -> Video)
+export const generateVideoProject = asyncHandler(async (req: Request, res: Response) => {
+    const { prompt, style, duration = 30 } = req.body;
+
+    // Use Gemini to generate the project structure
+    try {
+        const systemSystem = `You are an expert film director and AI video architect. 
+        Create a structured video project plan based on the user's prompt. 
+        Target Duration: ${duration} seconds. Style: ${style}.
+        
+        Output valid JSON only. Structure:
+        {
+          "script": "string (The full screenplay text)",
+          "language": "string (e.g. English)",
+          "region": "string (e.g. US)",
+          "characters": [
+            { "id": "char_1", "name": "string", "bio": "string", "accent": "string", "voiceId": "string" }
+          ],
+          "scenes": [
+            { 
+               "id": "scene_1", "order": 0, "description": "string (visual prompt)", 
+               "duration": number (seconds), "cameraPath": "string (Static, Pan, Zoom, Orbit)", 
+               "motionIntensity": number (1-100), "assignedCharacterId": "string (optional)" 
+            }
+          ]
+        }
+        Ensure scene durations sum to approx ${duration}. Create at least ${Math.floor(duration / 5)} scenes.
+        `;
+
+        const userPrompt = `Project Prompt: "${prompt}"`;
+
+        // Call Gemini
+        let rawContent = await aiImageService.generateText(`${systemSystem}\n\n${userPrompt}`);
+
+        // Clean JSON formatting (remove markdown blocks if present)
+        rawContent = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        const generatedData = JSON.parse(rawContent);
+
+        // Enhance with Mock Assets (since Gemini only gives text)
+        const characters = generatedData.characters.map((char: any, index: number) => ({
+            ...char,
+            id: char.id || `char_${index + 1}`,
+            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(char.name)}&background=random&size=128`,
+            voiceId: char.voiceId || "voice_en_us_neutral"
+        }));
+
+        const scenes = generatedData.scenes.map((scene: any, index: number) => ({
+            ...scene,
+            id: scene.id || `scene_${index + 1}`,
+            order: index,
+            imageUrl: `https://picsum.photos/seed/${Date.now() + index}/800/450`, // Placeholder until image geneation
+            type: 'video',
+            cameraPath: scene.cameraPath || "Static",
+            motionIntensity: scene.motionIntensity || 50
+        }));
+
+        // Mock Audio Tracks based on generated scenes
+        const audioTracks = [
+            {
+                id: "track_music_1",
+                type: "music",
+                name: "AI Generated Score",
+                startTime: 0,
+                duration: duration,
+                url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                volume: 0.5
+            },
+            // Add a voice track for the first character if present
+            ...(characters.length > 0 ? [{
+                id: "track_voice_1",
+                type: "voice",
+                name: `${characters[0].name} (Intro)`,
+                startTime: 0,
+                duration: scenes[0]?.duration || 5,
+                characterId: characters[0].id,
+                url: "#",
+                volume: 1.0
+            }] : [])
+        ];
+
+        return responseHandler(res, 200, "Project generated successfully", {
+            projectId: `proj_${Date.now()}`,
+            prompt,
+            settings: {
+                style,
+                duration,
+                language: generatedData.language || "English",
+                region: generatedData.region || "US",
+                aspectRatio: "16:9"
+            },
+            script: generatedData.script || "",
+            scenes,
+            characters,
+            tracks: audioTracks,
+            createdAt: new Date().toISOString(),
+        });
+
+    } catch (error: any) {
+        console.error("Gemini Project Generation Failed:", error);
+        // Fallback to Mock if Gemini fails (or just error out if strictly requested)
+        // For robustness, we will return a 500 but with clear message
+        return responseHandler(res, 500, `Failed to generate project with Gemini: ${error.message}`);
+    }
+});
+
 
 // Mock Storyboard Generation
 export const generateStoryboard = asyncHandler(async (req: Request, res: Response) => {

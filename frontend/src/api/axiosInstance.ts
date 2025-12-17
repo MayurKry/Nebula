@@ -42,7 +42,7 @@ axiosInstance.interceptors.request.use(
     }
 
     //  Safely add userId to request
-    if (user && typeof user["id"] === "number") {
+    if (user && user["id"]) {
       const userId = user["id"];
       const method = config.method?.toLowerCase();
 
@@ -52,6 +52,7 @@ axiosInstance.interceptors.request.use(
         config.params = { ...(config.params || {}), userId };
       }
     }
+
 
     return config;
   },

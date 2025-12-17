@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState } from 'react';
 // Interfaces
 export interface Scene {
     id: string;
+    order: number; // Added order property
     thumbnail: string;
     duration: number; // in seconds
     prompt: string;
@@ -66,6 +67,7 @@ export const useEditor = () => {
 // Initial Mock Scene for MVP
 const initialScene: Scene = {
     id: 'scene-1',
+    order: 0,
     thumbnail: 'https://picsum.photos/seed/scene1/320/180',
     duration: 3,
     prompt: 'A futuristic city skyline with flying cars at sunset',

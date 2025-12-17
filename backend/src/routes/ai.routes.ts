@@ -3,8 +3,10 @@ import {
     generateImage,
     generateVideo,
     checkVideoStatus,
+    generateVideoProject, // Import new controller
     generateStoryboard,
     updateOnboarding,
+    getAIProviders,
 } from "../controllers/ai.controller";
 import { authenticate } from "../middlewares/auth.middleware";
 
@@ -16,8 +18,10 @@ router.use(authenticate);
 // AI Generation endpoints
 router.post("/generate-image", generateImage);
 router.post("/generate-video", generateVideo);
+router.post("/generate-video-project", generateVideoProject); // Add new route
 router.get("/video-status/:jobId", checkVideoStatus);
 router.post("/generate-storyboard", generateStoryboard);
+router.get("/providers", getAIProviders);
 
 // Onboarding
 router.post("/onboarding", updateOnboarding);

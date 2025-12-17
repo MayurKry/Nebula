@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -15,12 +18,17 @@ const LoginPage = () => {
     setIsLoading(true);
     setError('');
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // For demo, always succeed and redirect
-    setIsLoading(false);
-    navigate('/app/dashboard');
+    try {
+      await login({ email, password });
+      toast.success('Login successful!');
+      navigate('/app/dashboard');
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || 'Login failed. Please check your credentials.';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {

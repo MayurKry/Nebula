@@ -1,356 +1,278 @@
-# Auth Boilerplate - TypeScript, Node.js & MongoDB 🚀
+# 🌌 Nebula - AI-Powered Visual Content Creation Platform
 
-A **production-ready full-stack authentication boilerplate** with complete MERN stack implementation using TypeScript.
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6+-blue.svg)](https://www.typescriptlang.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-4.4+-green.svg)](https://www.mongodb.com/)
 
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
-![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)
-![React](https://img.shields.io/badge/React-19-blue)
-![MongoDB](https://img.shields.io/badge/MongoDB-8-green)
-![Express](https://img.shields.io/badge/Express-5.1-lightgrey)
-
-## ✨ Features
-
-✅ **User Authentication** - Register, login, logout with JWT tokens  
-✅ **Token Management** - Access tokens + refresh tokens with auto-refresh  
-✅ **Role-Based Access** - SuperAdmin and User roles with protected routes  
-✅ **Security** - Password hashing, CORS, rate limiting, helmet headers  
-✅ **Form Validation** - Zod schemas on both backend and frontend  
-✅ **Error Handling** - Global error handler with comprehensive logging  
-✅ **State Management** - Redux Toolkit for auth state  
-✅ **Modern UI** - React + Tailwind CSS + Radix UI components  
-✅ **Responsive Design** - Mobile-first approach  
-✅ **Vercel Ready** - Serverless deployment support  
+> Transform your ideas into stunning visuals with AI-powered image and video generation
 
 ---
 
-## 🛠️ Tech Stack
+## 📋 Table of Contents
+- [Overview](#-overview)
+- [Features](#-features)
+- [Quick Start](#-quick-start)
+- [Documentation](#-documentation)
+- [Technology Stack](#-technology-stack)
+- [Project Structure](#-project-structure)
+- [Contributing](#-contributing)
+- [License](#-license)
 
-### Backend
-- **Node.js** + **Express.js** (TypeScript)
-- **MongoDB** + **Mongoose**
-- **JWT** for authentication
-- **Bcryptjs** for password hashing
-- **Zod** for validation
-- **Winston** for logging
-- **Morgan** for HTTP request logging
-- **Helmet** for security headers
-- **Express Rate Limiter** for API protection
+---
 
-### Frontend
-- **React** 19 with TypeScript
-- **Vite** for build tooling
-- **Redux Toolkit** for state management
-- **React Router** for navigation
-- **Axios** for HTTP requests
-- **React Hook Form** for forms
-- **Zod** for validation
-- **Tailwind CSS** for styling
-- **Radix UI** for components
-- **React Query** for data fetching
+## 🎯 Overview
+
+**Nebula** is a cutting-edge platform that leverages multiple AI providers to generate professional-quality images and videos from text descriptions. Built with a robust fallback system, Nebula ensures your creative workflow never stops.
+
+### Why Nebula?
+
+- ✅ **Multi-Provider AI**: 4 integrated AI providers with automatic fallback
+- ✅ **Always Available**: Never fails - if one provider is down, another takes over
+- ✅ **Free to Start**: Works immediately with free providers
+- ✅ **Production Ready**: Enterprise-grade architecture
+- ✅ **Easy to Scale**: Add more providers anytime
+- ✅ **Developer Friendly**: Comprehensive documentation
+
+---
+
+## ✨ Features
+
+### 🎨 AI Image Generation
+- **Multiple Providers**: Pollinations, Hugging Face, Segmind, Replicate
+- **Batch Generation**: Create 6 images simultaneously
+- **Full Customization**: Styles, aspect ratios, seeds, camera angles
+- **Smart Fallback**: Automatic provider switching on failure
+- **Provider Transparency**: See which AI generated your images
+
+### 🎬 AI Video Generation
+- Text-to-video conversion
+- Image-to-video animation
+- Customizable duration and styles
+- Real-time status tracking
+
+### 📁 Asset Management
+- Organize generated content
+- Folder structure
+- Search and filter
+- Bulk operations
+- Download capabilities
+
+### 🎯 Project Management
+- Create and manage creative projects
+- Scene organization
+- Storyboard generation
+- Timeline editing
+
+### 👤 User Management
+- JWT authentication
+- User profiles
+- Role-based access
+- Onboarding flow
 
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js v18+
-- npm or yarn
-- MongoDB (local or MongoDB Atlas)
 
-### Backend Setup (5 minutes)
+```bash
+Node.js 18+
+MongoDB 4.4+
+npm or yarn
+```
 
+### Installation
+
+#### 1. Clone the Repository
+```bash
+git clone <repository-url>
+cd Nebula
+```
+
+#### 2. Backend Setup
 ```bash
 cd backend
-
-# Install dependencies
 npm install
 
 # Create .env file
 cp .env.example .env
 
-# Edit .env with your MongoDB URI and JWT secrets
-# MONGODB_URI=your_mongodb_connection_string
-# JWT_ACCESS_TOKEN_SECRET=your_secret_key
-# JWT_REFRESH_TOKEN_SECRET=your_secret_key
+# Edit .env - Add this line for testing:
+echo "BYPASS_AUTH=true" >> .env
 
-# Start development server
+# Start backend
 npm run dev
 ```
 
-Backend runs on: `http://localhost:5000`
-
-### Frontend Setup (5 minutes)
-
+#### 3. Frontend Setup
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
 
 # Create .env file
 cp .env.example .env
 
-# Edit .env with backend API URL
-# VITE_API_BASE_URL=http://localhost:5000/v1
-
-# Start development server
+# Start frontend
 npm run dev
 ```
 
-Frontend runs on: `http://localhost:5173`
+#### 4. Access the Application
+```
+Frontend: http://localhost:5173
+Backend:  http://localhost:5000
+```
+
+### Test AI Generation
+
+```bash
+# Test AI providers
+cd backend
+node test-providers.js
+
+# Expected output:
+# ✅ Pollinations.AI... WORKING
+```
+
+### Generate Your First Image
+
+1. Navigate to http://localhost:5173/app/create/text-to-image
+2. Enter prompt: "A futuristic city at sunset, cyberpunk style"
+3. Click "Generate Images"
+4. Wait ~10-15 seconds
+5. See 6 AI-generated images! 🎉
 
 ---
 
-## 🔑 Default Credentials
+## 📚 Documentation
 
-A default SuperAdmin is created on first run:
+### Core Documentation
+- **[PRODUCT_DOCUMENTATION.md](PRODUCT_DOCUMENTATION.md)** - Complete product documentation
+- **[AI_PROVIDERS_GUIDE.md](AI_PROVIDERS_GUIDE.md)** - AI provider setup guide
+- **[MULTI_PROVIDER_AI_COMPLETE.md](MULTI_PROVIDER_AI_COMPLETE.md)** - Multi-provider implementation
+- **[AI_QUICK_REFERENCE.md](AI_QUICK_REFERENCE.md)** - Quick reference card
 
-**Email**: `admin@example.com`  
-**Password**: `password123`
+### Troubleshooting
+- **[QUICK_FIX_AUTH.md](QUICK_FIX_AUTH.md)** - Fix authentication issues
 
-> ⚠️ Change these in production!
-
----
-
-## 📚 API Endpoints
-
-### Authentication
-```
-POST   /v1/auth/register      - Register new user
-POST   /v1/auth/login         - Login user
-POST   /v1/auth/refresh       - Refresh access token
-POST   /v1/auth/logout        - Logout user
-```
-
-### Health & Status
-```
-GET    /v1/health             - Health check endpoint
-GET    /                       - Server status
-```
+### Implementation Details
+- **[IMPLEMENTATION_TEXT_TO_IMAGE.md](IMPLEMENTATION_TEXT_TO_IMAGE.md)** - Text-to-image implementation
 
 ---
 
-## 🔄 Authentication Flow
+## 💻 Technology Stack
 
-```
-User Registration/Login
-    ↓
-Credentials Validated (Zod)
-    ↓
-Password Hashed (Bcryptjs)
-    ↓
-User Created/Found in MongoDB
-    ↓
-JWT Tokens Generated
-    ↓
-Tokens Stored in localStorage (Frontend)
-    ↓
-Tokens Stored in Redux (Frontend)
-    ↓
-Route to Dashboard Based on Role
-```
+### Frontend
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool
+- **TailwindCSS** - Styling
+- **React Router** - Navigation
+- **Axios** - HTTP client
+
+### Backend
+- **Node.js** - Runtime
+- **Express** - Web framework
+- **TypeScript** - Type safety
+- **MongoDB** - Database
+- **Mongoose** - ODM
+- **JWT** - Authentication
+
+### AI Providers
+- **Pollinations.AI** - Free, no API key
+- **Hugging Face** - Free tier, high quality
+- **Segmind** - Free tier, fast
+- **Replicate** - Premium, highest quality
 
 ---
 
 ## 📁 Project Structure
 
 ```
-auth-boilerplate-ts-node-mongo/
-├── backend/                 # Express API
+Nebula/
+├── backend/
 │   ├── src/
-│   │   ├── controllers/     # Request handlers
-│   │   ├── services/        # Business logic
-│   │   ├── models/          # Mongoose schemas
-│   │   ├── routes/          # API routes
+│   │   ├── controllers/      # Request handlers
+│   │   ├── models/           # Database models
+│   │   ├── routes/           # API routes
+│   │   ├── services/         # Business logic
+│   │   │   └── ai-image.service.ts  # Multi-provider AI service
 │   │   ├── middlewares/      # Express middlewares
-│   │   ├── validation/      # Zod schemas
-│   │   ├── utils/           # Helpers
-│   │   ├── app.ts           # Express setup
-│   │   └── server.ts        # Entry point
+│   │   ├── utils/            # Helper functions
+│   │   └── app.ts            # Express app
+│   ├── test-providers.js     # Provider testing script
+│   ├── .env.example          # Environment template
 │   └── package.json
 │
-├── frontend/                # React app
+├── frontend/
 │   ├── src/
-│   │   ├── components/      # React components
-│   │   ├── pages/           # Page components
-│   │   ├── routes/          # Route definitions
-│   │   ├── slice/           # Redux slices
-│   │   ├── api/             # API clients
-│   │   ├── types/           # TypeScript types
-│   │   ├── App.tsx
-│   │   └── main.tsx
+│   │   ├── components/       # React components
+│   │   ├── pages/            # Page components
+│   │   │   └── App/Create/TextToImagePage.tsx
+│   │   ├── services/         # API services
+│   │   │   └── ai.service.ts
+│   │   ├── context/          # React context
+│   │   ├── routes/           # Route configuration
+│   │   └── App.tsx           # Root component
+│   ├── .env.example          # Environment template
 │   └── package.json
 │
-└── DOCUMENTATION.md         # Full documentation
+├── PRODUCT_DOCUMENTATION.md  # Complete documentation
+├── AI_PROVIDERS_GUIDE.md     # AI setup guide
+├── QUICK_FIX_AUTH.md         # Troubleshooting
+└── README.md                 # This file
 ```
 
 ---
 
-## 🔐 Environment Variables
+## 🔧 Configuration
 
-### Backend `.env`
-```env
+### Backend Environment Variables
+
+```bash
+# Server
 PORT=5000
 NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/auth-boilerplate
-JWT_ACCESS_TOKEN_SECRET=your_super_secret_key_min_32_chars
-JWT_REFRESH_TOKEN_SECRET=your_super_secret_key_min_32_chars
-JWT_ACCESS_TOKEN_EXPIRE=1h
-JWT_REFRESH_TOKEN_EXPIRE=7d
-CORS_ORIGIN=http://localhost:5173
+
+# Database
+DATABASE_URL=mongodb://localhost:27017/nebula
+
+# Authentication
+ACCESS_SECRET=your-secret-key
+REFRESH_TOKEN_SECRET=your-refresh-key
+BYPASS_AUTH=true  # For development only!
+
+# AI Providers (Optional)
+HUGGINGFACE_API_KEY=hf_your_key
+SEGMIND_API_KEY=your_key
+REPLICATE_API_KEY=r8_your_key
+AI_PROVIDER_PRIORITY=pollinations,huggingface,segmind
 ```
 
-### Frontend `.env`
-```env
-VITE_API_BASE_URL=http://localhost:5000/v1
-```
+### Frontend Environment Variables
 
----
-
-## 🧪 Testing
-
-### Register User
 ```bash
-curl -X POST http://localhost:5000/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "firstName": "John",
-    "lastName": "Doe",
-    "email": "john@example.com",
-    "password": "Password123!"
-  }'
+VITE_API_URL=http://localhost:5000/api
 ```
-
-### Login User
-```bash
-curl -X POST http://localhost:5000/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "john@example.com",
-    "password": "Password123!"
-  }'
-```
-
-### Health Check
-```bash
-curl http://localhost:5000/v1/health
-```
-
----
-
-## 📦 Build for Production
-
-### Backend
-```bash
-cd backend
-npm run build
-npm start
-```
-
-### Frontend
-```bash
-cd frontend
-npm run build
-npm run preview
-```
-
----
-
-## 🌐 Deployment
-
-### Vercel Deployment
-
-#### Backend (Vercel Serverless)
-1. Push code to GitHub
-2. Connect repository to Vercel
-3. Set environment variables in Vercel dashboard
-4. Deploy automatically on push
-
-#### Frontend (Vercel)
-1. Similar process for frontend
-2. Set `VITE_API_BASE_URL` to your backend URL
-
-### MongoDB Atlas
-
-1. Create cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-2. Get connection string
-3. Add to `.env`: `MONGODB_URI=<atlas_connection_string>`
 
 ---
 
 ## 🐛 Troubleshooting
 
-### MongoDB Connection Failed
-```bash
-# Ensure MongoDB is running
-mongod  # Windows
-# or
-brew services start mongodb-community  # macOS
-```
+### Issue: Redirected to homepage when generating images
+**Solution:** Add `BYPASS_AUTH=true` to `backend/.env` and restart backend.
+See [QUICK_FIX_AUTH.md](QUICK_FIX_AUTH.md) for details.
 
-### Port Already in Use
-```bash
-# Windows: Find and kill process on port
-netstat -ano | findstr :5000
-taskkill /PID <PID> /F
+### Issue: All AI providers failed
+**Solution:** Run `node test-providers.js` to check provider status.
+See [AI_PROVIDERS_GUIDE.md](AI_PROVIDERS_GUIDE.md) for setup.
 
-# macOS/Linux
-lsof -i :5000 | grep LISTEN
-kill -9 <PID>
-```
-
-### CORS Error
-Update `CORS_ORIGIN` in backend `.env` to match frontend URL
-
-### Token Issues
-Clear localStorage and re-login:
-```javascript
-localStorage.clear()
-```
+### Issue: Cannot connect to MongoDB
+**Solution:** Ensure MongoDB is running and `DATABASE_URL` is correct in `.env`.
 
 ---
 
-## 📖 Full Documentation
+**Built with ❤️ by the Nebula Team**
 
-See [DOCUMENTATION.md](./DOCUMENTATION.md) for:
-- Detailed architecture explanation
-- All API endpoints documentation
-- Backend and frontend code structure
-- Database schema
-- Middleware and utilities explanation
-- Common issues and solutions
-- Additional resources
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📧 Support
-
-If you have any questions or issues, please open an issue in the repository.
-
----
-
-## 📚 Learning Resources
-
-- [Express.js Official Docs](https://expressjs.com/)
-- [MongoDB Official Docs](https://www.mongodb.com/docs/)
-- [React Official Docs](https://react.dev/)
-- [Redux Toolkit Official Docs](https://redux-toolkit.js.org/)
-- [TypeScript Official Docs](https://www.typescriptlang.org/docs/)
-- [Tailwind CSS Official Docs](https://tailwindcss.com/docs)
-
----
-
-
-⭐ If you find this helpful, please give it a star!
+**Last Updated:** December 16, 2025
+**Version:** 1.0.0

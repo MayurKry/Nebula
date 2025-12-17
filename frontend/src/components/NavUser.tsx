@@ -18,22 +18,22 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { useAppDispatch, useAppSelector } from "@/slice/hook";
-import { logout } from "@/slice/auth.slice";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
-  const dispatch = useAppDispatch();
-
-  const user = useAppSelector((state) => state.auth.user);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const firstName = user?.firstName || "";
   const lastName = user?.lastName || "";
   const fullName = `${firstName} ${lastName}`.trim();
   const initials = (firstName?.[0] || "") + (lastName?.[0] || "");
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
   };
 
   return (

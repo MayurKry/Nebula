@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useEditor } from '@/context/EditorContext';
 import {
     Play, Pause, SkipBack, SkipForward, Maximize,
-    Volume2
+    Volume2, Video as VideoIcon
 } from 'lucide-react';
 
 const VideoPreview = () => {
@@ -62,22 +62,48 @@ const VideoPreview = () => {
             <div className="flex-1 flex items-center justify-center relative min-h-0">
                 <div className="aspect-video h-full max-h-full bg-black rounded-lg border border-white/10 relative overflow-hidden shadow-2xl group">
                     {/* Placeholder Content */}
+                    {/* Content Display */}
                     {activeScene ? (
                         <>
                             <img
+                                key={activeScene.id} // Re-render on scene change
                                 src={activeScene.thumbnail}
-                                alt="Preview"
-                                className="w-full h-full object-cover opacity-80"
+                                alt={`Scene ${activeScene.order + 1}`}
+                                onError={(e) => {
+                                    // Fallback if image fails
+                                    e.currentTarget.style.display = 'none';
+                                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                }}
+                                className="w-full h-full object-cover transition-opacity duration-300"
                             />
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="bg-black/40 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10 text-center">
-                                    <p className="text-white font-medium">{activeScene.prompt || "Draft Scene"}</p>
-                                    <p className="text-xs text-gray-400 mt-1">Preview Mode • {activeScene.duration}s</p>
+                            {/* Fallback Element (Hidden by default, shown on error) */}
+                            <div className="absolute inset-0 bg-[#1A1A1A] hidden flex flex-col items-center justify-center text-gray-500">
+                                <Maximize className="w-12 h-12 mb-2 opacity-20" />
+                                <span className="text-sm">Preview Unavailable</span>
+                            </div>
+
+                            {/* Playback Overlay */}
+                            <div className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-300 ${isPlaying ? 'opacity-0' : 'opacity-100'}`}>
+                                <div className="bg-black/40 backdrop-blur-sm p-4 rounded-full border border-white/10 group-hover:scale-110 transition-transform">
+                                    <Play className="w-8 h-8 text-white fill-white ml-1" />
                                 </div>
+                            </div>
+
+                            {/* Info Overlay */}
+                            <div className="absolute top-4 left-4 pointer-events-none">
+                                <span className="bg-black/60 backdrop-blur px-2 py-1 rounded text-xs text-white font-mono mr-2">
+                                    Scene {activeScene.order + 1}
+                                </span>
+                                <span className="bg-black/60 backdrop-blur px-2 py-1 rounded text-xs text-[#00FF88] font-mono">
+                                    {activeScene.duration}s
+                                </span>
                             </div>
                         </>
                     ) : (
-                        <div className="text-gray-500">No Scene Selected</div>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-[#0A0A0A]">
+                            <VideoIcon className="w-12 h-12 mb-4 opacity-20" />
+                            <p>Select a scene to preview</p>
+                        </div>
                     )}
 
                     {/* Overlay Controls */}

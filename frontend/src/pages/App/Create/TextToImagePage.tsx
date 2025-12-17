@@ -4,9 +4,11 @@ import {
     Loader2, Image as ImageIcon,
     RotateCw, Folder, Wand2, Download, Grid3X3
 } from 'lucide-react';
-import { useGeneration, SAMPLE_IMAGES } from '@/components/generation/GenerationContext';
+import { useGeneration } from '@/components/generation/GenerationContext';
 import { AdvancedPanel, StyleSelector, AspectRatioSelector, SeedToggle } from '@/components/generation/AdvancedControls';
 import GenerationQueue from '@/components/generation/GenerationQueue';
+import { aiService } from '@/services/ai.service';
+import { toast } from 'sonner';
 
 const imageStyles = [
     'Cinematic', 'Photorealistic', 'Anime', '3D Render', 'Oil Painting',
@@ -28,31 +30,57 @@ const TextToImagePage = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<string[]>([]);
     const [selectedResult, setSelectedResult] = useState<string | null>(null);
+    const [usedProvider, setUsedProvider] = useState<string | null>(null);
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
 
         setIsGenerating(true);
         setResults([]);
+        setUsedProvider(null);
 
-        // Add job to queue
-        addJob({
-            type: 'text-to-image',
-            prompt,
-            settings: {
-                style,
-                aspectRatio,
-                seed: seedEnabled ? seed : undefined,
-                ...advancedSettings,
-            },
-        });
+        try {
+            // Add job to queue
+            addJob({
+                type: 'text-to-image',
+                prompt,
+                settings: {
+                    style,
+                    aspectRatio,
+                    seed: seedEnabled ? seed : undefined,
+                    ...advancedSettings,
+                },
+            });
 
-        // Simulate generation
-        await new Promise(resolve => setTimeout(resolve, 6000));
+            // Generate 2 images using the AI service
+            const images = await aiService.generateImages(
+                {
+                    prompt,
+                    style,
+                    aspectRatio,
+                    seed: seedEnabled ? seed : undefined,
+                    cameraAngle: advancedSettings.cameraAngle,
+                },
+                2
+            );
 
-        // Show sample results
-        setResults(SAMPLE_IMAGES.slice(0, 6));
-        setIsGenerating(false);
+            // Extract URLs from the response and track provider
+            const imageUrls = images.map(img => img.url);
+            setResults(imageUrls);
+
+            // Set the provider used (from first image)
+            if (images.length > 0 && images[0].provider) {
+                setUsedProvider(images[0].provider);
+                toast.success(`Images generated successfully using ${images[0].provider}!`);
+            } else {
+                toast.success('Images generated successfully!');
+            }
+        } catch (error) {
+            console.error('Error generating images:', error);
+            toast.error('Failed to generate images. Please try again.');
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const handleSaveToAssets = () => {
@@ -66,6 +94,25 @@ const TextToImagePage = () => {
     const handleRegenerate = () => {
         setResults([]);
         handleGenerate();
+    };
+
+    const handleDownload = async (imageUrl: string, index?: number) => {
+        try {
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `nebula-image-${index !== undefined ? index + 1 : Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            toast.success('Image downloaded successfully!');
+        } catch (error) {
+            console.error('Error downloading image:', error);
+            toast.error('Failed to download image. Please try again.');
+        }
     };
 
 
@@ -136,8 +183,8 @@ const TextToImagePage = () => {
                 {/* Loading State */}
                 {isGenerating && (
                     <section className="mb-8">
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            {[...Array(6)].map((_, i) => (
+                        <div className="grid grid-cols-2 gap-4">
+                            {[...Array(2)].map((_, i) => (
                                 <div
                                     key={i}
                                     className="aspect-square bg-[#141414] border border-white/10 rounded-xl overflow-hidden"
@@ -147,7 +194,7 @@ const TextToImagePage = () => {
                             ))}
                         </div>
                         <div className="text-center mt-4">
-                            <p className="text-gray-400">✨ Creating your images...</p>
+                            <p className="text-gray-400">✨ Creating your images with Gemini...</p>
                             <p className="text-xs text-gray-500 mt-1">This usually takes 5-10 seconds</p>
                         </div>
                     </section>
@@ -157,7 +204,14 @@ const TextToImagePage = () => {
                 {results.length > 0 && !isGenerating && (
                     <section>
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-semibold text-white">Generated Images</h2>
+                            <div className="flex items-center gap-3">
+                                <h2 className="text-xl font-semibold text-white">Generated Images</h2>
+                                {usedProvider && (
+                                    <span className="px-3 py-1 bg-[#00FF88]/10 border border-[#00FF88]/30 rounded-full text-[#00FF88] text-xs font-medium">
+                                        Powered by {usedProvider}
+                                    </span>
+                                )}
+                            </div>
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={handleRegenerate}
@@ -176,7 +230,7 @@ const TextToImagePage = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
                             {results.map((url, i) => (
                                 <div
                                     key={i}
@@ -202,7 +256,7 @@ const TextToImagePage = () => {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                alert('Downloading image...');
+                                                handleDownload(url, i);
                                             }}
                                             className="px-3 py-2 bg-white/10 backdrop-blur rounded-lg text-white text-sm hover:bg-white/20 transition-colors"
                                         >
@@ -246,7 +300,7 @@ const TextToImagePage = () => {
                         />
                         <div className="flex items-center justify-center gap-4 mt-4">
                             <button
-                                onClick={() => alert('Downloading...')}
+                                onClick={() => handleDownload(selectedResult)}
                                 className="px-4 py-2 bg-white/10 rounded-lg text-white text-sm hover:bg-white/20 transition-colors flex items-center gap-2"
                             >
                                 <Download className="w-4 h-4" />
