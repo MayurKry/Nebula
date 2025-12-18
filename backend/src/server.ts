@@ -3,6 +3,7 @@ import app from "./app";
 import config from "./config/db";
 import logger from "./utils/logger";
 import initialUserCreation from "./utils/initialUserCreation";
+import { connectDB } from "./config/db/db";
 
 /**
  * When running on Vercel (serverless), we simply export the app.
@@ -13,8 +14,9 @@ import initialUserCreation from "./utils/initialUserCreation";
 if (!process.env.VERCEL) {
   const startServer = async () => {
     try {
-      await mongoose.connect(config.database_url as string);
-      logger.info("✅ Connected to MongoDB");
+      // await mongoose.connect(config.database_url as string);
+      // logger.info("✅ Connected to MongoDB");
+      await connectDB();
 
       app.listen(config.port, () => {
         logger.info(`🚀 Server running at http://localhost:${config.port}`);
