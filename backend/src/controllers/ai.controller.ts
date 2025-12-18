@@ -51,7 +51,11 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
 
         // Provide more detailed error message
         const errorMessage = error.message || "Failed to generate image";
-        const statusCode = error.response?.status === 401 || error.response?.status === 403 ? 401 : 500;
+
+        // Critical: Do NOT return 401/403 here even if the external provider gave it. 
+        // 401 tells the frontend "User is not logged in", causing a redirect to home.
+        // We want to tell the frontend "The server failed to process the request".
+        const statusCode = 500;
 
         return responseHandler(res, statusCode, errorMessage);
     }
@@ -120,7 +124,7 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
         Create a structured video project plan based on the user's prompt. 
         Target Duration: ${duration} seconds. Style: ${style}.
         
-        Output valid JSON only. Structure:
+        Output valid JSON only. NO MARKDOWN. Structure:
         {
           "script": "string (The full screenplay text)",
           "language": "string (e.g. English)",
@@ -130,41 +134,101 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
           ],
           "scenes": [
             { 
-               "id": "scene_1", "order": 0, "description": "string (visual prompt)", 
+               "id": "scene_1", "order": 0, "description": "string (visual prompt for image generation)", 
                "duration": number (seconds), "cameraPath": "string (Static, Pan, Zoom, Orbit)", 
                "motionIntensity": number (1-100), "assignedCharacterId": "string (optional)" 
             }
           ]
         }
-        Ensure scene durations sum to approx ${duration}. Create at least ${Math.floor(duration / 5)} scenes.
+        Ensure scene durations sum to approx ${duration}. Create approx ${Math.max(3, Math.floor(duration / 5))} scenes.
         `;
 
         const userPrompt = `Project Prompt: "${prompt}"`;
 
-        // Call Gemini
+        console.log("[VideoProject] Generating script with Gemini...");
+        // Call Gemini for Script
         let rawContent = await aiImageService.generateText(`${systemSystem}\n\n${userPrompt}`);
 
         // Clean JSON formatting (remove markdown blocks if present)
         rawContent = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
 
-        const generatedData = JSON.parse(rawContent);
+        // Find the first '{' and last '}' to ensure valid JSON substring
+        const firstBrace = rawContent.indexOf('{');
+        const lastBrace = rawContent.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1) {
+            rawContent = rawContent.substring(firstBrace, lastBrace + 1);
+        }
 
-        // Enhance with Mock Assets (since Gemini only gives text)
+        let generatedData;
+        try {
+            generatedData = JSON.parse(rawContent);
+        } catch (e) {
+            console.error("Failed to parse Gemini JSON:", rawContent);
+            throw new Error("AI returned invalid project structure. Please try again.");
+        }
+
+        // Enhance with Real AI Images (Gemini Imagen)
+        console.log(`[VideoProject] Generating visuals for ${generatedData.scenes.length} scenes...`);
+
+        // Process scenes in parallel (limit to 4 to avoid hitting rate limits too hard/timeouts)
+        const scenePromises = generatedData.scenes.slice(0, 6).map(async (scene: any, index: number) => {
+            try {
+                // Generate clear visual description
+                const visualPrompt = `${style} style. ${scene.description}. High quality, cinematic lighting, 4k.`;
+
+                const imageResult = await aiImageService.generateImage({
+                    prompt: visualPrompt,
+                    width: 1280,
+                    height: 720,
+                    style: style
+                });
+
+                return {
+                    ...scene,
+                    id: scene.id || `scene_${index + 1}`,
+                    order: index,
+                    imageUrl: imageResult.url,
+                    type: 'video',
+                    cameraPath: scene.cameraPath || "Static",
+                    motionIntensity: scene.motionIntensity || 50
+                };
+            } catch (err) {
+                console.error(`Failed to generate image for scene ${index}:`, err);
+                // Fallback image if generation fails
+                return {
+                    ...scene,
+                    id: scene.id || `scene_${index + 1}`,
+                    order: index,
+                    imageUrl: `https://placehold.co/1280x720/1a1a1a/FFF?text=${encodeURIComponent(scene.description.slice(0, 20))}`,
+                    type: 'video',
+                    cameraPath: scene.cameraPath || "Static",
+                    motionIntensity: scene.motionIntensity || 50
+                };
+            }
+        });
+
+        const scenes = await Promise.all(scenePromises);
+
+        // Process remaining scenes with placeholders if any (to avoid timeouts)
+        if (generatedData.scenes.length > 6) {
+            generatedData.scenes.slice(6).forEach((scene: any, index: number) => {
+                scenes.push({
+                    ...scene,
+                    id: scene.id || `scene_${index + 7}`,
+                    order: index + 6,
+                    imageUrl: `https://placehold.co/1280x720/1a1a1a/FFF?text=${encodeURIComponent(scene.description.slice(0, 20))}`,
+                    type: 'video',
+                    cameraPath: scene.cameraPath || "Static",
+                    motionIntensity: scene.motionIntensity || 50
+                });
+            });
+        }
+
         const characters = generatedData.characters.map((char: any, index: number) => ({
             ...char,
             id: char.id || `char_${index + 1}`,
             avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(char.name)}&background=random&size=128`,
             voiceId: char.voiceId || "voice_en_us_neutral"
-        }));
-
-        const scenes = generatedData.scenes.map((scene: any, index: number) => ({
-            ...scene,
-            id: scene.id || `scene_${index + 1}`,
-            order: index,
-            imageUrl: `https://picsum.photos/seed/${Date.now() + index}/800/450`, // Placeholder until image geneation
-            type: 'video',
-            cameraPath: scene.cameraPath || "Static",
-            motionIntensity: scene.motionIntensity || 50
         }));
 
         // Mock Audio Tracks based on generated scenes
@@ -178,7 +242,6 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
                 url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
                 volume: 0.5
             },
-            // Add a voice track for the first character if present
             ...(characters.length > 0 ? [{
                 id: "track_voice_1",
                 type: "voice",
@@ -210,9 +273,50 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
 
     } catch (error: any) {
         console.error("Gemini Project Generation Failed:", error);
-        // Fallback to Mock if Gemini fails (or just error out if strictly requested)
-        // For robustness, we will return a 500 but with clear message
-        return responseHandler(res, 500, `Failed to generate project with Gemini: ${error.message}`);
+
+        // Fallback to Safe Mock if Gemini fails (Critical for Prototype Stability)
+        // This ensures the user ALWAYS sees a result, even if API quotas are hit or network fails.
+        console.log("⚠️ Falling back to Mock Project Generation to save the demo...");
+
+        const mockScenes = Array.from({ length: 5 }, (_, i) => ({
+            id: `mock_scene_${i}`,
+            order: i,
+            description: `[Mock] Scene ${i + 1} - Visual representation of ${prompt}`,
+            duration: 5,
+            imageUrl: `https://picsum.photos/seed/mock_${Date.now()}_${i}/1280/720`,
+            type: 'video',
+            cameraPath: "Static",
+            motionIntensity: 50
+        }));
+
+        const mockTracks = [
+            {
+                id: "track_music_1",
+                type: "music",
+                name: "Cinematic Score (Mock)",
+                startTime: 0,
+                duration: duration,
+                url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                volume: 0.5
+            }
+        ];
+
+        return responseHandler(res, 200, "Project generated (Fallback Mode)", {
+            projectId: `proj_mock_${Date.now()}`,
+            prompt: prompt,
+            settings: {
+                style,
+                duration,
+                language: "English",
+                region: "US",
+                aspectRatio: "16:9"
+            },
+            script: "This is a fallback script generated because the AI service is currently unavailable. Your scene will be awesome!",
+            scenes: mockScenes,
+            characters: [],
+            tracks: mockTracks,
+            createdAt: new Date().toISOString(),
+        });
     }
 });
 

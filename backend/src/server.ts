@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import app from "./app";
 import config from "./config/db";
 import logger from "./utils/logger";
@@ -6,30 +5,33 @@ import initialUserCreation from "./utils/initialUserCreation";
 import { connectDB } from "./config/db/db";
 
 /**
- * When running on Vercel (serverless), we simply export the app.
- * When running locally, we connect to MongoDB and start the server normally.
+ * server.ts
+ * Entry point for LOCAL development.
+ * Vercel uses api/index.ts instead.
  */
 
-// If NOT running on Vercel (local / other platform)
+const startServer = async () => {
+  try {
+    // 1. Connect to Database WITHOUT buffering
+    await connectDB();
+
+    // 2. Start Express Server
+    app.listen(config.port, () => {
+      logger.info(`🚀 Server running locally at http://localhost:${config.port}`);
+    });
+
+    // 3. Run initial seed (only safely after DB is connected)
+    await initialUserCreation();
+
+  } catch (err) {
+    logger.error("❌ Failed to start server: " + err);
+    process.exit(1);
+  }
+};
+
+// Only run if not on Vercel (local dev)
 if (!process.env.VERCEL) {
-  const startServer = async () => {
-    try {
-      // await mongoose.connect(config.database_url as string);
-      // logger.info("✅ Connected to MongoDB");
-      await connectDB();
-
-      app.listen(config.port, () => {
-        logger.info(`🚀 Server running at http://localhost:${config.port}`);
-      });
-
-      await initialUserCreation();
-    } catch (err) {
-      logger.error("❌ Failed to connect to MongoDB: " + err);
-    }
-  };
-
   startServer();
 }
 
-// ✅ Always export app (required for Vercel)
 export default app;

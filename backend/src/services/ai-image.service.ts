@@ -38,8 +38,9 @@ class AIImageService {
         this.segmindKey = process.env.SEGMIND_API_KEY;
         this.replicateKey = process.env.REPLICATE_API_KEY;
 
-        // Set provider priority from env or use default (ONLY GEMINI)
-        const priorityString = process.env.AI_PROVIDER_PRIORITY || "gemini";
+        // Set provider priority from env or use default with fallback
+        // Default to "gemini,pollinations" so if Gemini fails, we have a free fallback
+        const priorityString = process.env.AI_PROVIDER_PRIORITY || "gemini,pollinations";
         this.providers = priorityString.split(",") as AIProvider[];
     }
 
@@ -52,6 +53,12 @@ class AIImageService {
         // Try each provider in order
         for (const provider of this.providers) {
             try {
+                // Skip providers if their key is missing (except pollinations which needs none)
+                if (provider === "gemini" && !this.geminiKey) continue;
+                if (provider === "huggingface" && !this.huggingfaceKey) continue;
+                if (provider === "segmind" && !this.segmindKey) continue;
+                if (provider === "replicate" && !this.replicateKey) continue;
+
                 console.log(`[AI Service] Trying provider: ${provider}`);
                 const result = await this.generateWithProvider(provider, params);
                 console.log(`[AI Service] Success with provider: ${provider}`);
@@ -105,9 +112,8 @@ class AIImageService {
         const { prompt, width = 1024, height = 1024, seed } = params;
 
         try {
-            // Use Google's Imagen 4.0 API for image generation
-            // Validated available models: imagen-4.0-generate-001
-            const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict";
+            // Use Google's Imagen 3.0 API (stable)
+            const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict";
 
             // Construct valid request body for Imagen
             // Note: Seed is NOT supported in the current API version
