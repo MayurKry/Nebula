@@ -6,7 +6,10 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useGeneration } from '@/components/generation/GenerationContext';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import GSAPTransition from '@/components/ui/GSAPTransition';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
 
 const DashboardPage = () => {
     useAuth();
@@ -14,6 +17,20 @@ const DashboardPage = () => {
     const { jobs } = useGeneration();
     const [prompt, setPrompt] = useState('');
     const [selectedModel, setSelectedModel] = useState('Nebula Turbo');
+    const container = useRef<HTMLDivElement>(null);
+
+    useGSAP(() => {
+        // Subtle hover animation for cards globally within this container
+        const cards = gsap.utils.toArray('.dashboard-card');
+        cards.forEach((card: any) => {
+            card.addEventListener('mouseenter', () => {
+                gsap.to(card, { y: -4, scale: 1.02, duration: 0.3, ease: 'power2.out' });
+            });
+            card.addEventListener('mouseleave', () => {
+                gsap.to(card, { y: 0, scale: 1, duration: 0.3, ease: 'power2.inOut' });
+            });
+        });
+    }, { scope: container });
 
     // Quick Actions
     const quickActions = [
@@ -83,91 +100,93 @@ const DashboardPage = () => {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-10 animate-fade-in transition-all">
+        <div ref={container} className="p-8 max-w-7xl mx-auto space-y-10">
             {/* Hero Section */}
-            <div className="text-center space-y-8 py-12">
-                <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400">
-                    What will you create today?
-                </h1>
+            <GSAPTransition animation="fade-in-up" duration={1}>
+                <div className="text-center space-y-8 py-12">
+                    <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400">
+                        What will you create today?
+                    </h1>
 
-                <div className="max-w-3xl mx-auto relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] rounded-2xl opacity-20 group-hover:opacity-30 blur transition-opacity" />
+                    <div className="max-w-3xl mx-auto relative group">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] rounded-2xl opacity-20 group-hover:opacity-30 blur transition-opacity" />
 
-                    <div className="relative bg-[#141414] border border-white/10 rounded-2xl p-4 flex flex-col shadow-2xl">
-                        <textarea
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            placeholder="Describe your imagination... (e.g., 'A cyberpunk city with neon lights')"
-                            className="bg-transparent border-none outline-none text-white text-lg placeholder-gray-500 min-h-[100px] resize-none w-full p-2"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleGenerate();
-                                }
-                            }}
-                        />
+                        <div className="relative bg-[#141414] border border-white/10 rounded-2xl p-4 flex flex-col shadow-2xl">
+                            <textarea
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                placeholder="Describe your imagination... (e.g., 'A cyberpunk city with neon lights')"
+                                className="bg-transparent border-none outline-none text-white text-lg placeholder-gray-500 min-h-[100px] resize-none w-full p-2"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleGenerate();
+                                    }
+                                }}
+                            />
 
-                        <div className="flex items-center justify-between border-t border-white/5 pt-4 mt-2">
-                            <div className="flex items-center gap-3">
-                                {/* Model Selector */}
-                                <div className="relative group/model">
-                                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-gray-300 transition-colors border border-white/5">
-                                        <span>{selectedModel}</span>
-                                        <ChevronDown className="w-4 h-4 text-gray-500" />
-                                    </button>
-                                    {/* Dropdown (Mock) */}
-                                    <div className="absolute top-full left-0 mt-2 w-48 bg-[#1A1A1A] border border-white/10 rounded-xl overflow-hidden hidden group-hover/model:block z-50 shadow-xl">
-                                        {['Nebula Turbo', 'Nebula V1', 'Nebula Pro'].map(model => (
-                                            <button
-                                                key={model}
-                                                onClick={() => setSelectedModel(model)}
-                                                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
-                                            >
-                                                {model}
-                                            </button>
-                                        ))}
+                            <div className="flex items-center justify-between border-t border-white/5 pt-4 mt-2">
+                                <div className="flex items-center gap-3">
+                                    {/* Model Selector */}
+                                    <div className="relative group/model">
+                                        <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-gray-300 transition-colors border border-white/5">
+                                            <span>{selectedModel}</span>
+                                            <ChevronDown className="w-4 h-4 text-gray-500" />
+                                        </button>
+                                        {/* Dropdown (Mock) */}
+                                        <div className="absolute top-full left-0 mt-2 w-48 bg-[#1A1A1A] border border-white/10 rounded-xl overflow-hidden hidden group-hover/model:block z-50 shadow-xl">
+                                            {['Nebula Turbo', 'Nebula V1', 'Nebula Pro'].map(model => (
+                                                <button
+                                                    key={model}
+                                                    onClick={() => setSelectedModel(model)}
+                                                    className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                                                >
+                                                    {model}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
+
+                                    {/* Attach File */}
+                                    <button className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors" title="Attach Image/Video">
+                                        <Paperclip className="w-5 h-5" />
+                                    </button>
+
+                                    {/* Enhance */}
+                                    <button
+                                        onClick={enhancePrompt}
+                                        className="p-2 rounded-lg hover:bg-white/5 text-[#00FF88] hover:text-[#00FF88]/80 transition-colors flex items-center gap-2 group/enhance"
+                                        title="Enhance Prompt"
+                                    >
+                                        <Wand2 className="w-5 h-5 transition-transform group-hover/enhance:rotate-12" />
+                                        <span className="text-sm font-medium hidden sm:inline">Enhance</span>
+                                    </button>
                                 </div>
 
-                                {/* Attach File */}
-                                <button className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors" title="Attach Image/Video">
-                                    <Paperclip className="w-5 h-5" />
-                                </button>
-
-                                {/* Enhance */}
                                 <button
-                                    onClick={enhancePrompt}
-                                    className="p-2 rounded-lg hover:bg-white/5 text-[#00FF88] hover:text-[#00FF88]/80 transition-colors flex items-center gap-2 group/enhance"
-                                    title="Enhance Prompt"
+                                    className="px-6 py-2.5 bg-[#00FF88] hover:bg-[#00CC6A] text-[#0A0A0A] font-semibold rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-[#00FF88]/20"
+                                    onClick={handleGenerate}
                                 >
-                                    <Wand2 className="w-5 h-5 transition-transform group-hover/enhance:rotate-12" />
-                                    <span className="text-sm font-medium hidden sm:inline">Enhance</span>
+                                    Generate
+                                    <ArrowRight className="w-4 h-4" />
                                 </button>
                             </div>
-
-                            <button
-                                className="px-6 py-2.5 bg-[#00FF88] hover:bg-[#00CC6A] text-[#0A0A0A] font-semibold rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-[#00FF88]/20"
-                                onClick={handleGenerate}
-                            >
-                                Generate
-                                <ArrowRight className="w-4 h-4" />
-                            </button>
                         </div>
                     </div>
-                </div>
 
-                <p className="text-gray-400 text-sm">
-                    Try: <button onClick={() => setPrompt('Futuristic space station')} className="text-white hover:text-[#00FF88] transition-colors">Futuristic space station</button>, <button onClick={() => setPrompt('Portrait of a warrior')} className="text-white hover:text-[#00FF88] transition-colors">Portrait of a warrior</button>
-                </p>
-            </div>
+                    <p className="text-gray-400 text-sm">
+                        Try: <button onClick={() => setPrompt('Futuristic space station')} className="text-white hover:text-[#00FF88] transition-colors">Futuristic space station</button>, <button onClick={() => setPrompt('Portrait of a warrior')} className="text-white hover:text-[#00FF88] transition-colors">Portrait of a warrior</button>
+                    </p>
+                </div>
+            </GSAPTransition>
 
             {/* Quick Actions Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <GSAPTransition animation="fade-in-up" stagger={0.1} delay={0.4} className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {quickActions.map((action) => (
                     <button
                         key={action.id}
                         onClick={() => navigate(action.route)}
-                        className="group relative overflow-hidden rounded-2xl p-6 bg-[#141414] border border-white/5 hover:border-white/10 transition-all text-left"
+                        className="dashboard-card group relative overflow-hidden rounded-2xl p-6 bg-[#141414] border border-white/5 hover:border-white/10 transition-all text-left"
                     >
                         <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
                         <div className="relative z-10 flex items-start justify-between mb-4">
@@ -180,7 +199,7 @@ const DashboardPage = () => {
                         <p className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">{action.description}</p>
                     </button>
                 ))}
-            </div>
+            </GSAPTransition>
 
             {/* Recent & Popular Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -194,12 +213,12 @@ const DashboardPage = () => {
                         <button className="text-sm text-gray-400 hover:text-white transition-colors">View All</button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <GSAPTransition className="grid grid-cols-1 sm:grid-cols-2 gap-4" stagger={0.1} delay={0.6}>
                         {recentProjects.map((project: any) => (
                             <div
                                 key={project.id}
                                 onClick={() => navigate(`/app/editor/${project.id}`)} // Navigate to editor
-                                className="group flex items-center gap-4 p-3 rounded-xl bg-[#141414] border border-white/5 hover:border-white/10 hover:bg-[#1A1A1A] transition-all cursor-pointer"
+                                className="dashboard-card group flex items-center gap-4 p-3 rounded-xl bg-[#141414] border border-white/5 hover:border-white/10 hover:bg-[#1A1A1A] transition-all cursor-pointer"
                             >
                                 <div className="w-24 h-16 rounded-lg overflow-hidden bg-black/50 relative">
                                     <img src={project.thumbnail} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
@@ -220,7 +239,7 @@ const DashboardPage = () => {
                                 </div>
                             </div>
                         ))}
-                    </div>
+                    </GSAPTransition>
                 </div>
 
                 {/* Popular Tools */}
@@ -229,12 +248,12 @@ const DashboardPage = () => {
                         <Star className="w-5 h-5 text-yellow-500" />
                         Popular Tools
                     </h2>
-                    <div className="space-y-3">
+                    <GSAPTransition className="space-y-3" stagger={0.1} delay={0.8}>
                         {popularTools.map((tool) => (
                             <button
                                 key={tool.id}
                                 onClick={() => handleToolClick(tool.route, tool.badge)}
-                                className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all text-left group ${tool.badge === 'Soon'
+                                className={`dashboard-card w-full flex items-center gap-4 p-4 rounded-xl border transition-all text-left group ${tool.badge === 'Soon'
                                     ? 'bg-[#141414]/50 border-white/5 opacity-60 cursor-not-allowed'
                                     : 'bg-[#141414] border-white/5 hover:border-white/10 hover:bg-[#1A1A1A]'
                                     }`}
@@ -256,7 +275,7 @@ const DashboardPage = () => {
                                 </div>
                             </button>
                         ))}
-                    </div>
+                    </GSAPTransition>
                 </div>
             </div>
         </div>

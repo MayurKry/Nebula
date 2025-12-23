@@ -9,6 +9,7 @@ import Pricing from '@/pages/Marketing/Pricing';
 import Research from '@/pages/Marketing/Research';
 import Company from '@/pages/Marketing/Company';
 import Contact from '@/pages/Marketing/Contact';
+import CaseStudyDetail from '@/pages/Marketing/CaseStudyDetail';
 
 const MarketingRoutes = () => {
     return (
@@ -16,6 +17,7 @@ const MarketingRoutes = () => {
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products />} />
             <Route path="/use-cases" element={<UseCases />} />
+            <Route path="/use-cases/:id" element={<CaseStudyDetail />} />
             <Route path="/models" element={<Models />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/pricing" element={<Pricing />} />

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import type {ReactNode} from 'react';
+import type { ReactNode } from 'react';
 
 // 1️ Define the shape of the context
 interface ThemeContextType {

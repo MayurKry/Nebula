@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
     Sparkles,
     Loader2, Video as VideoIcon, Upload, Camera, Film,
-    RotateCw, Wand2, Download, Play, Music,
+    RotateCw, Wand2, Download, Play, Pause, Music,
     Edit3, GripHorizontal, SkipBack, SkipForward
 } from 'lucide-react';
 import { useGeneration } from '@/components/generation/GenerationContext';
@@ -50,6 +50,74 @@ const TextToVideoPage = () => {
     const [project, setProject] = useState<GenerateVideoProjectResponse | null>(null);
     const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
     const [scriptContent, setScriptContent] = useState("");
+
+    // Playback State
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const playbackInterval = useRef<NodeJS.Timeout | null>(null);
+
+    // Playback Logic
+    useEffect(() => {
+        if (isPlaying) {
+            playbackInterval.current = setInterval(() => {
+                setCurrentTime(prev => {
+                    if (prev >= duration) {
+                        setIsPlaying(false);
+                        return 0; // Loop or stop
+                    }
+                    return prev + 0.1; // 100ms updates
+                });
+            }, 100);
+        } else {
+            if (playbackInterval.current) clearInterval(playbackInterval.current);
+        }
+        return () => {
+            if (playbackInterval.current) clearInterval(playbackInterval.current);
+        };
+    }, [isPlaying, duration]);
+
+    // Sync Active Scene with Time
+    useEffect(() => {
+        if (!project || !isPlaying) return;
+
+        // Find which scene encompasses the current time
+        // Assuming equal distribution for now or using scene durations if available
+        let elapsedTime = 0;
+        const currentScene = project.scenes.find(scene => {
+            const sceneEnd = elapsedTime + (scene.duration || (duration / project.scenes.length));
+            if (currentTime >= elapsedTime && currentTime < sceneEnd) {
+                return true;
+            }
+            elapsedTime = sceneEnd;
+            return false;
+        });
+
+        if (currentScene && currentScene.id !== activeSceneId) {
+            setActiveSceneId(currentScene.id);
+        }
+    }, [currentTime, project, isPlaying, duration, activeSceneId]);
+
+    const togglePlay = () => setIsPlaying(!isPlaying);
+
+    const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const percentage = Math.max(0, Math.min(1, x / rect.width));
+        const newTime = percentage * duration;
+        setCurrentTime(newTime);
+
+        // Also update active scene immediately
+        if (project) {
+            let elapsedTime = 0;
+            const scene = project.scenes.find(s => {
+                const sDuration = s.duration || (duration / project.scenes.length);
+                if (newTime >= elapsedTime && newTime < elapsedTime + sDuration) return true;
+                elapsedTime += sDuration;
+                return false;
+            });
+            if (scene) setActiveSceneId(scene.id);
+        }
+    };
 
 
     const handleGenerate = async () => {
@@ -218,14 +286,19 @@ const TextToVideoPage = () => {
 
                                 {/* Overlay Controls */}
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <button className="w-16 h-16 rounded-full bg-white/20 backdrop-blur hover:bg-white/30 flex items-center justify-center text-white transition-all transform hover:scale-110">
-                                        <Play className="w-8 h-8 ml-1" />
+                                    <button
+                                        onClick={togglePlay}
+                                        className="w-16 h-16 rounded-full bg-white/20 backdrop-blur hover:bg-white/30 flex items-center justify-center text-white transition-all transform hover:scale-110"
+                                    >
+                                        {isPlaying ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 ml-1 fill-current" />}
                                     </button>
                                 </div>
                                 <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
                                     <div className="bg-black/60 backdrop-blur px-3 py-1.5 rounded-lg text-xs">
                                         <div className="text-gray-400">Current Scene</div>
-                                        <div className="text-white font-medium">00:0{activeScene.order * 5}:00 / {duration}s</div>
+                                        <div className="text-white font-medium">
+                                            {new Date(currentTime * 1000).toISOString().substr(14, 8)} / {new Date(duration * 1000).toISOString().substr(14, 8)}
+                                        </div>
                                     </div>
                                     <div className="flex gap-2">
                                         <button className="p-2 bg-black/60 backdrop-blur text-white rounded-lg hover:bg-purple-600 transition-colors" title="Regenerate Visual">
@@ -260,11 +333,13 @@ const TextToVideoPage = () => {
                             {/* Toolbar */}
                             <div className="h-10 bg-[#1A1A1A] border-b border-white/5 flex items-center px-4 justify-between">
                                 <div className="flex items-center gap-4 text-gray-400">
-                                    <button className="hover:text-white"><SkipBack className="w-4 h-4" /></button>
-                                    <button className="hover:text-white"><Play className="w-4 h-4" /></button>
-                                    <button className="hover:text-white"><SkipForward className="w-4 h-4" /></button>
+                                    <button className="hover:text-white" onClick={() => setCurrentTime(0)}><SkipBack className="w-4 h-4" /></button>
+                                    <button className="hover:text-white" onClick={togglePlay}>
+                                        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                                    </button>
+                                    <button className="hover:text-white" onClick={() => setCurrentTime(duration)}><SkipForward className="w-4 h-4" /></button>
                                     <div className="h-4 w-[1px] bg-white/10 mx-2"></div>
-                                    <span className="text-xs font-mono">00:00:00:00</span>
+                                    <span className="text-xs font-mono">{new Date(currentTime * 1000).toISOString().substr(14, 8)}</span>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="flex items-center gap-2">
@@ -339,9 +414,18 @@ const TextToVideoPage = () => {
                                     </div>
 
                                     {/* Playhead */}
-                                    <div className="absolute top-0 bottom-0 w-[1px] bg-red-500 z-20 left-[24px] pointer-events-none shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+                                    <div
+                                        className="absolute top-0 bottom-0 w-[1px] bg-red-500 z-20 pointer-events-none shadow-[0_0_10px_rgba(239,68,68,0.5)] transition-all duration-75"
+                                        style={{ left: `calc(96px + ${(currentTime / duration) * 100}%)` }} // 96px is offset for labels
+                                    >
                                         <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-red-500 -ml-[6px]"></div>
                                     </div>
+
+                                    {/* Clickable Overlay for Seeking */}
+                                    <div
+                                        className="absolute inset-0 z-10 cursor-crosshair ml-24" // ml-24 to match track offset
+                                        onClick={handleTimelineClick}
+                                    />
 
                                 </div>
                             </div>

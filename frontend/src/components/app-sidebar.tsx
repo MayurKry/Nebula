@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   Home, Sparkles, FolderOpen, Settings, ChevronDown, ChevronRight,
   Video, Image as ImageIcon, Film, Palette, Music2, Layers,
-  LayoutGrid, Users, Box, Mic, Crown, HelpCircle, Zap
+  LayoutGrid, Users, Box, Mic, Crown, HelpCircle, Zap, Target
 } from 'lucide-react';
 
 interface NavItem {
@@ -25,6 +25,7 @@ const navGroups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { label: 'Home', path: '/app/dashboard', icon: <Home className="w-4 h-4" /> },
+      { label: 'Campaign Wizard', path: '/app/campaign', icon: <Target className="w-4 h-4" /> },
       { label: 'My Assets', path: '/app/assets', icon: <FolderOpen className="w-4 h-4" /> },
     ],
   },
@@ -106,10 +107,10 @@ const AppSidebar = () => {
                     to={item.badge ? '#' : item.path}
                     onClick={(e) => item.badge && e.preventDefault()}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${isActive(item.path)
-                        ? 'bg-[#00FF88]/10 text-[#00FF88] font-medium'
-                        : item.badge
-                          ? 'text-gray-600 cursor-not-allowed'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-[#00FF88]/10 text-[#00FF88] font-medium'
+                      : item.badge
+                        ? 'text-gray-600 cursor-not-allowed'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
                       }`}
                   >
                     {item.icon}

@@ -39,9 +39,20 @@ class AIImageService {
         this.replicateKey = process.env.REPLICATE_API_KEY;
 
         // Set provider priority from env or use default with fallback
-        // Default to "gemini,pollinations" so if Gemini fails, we have a free fallback
         const priorityString = process.env.AI_PROVIDER_PRIORITY || "gemini,pollinations";
-        this.providers = priorityString.split(",") as AIProvider[];
+        this.providers = priorityString.split(",").map(p => p.trim()) as AIProvider[];
+
+        // ALWAYS ensure pollinations is included as a fallback since it's free and reliable
+        if (!this.providers.includes("pollinations")) {
+            this.providers.push("pollinations");
+            console.log("[AI Service] Added pollinations as fallback provider (free, no API key required)");
+        }
+
+        // Debug: List models on startup to help the user identify their access
+        if (this.geminiKey) {
+            console.log("[AI Service] Gemini key found, listing available models...");
+            this.listAvailableGeminiModels().catch(() => { });
+        }
     }
 
     /**
@@ -112,101 +123,122 @@ class AIImageService {
         const { prompt, width = 1024, height = 1024, seed } = params;
 
         try {
-            // Use Google's Imagen 3.0 API (stable)
-            const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict";
+            // Try Imagen 4.0 models first (newer), then fall back to older versions
+            // These models are based on what's available in the user's Google AI account
+            const modelVersions = [
+                "imagen-4.0-generate-001",           // Primary Imagen 4.0
+                "imagen-4.0-fast-generate-001",      // Fast Imagen 4.0
+                "imagen-4.0-generate-preview-06-06", // Preview version
+                "imagen-4.0-ultra-generate-001",
+                "imagen-3.0-generate-001",
+                "imagen-3.0-generate-002",
+                "imagen-3.0-fast-generate-001",
+                "imagen-3.0-capability-generate-001",
+                "imagen-2.0-generate-001", // Even older version just in case
+                "gemini-2.5-flash-image",
+                "gemini-2.0-flash-exp-image-generation",
+            ];
+            let lastError: any;
 
-            // Construct valid request body for Imagen
-            // Note: Seed is NOT supported in the current API version
-            const requestBody: any = {
-                instances: [
-                    {
-                        prompt: prompt,
+            // Optional: List available models to console for debugging if we hit issues
+            if (process.env.DEBUG_AI) {
+                this.listAvailableGeminiModels().catch(console.error);
+            }
+
+            for (const model of modelVersions) {
+                try {
+                    console.log(`[Gemini] Attempting with model: ${model}`);
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict`;
+
+                    const requestBody: any = {
+                        instances: [
+                            {
+                                prompt: prompt,
+                            }
+                        ],
+                        parameters: {
+                            sampleCount: 1,
+                            aspectRatio: this.getAspectRatio(width, height),
+                            safetyFilterLevel: "block_some",
+                            personGeneration: "allow_adult",
+                        }
+                    };
+
+                    const response = await axios.post(
+                        apiUrl,
+                        requestBody,
+                        {
+                            headers: {
+                                "Content-Type": "application/json",
+                                "x-goog-api-key": this.geminiKey,
+                            },
+                            timeout: 60000,
+                        }
+                    );
+
+                    // Extract the image from the response
+                    let imageData: string | undefined;
+
+                    if (response.data.predictions && Array.isArray(response.data.predictions)) {
+                        const prediction = response.data.predictions[0];
+                        imageData =
+                            prediction?.bytesBase64Encoded ||
+                            prediction?.image?.bytesBase64Encoded ||
+                            prediction?.imageBytes ||
+                            prediction?.image?.imageBytes;
+                    } else if (response.data.generatedImages && Array.isArray(response.data.generatedImages)) {
+                        const generatedImage = response.data.generatedImages[0];
+                        imageData =
+                            generatedImage?.bytesBase64Encoded ||
+                            generatedImage?.image?.bytesBase64Encoded ||
+                            generatedImage?.imageBytes;
                     }
-                ],
-                parameters: {
-                    sampleCount: 1,
-                    aspectRatio: this.getAspectRatio(width, height),
-                    safetyFilterLevel: "block_some",
-                    personGeneration: "allow_adult",
+
+                    if (!imageData) {
+                        console.error(`[Gemini] No image data in response for ${model}`);
+                        continue;
+                    }
+
+                    const imageUrl = `data:image/png;base64,${imageData}`;
+                    console.log(`[Gemini] Success with ${model}`);
+
+                    return {
+                        url: imageUrl,
+                        provider: "gemini",
+                        seed,
+                        width,
+                        height,
+                    };
+                } catch (err: any) {
+                    lastError = err;
+                    if (err.response?.status === 404) {
+                        console.warn(`[Gemini] Model ${model} returned 404. Skipping...`);
+                        continue;
+                    }
+                    console.error(`[Gemini] Error with ${model}:`, err.response?.data || err.message);
+
+                    // Fail fast for billing/quota issues
+                    if (err.response?.status === 429 || err.response?.status === 403) {
+                        break;
+                    }
                 }
-            };
-
-            // Add negative prompt if provided (some models support it via parameters, others in instance)
-            // For Imagen, it's often in parameters as negativePrompt or in instance
-            // We'll trust the instance placement for now but check parameters if this fails
-            // Actually, for consistency, let's keep it in instance as per docs
-            /* 
-               Warning: Some versions of Imagen on Vertex AI use 'negativePrompt' in parameters.
-               The Generative Language API schema can vary. 
-               We will stick to the previous 'instances' placement but be aware.
-            */
-
-            console.log(`[Gemini] Generating image with prompt: "${prompt.substring(0, 50)}..."`);
-            console.log("[Gemini] Request Body:", JSON.stringify(requestBody, null, 2));
-
-            const response = await axios.post(
-                apiUrl,
-                requestBody,
-                {
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-goog-api-key": this.geminiKey,
-                    },
-                    timeout: 60000,
-                }
-            );
-
-            // Extract the image from the response
-            let imageData: string | undefined;
-
-            if (response.data.predictions && Array.isArray(response.data.predictions)) {
-                const prediction = response.data.predictions[0];
-                imageData =
-                    prediction?.bytesBase64Encoded ||
-                    prediction?.image?.bytesBase64Encoded ||
-                    prediction?.imageBytes ||
-                    prediction?.image?.imageBytes;
-            } else if (response.data.generatedImages && Array.isArray(response.data.generatedImages)) {
-                const generatedImage = response.data.generatedImages[0];
-                imageData =
-                    generatedImage?.bytesBase64Encoded ||
-                    generatedImage?.image?.bytesBase64Encoded ||
-                    generatedImage?.imageBytes;
             }
 
-            if (!imageData) {
-                console.error("[Gemini] Unexpected API response structure:");
-                console.error(JSON.stringify(response.data, null, 2));
-                throw new Error("No image data in Gemini response - check logs for details");
+            // All models failed with 404 or other errors
+            if (lastError?.response?.status === 404) {
+                throw new Error("Gemini Imagen models not available. Falling back to Pollinations. Check Google AI Studio (aistudio.google.com) for model access.");
             }
-
-            const imageUrl = `data:image/png;base64,${imageData}`;
-            console.log(`[Gemini] Successfully generated image`);
-
-            return {
-                url: imageUrl,
-                provider: "gemini",
-                seed, // Return the seed we intended to use, even if API didn't use it
-                width,
-                height,
-            };
+            throw lastError || new Error("All Gemini models failed");
         } catch (error: any) {
             if (error.response?.status === 429) {
                 throw new Error("Gemini API rate limit exceeded");
             }
             if (error.response?.status === 403) {
-                throw new Error("Gemini API key invalid or unauthorized");
-            }
-            if (error.response?.status === 404) {
-                throw new Error("Gemini Imagen model not available - API key may not have access");
+                throw new Error("Gemini API key invalid or unauthorized (check billing/quotas)");
             }
             if (error.response?.status === 400) {
                 console.error("[Gemini] Bad request error:", JSON.stringify(error.response.data, null, 2));
                 throw new Error(`Gemini API bad request: ${error.response.data?.error?.message || "Unknown error"}`);
-            }
-
-            if (error.response?.data) {
-                console.error("[Gemini] API error response:", JSON.stringify(error.response.data, null, 2));
             }
 
             throw new Error(`Gemini failed: ${error.message}`);
@@ -231,6 +263,7 @@ class AIImageService {
 
     /**
      * Pollinations.AI - Free, no API key required
+     * Returns URL directly - image is generated on-demand when client fetches URL
      */
     private async generateWithPollinations(
         params: ImageGenerationParams
@@ -253,23 +286,18 @@ class AIImageService {
             url += `?${queryParams.join("&")}`;
         }
 
-        // Pollinations returns the image directly, no API call needed
-        // Just verify the URL is accessible
-        try {
-            const response = await axios.head(url, { timeout: 30000 }); // Increased to 30 seconds
-            if (response.status === 200) {
-                return {
-                    url,
-                    provider: "pollinations",
-                    seed,
-                    width,
-                    height,
-                };
-            }
-            throw new Error("Image URL not accessible");
-        } catch (error) {
-            throw new Error(`Pollinations failed: ${error}`);
-        }
+        // Pollinations generates the image on-demand when the URL is accessed
+        // No need to validate - just return the URL directly
+        // The image will be generated when the frontend fetches it
+        console.log(`[Pollinations] Generated URL: ${url}`);
+
+        return {
+            url,
+            provider: "pollinations",
+            seed,
+            width,
+            height,
+        };
     }
 
     /**
@@ -511,6 +539,26 @@ class AIImageService {
         } catch (error: any) {
             console.error("[Gemini Text] Error:", error.response?.data || error.message);
             throw new Error(`Gemini Text Generation failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Debug helper to list all available models for this API key
+     */
+    private async listAvailableGeminiModels(): Promise<void> {
+        if (!this.geminiKey) return;
+        try {
+            const response = await axios.get(
+                "https://generativelanguage.googleapis.com/v1beta/models",
+                {
+                    params: { key: this.geminiKey },
+                    timeout: 10000,
+                }
+            );
+            const models = response.data.models?.map((m: any) => m.name) || [];
+            console.log("[Gemini] Available Models:", models.join(", "));
+        } catch (error: any) {
+            console.error("[Gemini] Failed to list models:", error.message);
         }
     }
 }

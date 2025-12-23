@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { TokenStorage } from "./tokenStorage";
 import type { ApiError, RefreshResponse } from "@/types/api.types";
 
-const BASE_URL = import.meta.env.VITE_API_URL as string;
+const BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:5000/v1';
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -66,7 +66,7 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
     if (
-      error.response?.data?.message === "jwt expired" &&
+      (error.response?.status === 401 || error.response?.data?.message === "jwt expired") &&
       !originalRequest._retry
     ) {
       if (isRefreshing) {
@@ -112,9 +112,16 @@ axiosInstance.interceptors.response.use(
       }
     }
 
+    // Only redirect on 401 for non-auth endpoints
+    // Auth endpoints should let the error propagate so the UI can show the error
     if (error.response?.status === 401) {
-      TokenStorage.clearTokens();
-      window.location.href = "/";
+      const isAuthEndpoint = originalRequest.url?.includes('/auth/login') ||
+        originalRequest.url?.includes('/auth/register');
+
+      if (!isAuthEndpoint) {
+        TokenStorage.clearTokens();
+        window.location.href = "/";
+      }
     }
 
     if (error.response) {

@@ -49,8 +49,8 @@ const SignUpPage = () => {
         email: formData.email,
         password: formData.password,
       });
-      toast.success('Account created successfully!');
-      navigate('/app/dashboard');
+      toast.success('Account created! Please log in to continue.');
+      navigate('/login');
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || 'Registration failed. Please try again.';
       setError(errorMessage);

@@ -1,5 +1,5 @@
-import app from "./app";
 import config from "./config/db";
+import app from "./app";
 import logger from "./utils/logger";
 import initialUserCreation from "./utils/initialUserCreation";
 import { connectDB } from "./config/db/db";

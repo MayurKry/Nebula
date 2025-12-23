@@ -138,8 +138,8 @@ const UseCases = () => {
                                 key={filter.id}
                                 onClick={() => setActiveFilter(filter.id)}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${activeFilter === filter.id
-                                        ? 'bg-[var(--marketing-accent)] text-[var(--marketing-bg)]'
-                                        : 'bg-[var(--marketing-card)] text-[var(--marketing-muted)] hover:text-white border border-[var(--marketing-border)]'
+                                    ? 'bg-[var(--marketing-accent)] text-[var(--marketing-bg)]'
+                                    : 'bg-[var(--marketing-card)] text-[var(--marketing-muted)] hover:text-white border border-[var(--marketing-border)]'
                                     }`}
                             >
                                 {filter.label}
@@ -200,11 +200,10 @@ const UseCases = () => {
                 <div className="container-marketing">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredUseCases.map((useCase) => (
-                            <div
+                            <Link
                                 key={useCase.id}
-                                id={useCase.id}
-                                className="use-case-card group h-72 flex flex-col justify-end p-6 cursor-pointer"
-                                onClick={() => setIsBookDemoOpen(true)}
+                                to={`/use-cases/${useCase.id}`}
+                                className="use-case-card group h-72 flex flex-col justify-end p-6 relative"
                             >
                                 <img
                                     src={useCase.image}
@@ -223,7 +222,7 @@ const UseCases = () => {
                                         <ArrowRight className="w-4 h-4" />
                                     </div>
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 </div>
