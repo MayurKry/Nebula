@@ -161,7 +161,7 @@ const TextToVideoPage = () => {
 
         } catch (error) {
             console.error("Failed to generate project:", error);
-            // Handle error (show toast etc)
+            alert("Failed to generate project. Please try again or check console for details.");
         } finally {
             setIsGenerating(false);
             setLoadingStep("");
@@ -177,6 +177,8 @@ const TextToVideoPage = () => {
         }
     };
 
+    const [isRegenerating, setIsRegenerating] = useState(false);
+
     const handleSceneUpdate = (sceneId: string, updates: Partial<VideoProjectScene>) => {
         if (!project) return;
 
@@ -188,6 +190,56 @@ const TextToVideoPage = () => {
             ...project,
             scenes: updatedScenes
         });
+    };
+
+    const handleRegenerateScene = async () => {
+        if (!project || !activeSceneId || isRegenerating) return;
+
+        const activeScene = project.scenes.find(s => s.id === activeSceneId);
+        if (!activeScene) return;
+
+        setIsGenerating(true); // Re-use main loading state for simplicity or add specific one
+        setIsRegenerating(true);
+
+        try {
+            const data = await aiService.regenerateScene(activeScene.description, project.settings.style);
+
+            handleSceneUpdate(activeSceneId, {
+                imageUrl: data.imageUrl
+            });
+        } catch (error) {
+            console.error("Failed to regenerate scene:", error);
+            // Optionally show toast
+        } finally {
+            setIsGenerating(false);
+            setIsRegenerating(false);
+        }
+    };
+
+    const handleAnimateScene = async () => {
+        if (!project || !activeSceneId || isRegenerating) return;
+
+        const activeScene = project.scenes.find(s => s.id === activeSceneId);
+        if (!activeScene) return;
+
+        setIsGenerating(true);
+        setIsRegenerating(true);
+
+        try {
+            // Call animate scene
+            const data = await aiService.animateScene(activeScene.imageUrl!, activeScene.description);
+
+            // In a real app we would poll status here
+            // For now, we assume it started and maybe show a toast
+            alert(`Animation started for scene! Job ID: ${data.jobId}. (Note: Polling not implemented in demo)`);
+
+        } catch (error) {
+            console.error("Failed to animate scene:", error);
+            alert("Failed to start animation.");
+        } finally {
+            setIsGenerating(false);
+            setIsRegenerating(false);
+        }
     };
 
     // Editor View
@@ -301,8 +353,20 @@ const TextToVideoPage = () => {
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button className="p-2 bg-black/60 backdrop-blur text-white rounded-lg hover:bg-purple-600 transition-colors" title="Regenerate Visual">
-                                            <RotateCw className="w-4 h-4" />
+                                        <button
+                                            onClick={handleRegenerateScene}
+                                            disabled={isRegenerating}
+                                            className={`p-2 bg-black/60 backdrop-blur text-white rounded-lg hover:bg-purple-600 transition-colors ${isRegenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            title="Regenerate Visual"
+                                        >
+                                            <RotateCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
+                                        </button>
+                                        <button
+                                            onClick={handleAnimateScene}
+                                            className="p-2 bg-black/60 backdrop-blur text-white rounded-lg hover:bg-purple-600 transition-colors"
+                                            title="Animate (Image-to-Video)"
+                                        >
+                                            <Film className="w-4 h-4" />
                                         </button>
                                         <button className="p-2 bg-black/60 backdrop-blur text-white rounded-lg hover:bg-purple-600 transition-colors" title="Edit Motion">
                                             <GripHorizontal className="w-4 h-4" />

@@ -4,6 +4,8 @@ import {
     generateVideo,
     checkVideoStatus,
     generateVideoProject, // Import new controller
+    regenerateScene, // Import new controller
+    animateScene, // Import new controller
     generateStoryboard,
     updateOnboarding,
     getAIProviders,
@@ -18,7 +20,9 @@ router.use(authenticate);
 // AI Generation endpoints
 router.post("/generate-image", generateImage);
 router.post("/generate-video", generateVideo);
-router.post("/generate-video-project", generateVideoProject); // Add new route
+router.post("/generate-video-project", generateVideoProject);
+router.post("/regenerate-scene", regenerateScene);
+router.post("/animate-scene", animateScene); // Add new route
 router.get("/video-status/:jobId", checkVideoStatus);
 router.post("/generate-storyboard", generateStoryboard);
 router.get("/providers", getAIProviders);

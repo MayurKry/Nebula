@@ -281,6 +281,32 @@ class AIService {
     }
 
     /**
+     * Regenerate a single scene image
+     */
+    async regenerateScene(description: string, style: string): Promise<{ imageUrl: string; provider?: string }> {
+        const response = await axiosInstance.post<{
+            success: boolean;
+            message: string;
+            data: { imageUrl: string; provider?: string };
+        }>('/ai/regenerate-scene', { description, style });
+
+        return response.data.data;
+    }
+
+    /**
+     * Animate a scene image
+     */
+    async animateScene(imageUrl: string, prompt?: string): Promise<VideoStatusResponse> {
+        const response = await axiosInstance.post<{
+            success: boolean;
+            message: string;
+            data: VideoStatusResponse;
+        }>('/ai/animate-scene', { imageUrl, prompt });
+
+        return response.data.data;
+    }
+
+    /**
      * Get available AI providers
      */
     async getAIProviders(): Promise<{

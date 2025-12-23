@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { responseHandler } from "../utils/responseHandler";
 import { aiImageService } from "../services/ai-image.service";
+import { aiVideoService } from "../services/ai-video.service";
 
 // AI Image Generation with multiple providers
 export const generateImage = asyncHandler(async (req: Request, res: Response) => {
@@ -72,46 +73,54 @@ export const getAIProviders = asyncHandler(async (req: Request, res: Response) =
     });
 });
 
-// Mock AI Video Generation
+// Real AI Video Generation (Text-to-Video)
 export const generateVideo = asyncHandler(async (req: Request, res: Response) => {
-    const { prompt, style, duration = 5 } = req.body;
+    const { prompt, style, duration = 3 } = req.body;
 
-    // Simulate processing delay
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    if (!prompt) {
+        return responseHandler(res, 400, "Prompt is required");
+    }
 
-    // Return mock generated video data
-    return responseHandler(res, 200, "Video generation started", {
-        jobId: `job_${Date.now()}`,
-        prompt,
-        style,
-        duration,
-        status: "processing",
-        estimatedTime: duration * 10, // 10 seconds per video second
-        thumbnailUrl: `https://picsum.photos/seed/${Date.now()}/640/360`,
-    });
+    try {
+        // Use the new AI Video Service
+        const result = await aiVideoService.generateVideo({
+            prompt: style ? `${style} style. ${prompt}` : prompt,
+            duration
+        });
+
+        return responseHandler(res, 200, "Video generation started", {
+            jobId: result.jobId,
+            prompt,
+            style,
+            duration,
+            status: result.status,
+            estimatedTime: 30, // Estimating ~30s for Replicate
+            thumbnailUrl: result.thumbnailUrl,
+        });
+    } catch (error: any) {
+        console.error("Video generation failed:", error);
+        return responseHandler(res, 500, "Failed to start video generation", { error: error.message });
+    }
 });
 
 // Check video generation status
 export const checkVideoStatus = asyncHandler(async (req: Request, res: Response) => {
     const { jobId } = req.params;
 
-    // Mock status - randomly complete or still processing
-    const isComplete = Math.random() > 0.3;
+    try {
+        const result = await aiVideoService.checkStatus(jobId);
 
-    if (isComplete) {
-        return responseHandler(res, 200, "Video generation complete", {
-            jobId,
-            status: "completed",
-            videoUrl: `https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4`,
-            thumbnailUrl: `https://picsum.photos/seed/${jobId}/640/360`,
+        return responseHandler(res, 200, "Video status retrieved", {
+            jobId: result.jobId,
+            status: result.status,
+            videoUrl: result.videoUrl,
+            thumbnailUrl: result.thumbnailUrl,
+            error: result.error
         });
+    } catch (error: any) {
+        console.error("Failed to check video status:", error);
+        return responseHandler(res, 500, "Failed to check video status");
     }
-
-    return responseHandler(res, 200, "Video still processing", {
-        jobId,
-        status: "processing",
-        progress: Math.floor(Math.random() * 80) + 10,
-    });
 });
 
 // Generate Full Video Project (Script -> Storyboard -> Video)
@@ -367,4 +376,58 @@ export const updateOnboarding = asyncHandler(async (req: Request, res: Response)
     }
 
     return responseHandler(res, 200, "Onboarding completed", user);
+});
+
+// Regenerate a single scene image
+export const regenerateScene = asyncHandler(async (req: Request, res: Response) => {
+    const { description, style, width = 1280, height = 720 } = req.body;
+
+    if (!description) {
+        return responseHandler(res, 400, "Scene description is required");
+    }
+
+    try {
+        const visualPrompt = `${style} style. ${description}. High quality, cinematic lighting, 4k.`;
+
+        const result = await aiImageService.generateImage({
+            prompt: visualPrompt,
+            width,
+            height,
+            style
+        });
+
+        return responseHandler(res, 200, "Scene regenerated successfully", {
+            imageUrl: result.url,
+            provider: result.provider
+        });
+    } catch (error: any) {
+        console.error("Scene regeneration failed:", error);
+        return responseHandler(res, 500, "Failed to regenerate scene", {
+            error: error.message
+        });
+    }
+});
+
+// Animate a scene (Image-to-Video)
+export const animateScene = asyncHandler(async (req: Request, res: Response) => {
+    const { imageUrl, prompt } = req.body;
+
+    if (!imageUrl) {
+        return responseHandler(res, 400, "Image URL is required");
+    }
+
+    try {
+        const result = await aiVideoService.animateImage(imageUrl, prompt);
+
+        return responseHandler(res, 200, "Scene animation started", {
+            jobId: result.jobId,
+            status: result.status,
+            thumbnailUrl: result.thumbnailUrl
+        });
+    } catch (error: any) {
+        console.error("Scene animation failed:", error);
+        return responseHandler(res, 500, "Failed to animate scene", {
+            error: error.message
+        });
+    }
 });
