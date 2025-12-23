@@ -30,9 +30,17 @@ const GSAPScrollSection: React.FC<GSAPScrollSectionProps> = ({
 
         let fromVars: gsap.TweenVars = {
             opacity: 0,
+        };
+
+        let toVars: gsap.TweenVars = {
+            opacity: 1,
+            x: 0,
+            y: 0,
+            scale: 1,
             duration,
             stagger,
             ease: 'power3.out',
+            clearProps: 'all',
             scrollTrigger: {
                 trigger: sectionRef.current,
                 start,
@@ -55,7 +63,7 @@ const GSAPScrollSection: React.FC<GSAPScrollSectionProps> = ({
                 break;
         }
 
-        gsap.from(Array.from(elements), fromVars);
+        gsap.fromTo(Array.from(elements), fromVars, toVars);
     }, { scope: sectionRef });
 
     return (
