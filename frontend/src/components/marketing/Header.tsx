@@ -69,10 +69,7 @@ const Header = () => {
                     <div className="flex items-center justify-between h-16 md:h-20">
                         {/* Logo */}
                         <Link to="/" className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-[var(--marketing-accent)] flex items-center justify-center">
-                                <span className="text-[var(--marketing-bg)] font-bold text-lg">N</span>
-                            </div>
-                            <span className="text-xl font-bold text-white">Nebula</span>
+                            <img src="/nebula-logo.png" alt="Nebula" className="h-8 object-contain" />
                         </Link>
 
                         {/* Desktop Navigation */}
@@ -131,10 +128,7 @@ const Header = () => {
             <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
                 <div className="flex items-center justify-between p-4 border-b border-[var(--marketing-border)]">
                     <Link to="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
-                        <div className="w-8 h-8 rounded-lg bg-[var(--marketing-accent)] flex items-center justify-center">
-                            <span className="text-[var(--marketing-bg)] font-bold text-lg">N</span>
-                        </div>
-                        <span className="text-xl font-bold text-white">Nebula</span>
+                        <img src="/nebula-logo.png" alt="Nebula" className="h-8 object-contain" />
                     </Link>
                     <button
                         className="p-2 text-white"

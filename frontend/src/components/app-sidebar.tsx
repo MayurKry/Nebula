@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Home, Sparkles, FolderOpen, Settings, ChevronDown, ChevronRight,
+  Home, FolderOpen, Settings, ChevronDown, ChevronRight,
   Video, Image as ImageIcon, Film, Palette, Music2, Layers,
   LayoutGrid, Users, Box, Mic, Crown, HelpCircle, Zap, Target
 } from 'lucide-react';
@@ -76,10 +76,7 @@ const AppSidebar = () => {
       {/* Logo */}
       <div className="p-4 border-b border-white/10">
         <Link to="/app/dashboard" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00FF88] to-[#00CC6A] flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-[#0A0A0A]" />
-          </div>
-          <span className="text-lg font-bold text-white">Nebula</span>
+          <img src="/nebula-logo.png" alt="Nebula" className="h-8 object-contain" />
         </Link>
       </div>
 

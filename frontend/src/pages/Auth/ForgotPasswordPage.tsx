@@ -30,10 +30,7 @@ const ForgotPasswordPage = () => {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <Link to="/" className="inline-flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-[#00FF88] flex items-center justify-center">
-                            <span className="text-[#0A0A0A] font-bold text-xl">N</span>
-                        </div>
-                        <span className="text-2xl font-bold text-white">Nebula</span>
+                        <img src="/nebula-logo.png" alt="Nebula" className="h-10 object-contain" />
                     </Link>
                 </div>
 

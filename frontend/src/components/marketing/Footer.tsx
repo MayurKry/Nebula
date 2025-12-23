@@ -71,10 +71,7 @@ const Footer = () => {
                     {/* Brand Column */}
                     <div className="col-span-2 md:col-span-3 lg:col-span-1">
                         <Link to="/" className="flex items-center gap-2 mb-4">
-                            <div className="w-10 h-10 rounded-lg bg-[var(--marketing-accent)] flex items-center justify-center">
-                                <span className="text-[var(--marketing-bg)] font-bold text-xl">N</span>
-                            </div>
-                            <span className="text-2xl font-bold text-white">Nebula</span>
+                            <img src="/nebula-logo.png" alt="Nebula" className="h-10 object-contain" />
                         </Link>
                         <p className="text-[var(--marketing-muted)] text-sm mb-6 max-w-xs">
                             Transform your creative vision into stunning video content with the power of AI.
