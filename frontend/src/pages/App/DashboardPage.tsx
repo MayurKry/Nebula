@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useGeneration } from '@/components/generation/GenerationContext';
 import { useState, useRef } from 'react';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 import gsap from 'gsap';
@@ -16,10 +15,9 @@ import GenerationGame from '@/components/game/GenerationGame';
 const DashboardPage = () => {
     useAuth();
     const navigate = useNavigate();
-    const { jobs } = useGeneration();
     const [prompt, setPrompt] = useState('');
     const [generationMode, setGenerationMode] = useState<'image' | 'video'>('video');
-    const [selectedModel, setSelectedModel] = useState('Nebula Turbo');
+    const [selectedModel] = useState('Nebula Turbo');
 
     // Generation States
     const [isGenerating, setIsGenerating] = useState(false);

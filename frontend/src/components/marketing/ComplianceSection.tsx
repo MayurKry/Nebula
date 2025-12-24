@@ -1,4 +1,4 @@
-import { Shield, Lock, FileCheck, Globe, Database, CheckCircle2, Server } from 'lucide-react';
+import { Shield, Lock, FileCheck, Database, CheckCircle2, Server } from 'lucide-react';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 
 const ComplianceSection = () => {

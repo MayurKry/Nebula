@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Rocket, Star, Trophy, Brain } from 'lucide-react';
+import { Trophy, Brain } from 'lucide-react';
 import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
 
 const GenerationGame = () => {
     const [score, setScore] = useState(0);
