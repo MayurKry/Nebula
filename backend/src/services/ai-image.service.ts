@@ -507,46 +507,13 @@ class AIImageService {
             }
         });
     }
-    /**
-     * Google Gemini - Text generation
-     */
-    async generateText(prompt: string): Promise<string> {
-        if (!this.geminiKey) {
-            throw new Error("Gemini API key not configured");
-        }
-
-        const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
-
-        try {
-            const response = await axios.post(
-                apiUrl,
-                {
-                    contents: [{ parts: [{ text: prompt }] }]
-                },
-                {
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-goog-api-key": this.geminiKey,
-                    },
-                    timeout: 30000,
-                }
-            );
-
-            const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!text) throw new Error("No text generated");
-
-            return text;
-        } catch (error: any) {
-            console.error("[Gemini Text] Error:", error.response?.data || error.message);
-            throw new Error(`Gemini Text Generation failed: ${error.message}`);
-        }
-    }
+    private availableModels: string[] = [];
 
     /**
      * Debug helper to list all available models for this API key
      */
-    private async listAvailableGeminiModels(): Promise<void> {
-        if (!this.geminiKey) return;
+    private async listAvailableGeminiModels(): Promise<string[]> {
+        if (!this.geminiKey) return [];
         try {
             const response = await axios.get(
                 "https://generativelanguage.googleapis.com/v1beta/models",
@@ -555,11 +522,93 @@ class AIImageService {
                     timeout: 10000,
                 }
             );
-            const models = response.data.models?.map((m: any) => m.name) || [];
+            const models = response.data.models?.map((m: any) => m.name.replace('models/', '')) || [];
             console.log("[Gemini] Available Models:", models.join(", "));
+            this.availableModels = models;
+            return models;
         } catch (error: any) {
             console.error("[Gemini] Failed to list models:", error.message);
+            return [];
         }
+    }
+
+    /**
+     * Google Gemini - Text generation
+     */
+    async generateText(prompt: string): Promise<string> {
+        if (!this.geminiKey) {
+            throw new Error("Gemini API key not configured");
+        }
+
+        // Refresh available models if empty
+        if (this.availableModels.length === 0) {
+            await this.listAvailableGeminiModels();
+        }
+
+        // Prioritize models that are confirmed available, otherwise use defaults
+        const defaultModels = [
+            "gemini-2.0-flash-exp",
+            "gemini-1.5-flash",
+            "gemini-1.5-pro",
+            "gemini-pro",
+            "gemini-1.0-pro"
+        ];
+
+        let candidateModels = [...defaultModels];
+
+        if (this.availableModels.length > 0) {
+            // If we know what's available, prioritize those
+            const availableDefaults = defaultModels.filter(m => this.availableModels.includes(m));
+            const otherGemini = this.availableModels.filter(m =>
+                m.includes('gemini') &&
+                !defaultModels.includes(m) &&
+                !m.includes('vision') // Exclude vision-only if any
+            );
+            // Put confirmed available defaults first, then other gemini models, then the raw defaults (as fallback)
+            candidateModels = [...new Set([...availableDefaults, ...otherGemini, ...defaultModels])];
+        }
+
+        let lastError: any;
+
+        for (const model of candidateModels) {
+            try {
+                console.log(`[Gemini Text] Attempting with model: ${model}`);
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+
+                const response = await axios.post(
+                    apiUrl,
+                    {
+                        contents: [{ parts: [{ text: prompt }] }]
+                    },
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                            "x-goog-api-key": this.geminiKey,
+                        },
+                        timeout: 30000,
+                    }
+                );
+
+                const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text) continue;
+
+                return text;
+            } catch (error: any) {
+                console.warn(`[Gemini Text] Failed with ${model}:`, error.message);
+                lastError = error;
+                if (error.response?.status === 404) continue;
+                if (error.response?.status === 429 || error.response?.status === 403) continue;
+            }
+        }
+
+        const errorInfo = {
+            message: lastError?.message || "All models failed",
+            availableModels: this.availableModels,
+            triedModels: candidateModels
+        };
+
+        console.error("[Gemini Text] All models failed.", JSON.stringify(errorInfo, null, 2));
+        throw new Error(`Gemini Text Generation failed: ${JSON.stringify(errorInfo)}`);
     }
 }
 

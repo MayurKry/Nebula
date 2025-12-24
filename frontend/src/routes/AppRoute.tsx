@@ -8,6 +8,7 @@ import SceneEditorPage from "@/pages/App/Editor/SceneEditorPage";
 import ProfilePage from "@/pages/App/ProfilePage";
 import CampaignPage from "@/pages/App/CampaignPage";
 import HistoryPage from "@/pages/App/HistoryPage";
+import SettingsPage from "@/pages/App/SettingsPage";
 import MarketingRoutes from "./MarketingRoute";
 import PublicRoutes from "./PublicRoute";
 
@@ -26,6 +27,7 @@ function AppRoutes() {
         <Route path="profile" element={<ProfilePage />} />
         <Route path="campaign" element={<CampaignPage />} />
         <Route path="history" element={<HistoryPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
 
       <Route path="*" element={<div className="text-foreground p-4">404 - Page Not Found</div>} />

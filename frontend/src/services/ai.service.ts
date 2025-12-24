@@ -396,6 +396,19 @@ class AIService {
 
         return response.data.data;
     }
+
+    /**
+     * Enhance a prompt using AI
+     */
+    async enhancePrompt(prompt: string): Promise<{ original: string; enhanced: string }> {
+        const response = await axiosInstance.post<{
+            success: boolean;
+            message: string;
+            data: { original: string; enhanced: string };
+        }>('/ai/enhance-prompt', { prompt });
+
+        return response.data.data;
+    }
 }
 
 export const aiService = new AIService();

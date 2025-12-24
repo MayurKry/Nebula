@@ -20,9 +20,9 @@ const cameraPaths = [
 ];
 
 const durations = [
-    { value: 15, label: '15 seconds' },
-    { value: 30, label: '30 seconds' },
-    { value: 60, label: '60 seconds' },
+    { value: 5, label: '05 sec' },
+    { value: 10, label: '10 sec' },
+    { value: 15, label: '15 sec' },
 ];
 
 const TextToVideoPage = () => {
@@ -33,13 +33,10 @@ const TextToVideoPage = () => {
     const [prompt, setPrompt] = useState('');
     const [style, setStyle] = useState('Cinematic');
     const [cameraPath, setCameraPath] = useState('Slow Pan');
-    const [duration, setDuration] = useState(30);
+    const [duration, setDuration] = useState(5);
     const [referenceImage, setReferenceImage] = useState<string | null>(null);
     const [advancedSettings, setAdvancedSettings] = useState({
         cameraAngle: 'Eye Level',
-        depth: 50,
-        fidelity: 80,
-        colorTemperature: 50,
     });
 
     // Generation States

@@ -11,6 +11,7 @@ import {
     getAIProviders,
     getHistory, // Import getHistory
     getHistoryItem, // Import getHistoryItem
+    enhancePrompt, // Import enhancePrompt
 } from "../controllers/ai.controller";
 import { authenticate } from "../middlewares/auth.middleware";
 
@@ -30,6 +31,7 @@ router.post("/generate-storyboard", generateStoryboard);
 router.get("/providers", getAIProviders);
 router.get("/history", getHistory); // Get all history
 router.get("/history/:id", getHistoryItem); // Get single history item
+router.post("/enhance-prompt", enhancePrompt); // Enhance prompt
 
 // Onboarding
 router.post("/onboarding", updateOnboarding);

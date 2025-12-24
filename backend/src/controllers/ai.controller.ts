@@ -324,10 +324,35 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
         // Enhance with Real AI Images (Gemini Imagen)
         console.log(`[VideoProject] Generating visuals for ${generatedData.scenes.length} scenes...`);
 
-        // Process scenes in parallel (limit to 4 to avoid hitting rate limits too hard/timeouts)
+        // Process scenes in parallel (limit to 6 to avoid hitting rate limits too hard/timeouts)
         const scenePromises = generatedData.scenes.slice(0, 6).map(async (scene: any, index: number) => {
-            try {
-                // Generate clear visual description
+            // Generate clear visual description
+            const visualPrompt = `${style} style. ${scene.description}. High quality, cinematic lighting, 4k.`;
+
+            const imageResult = await aiImageService.generateImage({
+                prompt: visualPrompt,
+                width: 1280,
+                height: 720,
+                style: style
+            });
+
+            return {
+                ...scene,
+                id: scene.id || `scene_${index + 1}`,
+                order: index,
+                imageUrl: imageResult.url,
+                type: 'video',
+                cameraPath: scene.cameraPath || "Static",
+                motionIntensity: scene.motionIntensity || 50
+            };
+        });
+
+        // Wait for all scenes to complete - if any fail, the whole generation fails
+        const scenes = await Promise.all(scenePromises);
+
+        // Process remaining scenes if more than 6 (to avoid timeout)
+        if (generatedData.scenes.length > 6) {
+            const remainingPromises = generatedData.scenes.slice(6).map(async (scene: any, index: number) => {
                 const visualPrompt = `${style} style. ${scene.description}. High quality, cinematic lighting, 4k.`;
 
                 const imageResult = await aiImageService.generateImage({
@@ -339,43 +364,17 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
 
                 return {
                     ...scene,
-                    id: scene.id || `scene_${index + 1}`,
-                    order: index,
+                    id: scene.id || `scene_${index + 7}`,
+                    order: index + 6,
                     imageUrl: imageResult.url,
                     type: 'video',
                     cameraPath: scene.cameraPath || "Static",
                     motionIntensity: scene.motionIntensity || 50
                 };
-            } catch (err) {
-                console.error(`Failed to generate image for scene ${index}:`, err);
-                // Fallback image if generation fails
-                return {
-                    ...scene,
-                    id: scene.id || `scene_${index + 1}`,
-                    order: index,
-                    imageUrl: `https://placehold.co/1280x720/1a1a1a/FFF?text=${encodeURIComponent(scene.description.slice(0, 20))}`,
-                    type: 'video',
-                    cameraPath: scene.cameraPath || "Static",
-                    motionIntensity: scene.motionIntensity || 50
-                };
-            }
-        });
-
-        const scenes = await Promise.all(scenePromises);
-
-        // Process remaining scenes with placeholders if any (to avoid timeouts)
-        if (generatedData.scenes.length > 6) {
-            generatedData.scenes.slice(6).forEach((scene: any, index: number) => {
-                scenes.push({
-                    ...scene,
-                    id: scene.id || `scene_${index + 7}`,
-                    order: index + 6,
-                    imageUrl: `https://placehold.co/1280x720/1a1a1a/FFF?text=${encodeURIComponent(scene.description.slice(0, 20))}`,
-                    type: 'video',
-                    cameraPath: scene.cameraPath || "Static",
-                    motionIntensity: scene.motionIntensity || 50
-                });
             });
+
+            const remainingScenes = await Promise.all(remainingPromises);
+            scenes.push(...remainingScenes);
         }
 
         const characters = generatedData.characters.map((char: any, index: number) => ({
@@ -428,48 +427,11 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
     } catch (error: any) {
         console.error("Gemini Project Generation Failed:", error);
 
-        // Fallback to Safe Mock if Gemini fails (Critical for Prototype Stability)
-        // This ensures the user ALWAYS sees a result, even if API quotas are hit or network fails.
-        console.log("⚠️ Falling back to Mock Project Generation to save the demo...");
-
-        const mockScenes = Array.from({ length: 5 }, (_, i) => ({
-            id: `mock_scene_${i}`,
-            order: i,
-            description: `[Mock] Scene ${i + 1} - Visual representation of ${prompt}`,
-            duration: 5,
-            imageUrl: `https://picsum.photos/seed/mock_${Date.now()}_${i}/1280/720`,
-            type: 'video',
-            cameraPath: "Static",
-            motionIntensity: 50
-        }));
-
-        const mockTracks = [
-            {
-                id: "track_music_1",
-                type: "music",
-                name: "Cinematic Score (Mock)",
-                startTime: 0,
-                duration: duration,
-                url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-                volume: 0.5
-            }
-        ];
-
-        return responseHandler(res, 200, "Project generated (Fallback Mode)", {
-            projectId: `proj_mock_${Date.now()}`,
-            prompt: prompt,
-            settings: {
-                style,
-                duration,
-                language: "English",
-                region: "US",
-                aspectRatio: "16:9"
-            },
-            script: "This is a fallback script generated because the AI service is currently unavailable. Your scene will be awesome!",
-            scenes: mockScenes,
-            characters: [],
-            tracks: mockTracks,
-            createdAt: new Date().toISOString(),
+        // Return proper error instead of mock data
+        // This gives users honest feedback about service availability
+        return responseHandler(res, 503, "AI service temporarily unavailable. Please try again in a few moments.", {
+            error: error.message,
+            suggestion: "Our AI service is currently experiencing high demand or quota limits. Please try again shortly."
         });
     }
 });
@@ -659,5 +621,51 @@ export const getHistoryItem = asyncHandler(async (req: Request, res: Response) =
     } catch (error: any) {
         console.error("Failed to fetch history item:", error);
         return responseHandler(res, 500, "Failed to fetch history item");
+    }
+});
+
+// Enhance Prompt using AI
+export const enhancePrompt = asyncHandler(async (req: Request, res: Response) => {
+    const { prompt } = req.body;
+
+    if (!prompt) {
+        return responseHandler(res, 400, "Prompt is required");
+    }
+
+    try {
+        const systemPrompt = `You are an expert prompt engineer for AI video and image generation. 
+Your task is to enhance the user's prompt to make it more detailed, cinematic, and production-ready while MAINTAINING THE EXACT SAME SUBJECT AND CONTEXT.
+
+Rules:
+1. Keep the original subject, scene, and concept EXACTLY as described
+2. Add cinematic details: lighting, camera angles, atmosphere, mood
+3. Add technical quality descriptors: resolution, rendering style
+4. Keep it concise (max 2-3 sentences)
+5. Make it specific and vivid
+6. DO NOT change the core idea or add unrelated elements
+
+Return ONLY the enhanced prompt text, nothing else.`;
+
+        const userMessage = `Original prompt: "${prompt}"
+
+Enhance this prompt for video/image generation:`;
+
+        const enhancedPrompt = await aiImageService.generateText(`${systemPrompt}\n\n${userMessage}`);
+
+        // Clean up the response
+        const cleanedPrompt = enhancedPrompt
+            .replace(/^["']|["']$/g, '') // Remove quotes
+            .replace(/^Enhanced prompt:\s*/i, '') // Remove "Enhanced prompt:" prefix
+            .trim();
+
+        return responseHandler(res, 200, "Prompt enhanced successfully", {
+            original: prompt,
+            enhanced: cleanedPrompt
+        });
+    } catch (error: any) {
+        console.error("Prompt enhancement failed:", error);
+        return responseHandler(res, 500, "Failed to enhance prompt", {
+            error: error.message
+        });
     }
 });

@@ -23,6 +23,7 @@ const DashboardPage = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedImage, setGeneratedImage] = useState<GenerateImageResponse | null>(null);
     const [showImageModal, setShowImageModal] = useState(false);
+    const [isEnhancing, setIsEnhancing] = useState(false);
 
     const container = useRef<HTMLDivElement>(null);
 
@@ -38,6 +39,24 @@ const DashboardPage = () => {
             });
         });
     }, { scope: container });
+
+    const handleEnhancePrompt = async () => {
+        if (!prompt.trim()) {
+            alert('Please enter a prompt first');
+            return;
+        }
+
+        setIsEnhancing(true);
+        try {
+            const result = await aiService.enhancePrompt(prompt);
+            setPrompt(result.enhanced);
+        } catch (error) {
+            console.error('Prompt enhancement failed:', error);
+            alert('Failed to enhance prompt. Please try again.');
+        } finally {
+            setIsEnhancing(false);
+        }
+    };
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
@@ -68,9 +87,17 @@ const DashboardPage = () => {
                 setGeneratedImage(result);
                 setShowImageModal(true);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Generation failed:", error);
-            alert("Failed to start generation. Please try again.");
+
+            // Show specific error message based on error type
+            const errorMessage = error.response?.status === 503
+                ? "AI service is temporarily unavailable due to high demand. Please try again in a few moments."
+                : error.response?.data?.data?.suggestion
+                    ? error.response.data.data.suggestion
+                    : "Failed to start generation. Please try again.";
+
+            alert(errorMessage);
         } finally {
             setIsGenerating(false);
         }
@@ -197,12 +224,15 @@ const DashboardPage = () => {
                                         <Paperclip className="w-5 h-5" />
                                     </button>
                                     <button
-                                        onClick={() => setPrompt(prev => prev + ", cinematic lighting, 8k, highly detailed")}
-                                        className="p-2 rounded-lg hover:bg-white/5 text-[#00FF88] hover:text-[#00FF88]/80 transition-colors flex items-center gap-2"
-                                        title="Enhance Prompt"
+                                        onClick={handleEnhancePrompt}
+                                        disabled={isEnhancing || !prompt.trim()}
+                                        className="p-2 rounded-lg hover:bg-white/5 text-[#00FF88] hover:text-[#00FF88]/80 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="Enhance Prompt with AI"
                                     >
-                                        <Wand2 className="w-5 h-5" />
-                                        <span className="text-sm font-medium hidden sm:inline">Enhance</span>
+                                        <Wand2 className={`w-5 h-5 ${isEnhancing ? 'animate-spin' : ''}`} />
+                                        <span className="text-sm font-medium hidden sm:inline">
+                                            {isEnhancing ? 'Enhancing...' : 'Enhance'}
+                                        </span>
                                     </button>
                                 </div>
 
