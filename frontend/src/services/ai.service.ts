@@ -131,6 +131,35 @@ export interface StoryboardScene {
     cameraAngle: string;
 }
 
+export interface HistoryItem {
+    id: string;
+    type: 'image' | 'video' | 'video-project';
+    prompt: string;
+    settings: {
+        style?: string;
+        width?: number;
+        height?: number;
+        aspectRatio?: string;
+        duration?: number;
+        seed?: number;
+        cameraAngle?: string;
+        negativePrompt?: string;
+        count?: number;
+    };
+    results: Array<{
+        assetId?: string;
+        url: string;
+        thumbnailUrl?: string;
+        provider?: string;
+        jobId?: string;
+        status?: string;
+    }>;
+    provider?: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    error?: string;
+    createdAt: string;
+}
+
 export interface GenerateStoryboardResponse {
     scenes: StoryboardScene[];
     totalDuration: number;
@@ -326,7 +355,49 @@ class AIService {
 
         return response.data.data;
     }
+
+    /**
+     * Get User's Generation History
+     */
+    async getHistory(params?: { type?: string; limit?: number; skip?: number }): Promise<{
+        history: HistoryItem[];
+        total: number;
+        limit: number;
+        skip: number;
+    }> {
+        const queryParams = new URLSearchParams();
+        if (params?.type) queryParams.append('type', params.type);
+        if (params?.limit) queryParams.append('limit', params.limit.toString());
+        if (params?.skip) queryParams.append('skip', params.skip.toString());
+
+        const response = await axiosInstance.get<{
+            success: boolean;
+            message: string;
+            data: {
+                history: HistoryItem[];
+                total: number;
+                limit: number;
+                skip: number;
+            };
+        }>(`/ai/history?${queryParams.toString()}`);
+
+        return response.data.data;
+    }
+
+    /**
+     * Get Single History Item Details
+     */
+    async getHistoryItem(id: string): Promise<HistoryItem> {
+        const response = await axiosInstance.get<{
+            success: boolean;
+            message: string;
+            data: HistoryItem;
+        }>(`/ai/history/${id}`);
+
+        return response.data.data;
+    }
 }
 
 export const aiService = new AIService();
 export default aiService;
+

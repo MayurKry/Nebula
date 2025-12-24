@@ -3,14 +3,24 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { responseHandler } from "../utils/responseHandler";
 import { aiImageService } from "../services/ai-image.service";
 import { aiVideoService } from "../services/ai-video.service";
+import { AssetModel } from "../models/asset.model";
+import { GenerationHistoryModel } from "../models/generation-history.model";
+import mongoose from "mongoose";
+
+// Extend Request type to include user (if not already globally defined, but here for safety/clarity in this file scope)
+interface AuthenticatedRequest extends Request {
+    user?: any;
+}
 
 // AI Image Generation with multiple providers
 export const generateImage = asyncHandler(async (req: Request, res: Response) => {
-    const { prompt, style, width = 1024, height = 1024, seed, negativePrompt, count = 2 } = req.body;
+    const { prompt, style, width = 1024, height = 1024, seed, negativePrompt, count = 2, aspectRatio, cameraAngle } = req.body;
 
     if (!prompt) {
         return responseHandler(res, 400, "Prompt is required");
     }
+
+    const userId = (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
 
     try {
         // Generate multiple images using AI service (with automatic fallback)
@@ -33,6 +43,54 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
 
         const results = await Promise.all(promises);
 
+        // Save generated assets to database
+        const savedAssets: any[] = [];
+
+        if (userId) {
+            const assetPromises = results.map(result => {
+                return AssetModel.create({
+                    name: prompt, // Using prompt as the name/title
+                    type: "image",
+                    url: result.url,
+                    thumbnailUrl: result.url, // For images, thumb is the same
+                    userId: new mongoose.Types.ObjectId(userId),
+                    metadata: {
+                        width: result.width,
+                        height: result.height,
+                        format: "png" // Assuming png for now, or extract from url
+                    },
+                    tags: ["ai-generated", style || "default"]
+                });
+            });
+            const assets = await Promise.all(assetPromises);
+            savedAssets.push(...assets);
+
+            // Save to generation history
+            await GenerationHistoryModel.create({
+                userId: new mongoose.Types.ObjectId(userId),
+                type: "image",
+                prompt,
+                settings: {
+                    style,
+                    width,
+                    height,
+                    aspectRatio,
+                    seed,
+                    cameraAngle,
+                    negativePrompt,
+                    count: imageCount
+                },
+                results: results.map((result, index) => ({
+                    assetId: savedAssets[index]?._id,
+                    url: result.url,
+                    thumbnailUrl: result.url,
+                    provider: result.provider
+                })),
+                provider: results[0]?.provider,
+                status: "completed"
+            });
+        }
+
         return responseHandler(res, 200, "Images generated successfully", {
             images: results.map(result => ({
                 url: result.url,
@@ -49,6 +107,19 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
         });
     } catch (error: any) {
         console.error("Image generation error:", error);
+
+        // Save failed generation to history
+        if (userId) {
+            await GenerationHistoryModel.create({
+                userId: new mongoose.Types.ObjectId(userId),
+                type: "image",
+                prompt,
+                settings: { style, width, height, aspectRatio, seed, negativePrompt, count },
+                results: [],
+                status: "failed",
+                error: error.message
+            });
+        }
 
         // Provide more detailed error message
         const errorMessage = error.message || "Failed to generate image";
@@ -81,12 +152,34 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
         return responseHandler(res, 400, "Prompt is required");
     }
 
+    const userId = (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
+
     try {
         // Use the new AI Video Service
         const result = await aiVideoService.generateVideo({
             prompt: style ? `${style} style. ${prompt}` : prompt,
             duration
         });
+
+        // Save to generation history with pending status
+        if (userId) {
+            await GenerationHistoryModel.create({
+                userId: new mongoose.Types.ObjectId(userId),
+                type: "video",
+                prompt,
+                settings: {
+                    style,
+                    duration
+                },
+                results: [{
+                    jobId: result.jobId,
+                    url: "",
+                    thumbnailUrl: result.thumbnailUrl,
+                    status: result.status
+                }],
+                status: "processing"
+            });
+        }
 
         return responseHandler(res, 200, "Video generation started", {
             jobId: result.jobId,
@@ -99,6 +192,20 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
         });
     } catch (error: any) {
         console.error("Video generation failed:", error);
+
+        // Save failed generation to history
+        if (userId) {
+            await GenerationHistoryModel.create({
+                userId: new mongoose.Types.ObjectId(userId),
+                type: "video",
+                prompt,
+                settings: { style, duration },
+                results: [],
+                status: "failed",
+                error: error.message
+            });
+        }
+
         return responseHandler(res, 500, "Failed to start video generation", { error: error.message });
     }
 });
@@ -106,9 +213,47 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
 // Check video generation status
 export const checkVideoStatus = asyncHandler(async (req: Request, res: Response) => {
     const { jobId } = req.params;
+    const userId = (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
 
     try {
         const result = await aiVideoService.checkStatus(jobId);
+
+        // If video is successful, save to Assets if it doesn't already exist
+        if (result.status === 'succeeded' && result.videoUrl && userId) {
+            // Check if already saved (deduplication)
+            const existingAsset = await AssetModel.findOne({ url: result.videoUrl });
+
+            if (!existingAsset) {
+                const asset = await AssetModel.create({
+                    name: `Video Generation ${jobId}`, // We might want to pass the prompt here, but checkStatus doesn't natively return it unless we mock/store it. Using generic name for now.
+                    type: "video",
+                    url: result.videoUrl,
+                    thumbnailUrl: result.thumbnailUrl || result.videoUrl,
+                    userId: new mongoose.Types.ObjectId(userId),
+                    metadata: {
+                        format: "mp4"
+                    },
+                    tags: ["ai-video", "generated"]
+                });
+
+                // Update generation history with completed video
+                await GenerationHistoryModel.findOneAndUpdate(
+                    {
+                        userId: new mongoose.Types.ObjectId(userId),
+                        "results.jobId": jobId
+                    },
+                    {
+                        $set: {
+                            status: "completed",
+                            "results.$.url": result.videoUrl,
+                            "results.$.thumbnailUrl": result.thumbnailUrl,
+                            "results.$.assetId": asset._id,
+                            "results.$.status": "succeeded"
+                        }
+                    }
+                );
+            }
+        }
 
         return responseHandler(res, 200, "Video status retrieved", {
             jobId: result.jobId,
@@ -429,5 +574,90 @@ export const animateScene = asyncHandler(async (req: Request, res: Response) => 
         return responseHandler(res, 500, "Failed to animate scene", {
             error: error.message
         });
+    }
+});
+
+// Get User's Generation History
+export const getHistory = asyncHandler(async (req: Request, res: Response) => {
+    const userFromToken = (req as AuthenticatedRequest).user;
+
+    console.log('[getHistory] Request received');
+    console.log('[getHistory] User from token:', userFromToken);
+
+    // JWT tokens use 'id' field, not '_id'
+    const userId = userFromToken?.id || userFromToken?._id;
+
+    console.log('[getHistory] User ID:', userId);
+
+    if (!userId) {
+        console.error('[getHistory] No user ID found in request');
+        return responseHandler(res, 401, "Unauthorized - No user ID found");
+    }
+
+    try {
+        const { type, limit = 50, skip = 0 } = req.query;
+
+        const query: any = { userId: new mongoose.Types.ObjectId(userId) };
+        if (type && type !== 'all') {
+            query.type = type;
+        }
+
+        console.log('[getHistory] Query:', JSON.stringify(query));
+
+        const history = await GenerationHistoryModel.find(query)
+            .sort({ createdAt: -1 })
+            .limit(Number(limit))
+            .skip(Number(skip))
+            .lean();
+
+        const total = await GenerationHistoryModel.countDocuments(query);
+
+        console.log('[getHistory] Found', history.length, 'items out of', total, 'total');
+
+        return responseHandler(res, 200, "History retrieved successfully", {
+            history: history.map(item => ({
+                id: item._id,
+                type: item.type,
+                prompt: item.prompt,
+                settings: item.settings,
+                results: item.results,
+                provider: item.provider,
+                status: item.status,
+                error: item.error,
+                createdAt: item.createdAt,
+            })),
+            total,
+            limit: Number(limit),
+            skip: Number(skip)
+        });
+    } catch (error: any) {
+        console.error("[getHistory] Error:", error);
+        return responseHandler(res, 500, "Failed to fetch history");
+    }
+});
+
+// Get Single History Item Details
+export const getHistoryItem = asyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as AuthenticatedRequest).user?._id;
+    const { id } = req.params;
+
+    if (!userId) {
+        return responseHandler(res, 401, "Unauthorized");
+    }
+
+    try {
+        const historyItem = await GenerationHistoryModel.findOne({
+            _id: new mongoose.Types.ObjectId(id),
+            userId: new mongoose.Types.ObjectId(userId)
+        }).lean();
+
+        if (!historyItem) {
+            return responseHandler(res, 404, "History item not found");
+        }
+
+        return responseHandler(res, 200, "History item retrieved successfully", historyItem);
+    } catch (error: any) {
+        console.error("Failed to fetch history item:", error);
+        return responseHandler(res, 500, "Failed to fetch history item");
     }
 });

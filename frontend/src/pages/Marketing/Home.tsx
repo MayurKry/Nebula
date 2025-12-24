@@ -6,6 +6,7 @@ import GSAPTransition from '@/components/ui/GSAPTransition';
 import GSAPScrollSection from '@/components/ui/GSAPScrollSection';
 import BentoGrid from '@/components/marketing/BentoGrid';
 import LogoTicker from '@/components/marketing/LogoTicker';
+import ComplianceSection from '@/components/marketing/ComplianceSection';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
@@ -266,6 +267,9 @@ const Home = () => {
                     </GSAPScrollSection>
                 </div>
             </section>
+
+            {/* Compliance Section */}
+            <ComplianceSection />
 
             {/* CTA Section */}
             <section className="section-padding">

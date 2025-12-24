@@ -62,7 +62,7 @@ const GSAPTransition: React.FC<GSAPTransitionProps> = ({
         }
 
         gsap.fromTo(Array.from(elements), fromVars, toVars);
-    }, { scope: container, dependencies: [children] }); // Rerun if children change
+    }, { scope: container });
 
     return (
         <div ref={container} className={className}>

@@ -26,6 +26,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Home', path: '/app/dashboard', icon: <Home className="w-4 h-4" /> },
       { label: 'Campaign Wizard', path: '/app/campaign', icon: <Target className="w-4 h-4" /> },
+      { label: 'History', path: '/app/history', icon: <FolderOpen className="w-4 h-4" /> },
       { label: 'My Assets', path: '/app/assets', icon: <FolderOpen className="w-4 h-4" /> },
     ],
   },

@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import Header from '@/components/marketing/Header';
 import Footer from '@/components/marketing/Footer';
+import CookieConsent from '@/components/ui/CookieConsent';
 
 const MarketingLayout = () => {
     return (
@@ -10,6 +11,7 @@ const MarketingLayout = () => {
                 <Outlet />
             </main>
             <Footer />
+            <CookieConsent />
         </div>
     );
 };
