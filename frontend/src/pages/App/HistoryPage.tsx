@@ -90,42 +90,42 @@ const HistoryPage = () => {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8">
             <GSAPTransition animation="fade-in-up">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">History</h1>
-                        <p className="text-gray-400">View and manage your generated assets.</p>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">History</h1>
+                        <p className="text-sm text-gray-400">View and manage your generated assets.</p>
                     </div>
 
-                    <div className="flex gap-2">
-                        <div className="relative group">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                        <div className="relative group flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-hover:text-gray-400 transition-colors" />
                             <input
                                 type="text"
                                 placeholder="Search history..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-[#141414] border border-white/10 text-white pl-10 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:border-white/20 transition-all w-64"
+                                className="bg-[#141414] border border-white/10 text-white pl-10 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:border-white/20 transition-all w-full sm:w-64"
                             />
                         </div>
 
-                        <div className="flex bg-[#141414] border border-white/10 rounded-lg p-1">
+                        <div className="flex bg-[#141414] border border-white/10 rounded-lg p-1 overflow-x-auto scrollbar-hide">
                             <button
                                 onClick={() => setFilterType('all')}
-                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${filterType === 'all' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}
+                                className={`px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${filterType === 'all' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}
                             >
                                 All
                             </button>
                             <button
                                 onClick={() => setFilterType('image')}
-                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${filterType === 'image' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}
+                                className={`px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap ${filterType === 'image' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}
                             >
                                 <Image className="w-4 h-4" /> Images
                             </button>
                             <button
                                 onClick={() => setFilterType('video')}
-                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${filterType === 'video' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}
+                                className={`px-4 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap ${filterType === 'video' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}
                             >
                                 <Video className="w-4 h-4" /> Videos
                             </button>
@@ -133,6 +133,7 @@ const HistoryPage = () => {
                     </div>
                 </div>
             </GSAPTransition>
+
 
             {loading ? (
                 <div className="flex items-center justify-center py-24">
@@ -151,7 +152,7 @@ const HistoryPage = () => {
                 </div>
             ) : (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                         {filteredHistory.map((item, index) => {
                             const firstResult = item.results[0];
                             const displayUrl = firstResult?.thumbnailUrl || firstResult?.url || '';

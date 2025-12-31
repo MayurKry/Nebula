@@ -2,6 +2,7 @@ import { Request } from "express";
 import bcrypt from "bcryptjs";
 import { ApiError } from "../utils/ApiError";
 import { UserModel } from "../models/user.model";
+import { ActivityService } from "./activity.service";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -11,7 +12,7 @@ import {
 export const AuthService = {
   async register(req: Request) {
     console.log("req.body", req.body);
-    const { firstName,lastName, email, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
 
     if (!firstName || !lastName || !email || !password)
       throw new ApiError(400, "Name, email, and password are required");
@@ -33,6 +34,16 @@ export const AuthService = {
 
     user.refreshToken = refreshToken;
     await user.save();
+
+    await ActivityService.logActivity({
+      userId: user._id as any,
+      type: "login",
+      action: "Account Created",
+      description: `Welcome to Nebula, ${firstName}! Your account has been successfully created.`,
+      status: "success",
+      ip: req.ip,
+      userAgent: req.get('user-agent')
+    });
 
     const safeUser = {
       id: user._id,
@@ -62,6 +73,16 @@ export const AuthService = {
 
     user.refreshToken = refreshToken;
     await user.save();
+
+    await ActivityService.logActivity({
+      userId: user._id as any,
+      type: "login",
+      action: "Sign In",
+      description: "Successfully signed in to your account.",
+      status: "success",
+      ip: req.ip,
+      userAgent: req.get('user-agent')
+    });
 
     const safeUser = {
       id: user._id,

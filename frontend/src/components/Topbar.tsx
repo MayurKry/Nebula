@@ -1,9 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { User, LogOut, HelpCircle, BookOpen, ChevronDown, Bell } from 'lucide-react';
+import { User, LogOut, HelpCircle, BookOpen, ChevronDown, Bell, Menu } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
-const Topbar = () => {
+interface TopbarProps {
+    onMenuClick: () => void;
+}
+
+const Topbar = ({ onMenuClick }: TopbarProps) => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -29,14 +33,25 @@ const Topbar = () => {
     };
 
     return (
-        <header className="h-16 border-b border-white/10 bg-[#0A0A0A]/50 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-6">
-            {/* Left side (Breadcrumbs or Page Title - placeholder for now) */}
-            <div className="text-gray-400 text-sm">
+        <header className="h-16 border-b border-white/10 bg-[#0A0A0A]/50 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-4 lg:px-6">
+            <div className="flex items-center gap-4">
+                {/* Mobile Menu Toggle */}
+                <button
+                    onClick={onMenuClick}
+                    className="p-2 -ml-2 text-gray-400 hover:text-white lg:hidden transition-colors rounded-lg hover:bg-white/5"
+                >
+                    <Menu className="w-6 h-6" />
+                </button>
 
+                {/* Left side (Breadcrumbs or Page Title - placeholder for now) */}
+                <div className="text-gray-400 text-sm hidden sm:block">
+                    {/* Breadcrumbs could go here */}
+                </div>
             </div>
 
             {/* Right side actions */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1 sm:gap-4">
+
                 {/* Website Link */}
                 <a
                     href="https://nebula-marketing.vercel.app" // Replace with actual marketing site URL if known, or use a placeholder

@@ -6,7 +6,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   // Development mode bypass - allows testing without authentication
   if (process.env.NODE_ENV === "development" && process.env.BYPASS_AUTH === "true") {
     (req as any).user = {
-      _id: "dev-user-123",
+      _id: "507f1f77bcf86cd799439011",
       email: "dev@nebula.com",
       name: "Development User"
     };

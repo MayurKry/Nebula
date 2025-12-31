@@ -1,12 +1,14 @@
 import { useState, useRef } from 'react';
 import {
-    Sparkles,
     Loader2, Upload, Move, Wind, ZoomIn, Eye,
-    Layers, RotateCw, Folder, Play, Download
+    Layers, RotateCw, Folder, Play, Download,
+    Camera, Image as ImageIcon, X
 } from 'lucide-react';
 import { useGeneration, SAMPLE_IMAGES, SAMPLE_VIDEO_THUMBS } from '@/components/generation/GenerationContext';
 import { AdvancedPanel } from '@/components/generation/AdvancedControls';
 import GenerationQueue from '@/components/generation/GenerationQueue';
+import PromptBar from '@/components/ui/PromptBar';
+import GSAPTransition from '@/components/ui/GSAPTransition';
 
 const sceneEffects = [
     { id: 'wind', label: 'Wind', icon: Wind },
@@ -30,10 +32,11 @@ const ImageToVideoPage = () => {
 
     const [sourceImage, setSourceImage] = useState<string | null>(null);
     const [selectedSample, setSelectedSample] = useState<number | null>(null);
-    const [motionDynamics, setMotionDynamics] = useState(50);
+    const [motionDynamics] = useState(50);
     const [cameraMove, setCameraMove] = useState('zoom-in');
     const [sceneEffect, setSceneEffect] = useState('parallax');
-    const [motionFidelity, setMotionFidelity] = useState(70);
+    const [prompt, setPrompt] = useState('');
+
     const [advancedSettings, setAdvancedSettings] = useState({
         cameraAngle: 'Eye Level',
         depth: 50,
@@ -71,7 +74,7 @@ const ImageToVideoPage = () => {
 
         addJob({
             type: 'image-to-video',
-            prompt: `Animate image with ${sceneEffect} effect, ${cameraMove} camera`,
+            prompt: prompt || `Animate image with ${sceneEffect} effect, ${cameraMove} camera`,
             settings: {
                 motionLevel: motionDynamics,
                 cameraPath: cameraMove,
@@ -102,281 +105,210 @@ const ImageToVideoPage = () => {
         setIsGenerating(false);
     };
 
-
-
     return (
-        <div className="min-h-screen bg-[#0A0A0A]">
-            <main className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-all`}>
-                {/* Source Image Selection */}
-                <section className="mb-8">
-                    <h2 className="text-lg font-semibold text-white mb-4">Select Source Image</h2>
+        <div className="min-h-screen bg-[#0A0A0A] p-4 sm:p-8">
+            <main className="max-w-6xl mx-auto space-y-12">
 
-                    <div className="grid grid-cols-2 gap-6">
-                        {/* Upload Area */}
-                        <div className="bg-[#141414] border border-white/10 rounded-xl p-6">
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageUpload}
-                                className="hidden"
-                            />
+                {/* Header */}
+                <GSAPTransition animation="fade-in-up">
+                    <div className="text-center space-y-4 pt-4 mb-4">
+                        <div className="inline-flex p-3 bg-orange-500/10 border border-orange-500/20 rounded-2xl mb-2">
+                            <Move className="w-8 h-8 text-orange-400" />
+                        </div>
+                        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
+                            Image to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Video</span>
+                        </h1>
+                        <p className="text-gray-400 max-w-xl mx-auto">
+                            Breathe life into static images with AI choreography. Describe the motion or use our cinematic presets.
+                        </p>
+                    </div>
+                </GSAPTransition>
 
-                            {sourceImage && !selectedSample ? (
-                                <div className="relative group">
-                                    <img
-                                        src={sourceImage}
-                                        alt="Source"
-                                        className="w-full aspect-video object-cover rounded-lg"
-                                    />
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <button
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className="px-4 py-2 bg-white/20 backdrop-blur rounded-lg text-white text-sm"
-                                        >
-                                            Change Image
-                                        </button>
+                {/* Source Selection & Prompt */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+                    {/* Left: Source Image */}
+                    <GSAPTransition animation="fade-in-up" delay={0.1} className="lg:col-span-5">
+                        <div className="space-y-6">
+                            <div className="bg-[#141414] border border-white/10 rounded-[32px] p-2 shadow-2xl overflow-hidden group">
+                                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+
+                                {sourceImage ? (
+                                    <div className="relative aspect-video rounded-[24px] overflow-hidden">
+                                        <img src={sourceImage} className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <button
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className="px-6 py-2.5 bg-white text-black font-bold rounded-xl text-sm"
+                                            >
+                                                CHANGE IMAGE
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="w-full aspect-video border-2 border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center hover:border-[#00FF88]/50 transition-colors"
-                                >
-                                    <Upload className="w-10 h-10 text-gray-500 mb-3" />
-                                    <p className="text-gray-400 font-medium">Upload Image</p>
-                                    <p className="text-xs text-gray-600 mt-1">PNG, JPG up to 10MB</p>
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Sample Images */}
-                        <div className="bg-[#141414] border border-white/10 rounded-xl p-4">
-                            <p className="text-sm text-gray-400 mb-3">Or choose from samples:</p>
-                            <div className="grid grid-cols-3 gap-2">
-                                {SAMPLE_IMAGES.slice(0, 6).map((img, i) => (
+                                ) : (
                                     <button
-                                        key={i}
-                                        onClick={() => handleSelectSample(i)}
-                                        className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${selectedSample === i ? 'border-[#00FF88]' : 'border-transparent hover:border-white/30'
-                                            }`}
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="w-full aspect-video rounded-[24px] border-2 border-dashed border-white/5 flex flex-col items-center justify-center hover:bg-white/5 hover:border-white/10 transition-all"
                                     >
-                                        <img src={img} alt={`Sample ${i + 1}`} className="w-full h-full object-cover" />
+                                        <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4">
+                                            <Upload className="w-8 h-8 text-gray-400" />
+                                        </div>
+                                        <p className="text-white font-bold text-sm">UPLOAD IMAGE</p>
+                                        <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest font-black">DRAG & DROP</p>
                                     </button>
-                                ))}
+                                )}
+                            </div>
+
+                            <div className="bg-[#141414]/30 p-6 rounded-[32px] border border-white/5">
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Or use a sample</p>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {SAMPLE_IMAGES.slice(0, 4).map((img, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => handleSelectSample(i)}
+                                            className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedSample === i ? 'border-orange-500' : 'border-transparent hover:border-white/20'}`}
+                                        >
+                                            <img src={img} className="w-full h-full object-cover" />
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    </GSAPTransition>
 
-                {/* Motion Controls */}
-                <section className="mb-6">
-                    <h2 className="text-lg font-semibold text-white mb-4">Motion Settings</h2>
+                    {/* Right: Motion Prompt & Settings */}
+                    <GSAPTransition animation="fade-in-up" delay={0.2} className="lg:col-span-7 space-y-8">
+                        <PromptBar
+                            value={prompt}
+                            onChange={setPrompt}
+                            onGenerate={handleGenerate}
+                            isGenerating={isGenerating}
+                            placeholder="Describe how parts of the image should move..."
+                            actions={[
+                                { label: 'Cinematic Pan', onClick: () => setPrompt('A slow cinematic pan across the landscape with volumetric fog moving'), icon: <Camera className="w-3 h-3" /> },
+                                { label: 'Fluid Motion', onClick: () => setPrompt('Make the water flow realistically with subtle sunlight reflections'), icon: <Wind className="w-3 h-3" /> },
+                            ]}
+                        />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Motion Dynamics */}
-                        <div className="bg-[#141414] border border-white/10 rounded-xl p-4">
-                            <div className="flex items-center justify-between mb-3">
-                                <label className="text-sm text-gray-400">Motion Dynamics</label>
-                                <span className="text-sm text-[#00FF88]">{motionDynamics}%</span>
+                        {/* Motion Presets */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-all">
+                                <label className="block text-[10px] font-black text-gray-500 mb-4 uppercase tracking-widest">Camera Movement</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {cameraMoves.map(cam => (
+                                        <button
+                                            key={cam.id}
+                                            onClick={() => setCameraMove(cam.id)}
+                                            className={`px-2 py-2 rounded-lg text-[10px] font-bold transition-all ${cameraMove === cam.id
+                                                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
+                                                : 'bg-[#1A1A1A] text-gray-500 hover:text-white'
+                                                }`}
+                                        >
+                                            {cam.label.toUpperCase()}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                value={motionDynamics}
-                                onChange={(e) => setMotionDynamics(parseInt(e.target.value))}
-                                className="w-full h-2 bg-[#1A1A1A] rounded-lg appearance-none cursor-pointer accent-[#00FF88]"
-                            />
-                            <div className="flex justify-between mt-1">
-                                <span className="text-xs text-gray-600">Subtle</span>
-                                <span className="text-xs text-gray-600">Dramatic</span>
+
+                            <div className="bg-[#141414] border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-all">
+                                <label className="block text-[10px] font-black text-gray-500 mb-4 uppercase tracking-widest">Physics Quality</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {sceneEffects.map(effect => (
+                                        <button
+                                            key={effect.id}
+                                            onClick={() => setSceneEffect(effect.id)}
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-bold transition-all ${sceneEffect === effect.id
+                                                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
+                                                : 'bg-[#1A1A1A] text-gray-500 hover:text-white'
+                                                }`}
+                                        >
+                                            <effect.icon className="w-3 h-3" />
+                                            {effect.label.toUpperCase()}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Motion Fidelity */}
-                        <div className="bg-[#141414] border border-white/10 rounded-xl p-4">
-                            <div className="flex items-center justify-between mb-3">
-                                <label className="text-sm text-gray-400">Motion Fidelity</label>
-                                <span className="text-sm text-[#00FF88]">{motionFidelity}%</span>
-                            </div>
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                value={motionFidelity}
-                                onChange={(e) => setMotionFidelity(parseInt(e.target.value))}
-                                className="w-full h-2 bg-[#1A1A1A] rounded-lg appearance-none cursor-pointer accent-[#00FF88]"
-                            />
-                            <div className="flex justify-between mt-1">
-                                <span className="text-xs text-gray-600">Fast</span>
-                                <span className="text-xs text-gray-600">Quality</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Camera & Effects */}
-                <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    {/* Camera Movement */}
-                    <div className="bg-[#141414] border border-white/10 rounded-xl p-4">
-                        <label className="block text-sm text-gray-400 mb-3">Camera Movement</label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {cameraMoves.map(cam => (
-                                <button
-                                    key={cam.id}
-                                    onClick={() => setCameraMove(cam.id)}
-                                    className={`px-3 py-2 rounded-lg text-sm transition-all ${cameraMove === cam.id
-                                        ? 'bg-[#00FF88] text-[#0A0A0A] font-medium'
-                                        : 'bg-[#1A1A1A] text-gray-400 hover:text-white'
-                                        }`}
-                                >
-                                    {cam.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Scene Effects */}
-                    <div className="bg-[#141414] border border-white/10 rounded-xl p-4">
-                        <label className="block text-sm text-gray-400 mb-3">Scene Effect</label>
-                        <div className="grid grid-cols-2 gap-2">
-                            {sceneEffects.map(effect => (
-                                <button
-                                    key={effect.id}
-                                    onClick={() => setSceneEffect(effect.id)}
-                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${sceneEffect === effect.id
-                                        ? 'bg-[#00FF88] text-[#0A0A0A] font-medium'
-                                        : 'bg-[#1A1A1A] text-gray-400 hover:text-white'
-                                        }`}
-                                >
-                                    <effect.icon className="w-4 h-4" />
-                                    {effect.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* Advanced Panel */}
-                <section className="mb-8">
-                    <AdvancedPanel settings={advancedSettings} onChange={setAdvancedSettings} />
-                </section>
-
-                {/* Generate Button */}
-                <div className="flex justify-center mb-8">
-                    <button
-                        onClick={handleGenerate}
-                        disabled={!sourceImage || isGenerating}
-                        className="px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-lg rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-3 shadow-lg shadow-orange-500/20"
-                    >
-                        {isGenerating ? (
-                            <>
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                Animating Image...
-                            </>
-                        ) : (
-                            <>
-                                <Sparkles className="w-5 h-5" />
-                                Animate Image
-                            </>
-                        )}
-                    </button>
+                        <AdvancedPanel settings={advancedSettings} onChange={setAdvancedSettings} />
+                    </GSAPTransition>
                 </div>
 
-                {/* Progress */}
+                {/* Progress Overlay */}
                 {isGenerating && (
-                    <section className="mb-8">
-                        <div className="bg-[#141414] border border-white/10 rounded-2xl p-6">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center">
-                                    <Loader2 className="w-6 h-6 text-orange-400 animate-spin" />
-                                </div>
-                                <div>
-                                    <h3 className="text-white font-medium">Creating motion...</h3>
-                                    <p className="text-xs text-gray-500">Analyzing depth and generating frames</p>
-                                </div>
+                    <div className="bg-[#141414] border border-white/10 rounded-[32px] p-8 overflow-hidden relative shadow-2xl">
+                        <div className="flex items-center gap-6 mb-8">
+                            <div className="w-16 h-16 rounded-2xl bg-orange-500/10 flex items-center justify-center">
+                                <Loader2 className="w-8 h-8 text-orange-400 animate-spin" />
                             </div>
-
-                            <div className="grid grid-cols-3 gap-4 mb-4">
-                                {[...Array(3)].map((_, i) => (
-                                    <div key={i} className="aspect-video bg-[#0A0A0A] rounded-lg overflow-hidden">
-                                        {i * 33 < generationProgress ? (
-                                            <div className="w-full h-full bg-gradient-to-r from-orange-500/30 to-red-500/30 animate-pulse" />
-                                        ) : (
-                                            <div className="w-full h-full bg-[#1A1A1A]" />
-                                        )}
-                                    </div>
-                                ))}
+                            <div className="space-y-1">
+                                <h3 className="text-xl font-bold text-white">Animating with Physics</h3>
+                                <p className="text-gray-500 text-sm">Analyzing optical flow and depth maps...</p>
                             </div>
-
-                            <div className="h-2 bg-[#1A1A1A] rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300"
-                                    style={{ width: `${Math.min(generationProgress, 100)}%` }}
-                                />
+                            <div className="ml-auto text-orange-500 font-mono text-2xl font-black">
+                                {Math.round(generationProgress)}%
                             </div>
-                            <p className="text-xs text-gray-500 mt-2 text-center">{Math.min(Math.round(generationProgress), 100)}% complete</p>
                         </div>
-                    </section>
+                        <div className="grid grid-cols-3 gap-4 mb-6">
+                            {[0, 1, 2].map(i => (
+                                <div key={i} className="aspect-video bg-black/40 rounded-xl relative overflow-hidden">
+                                    {generationProgress > (i * 30) && (
+                                        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-transparent animate-pulse" />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300" style={{ width: `${generationProgress}%` }} />
+                        </div>
+                    </div>
                 )}
 
-                {/* Results */}
+                {/* Results Section */}
                 {results.length > 0 && !isGenerating && (
-                    <section>
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-semibold text-white">Animated Videos</h2>
+                    <GSAPTransition animation="fade-in-up">
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-2xl font-extrabold text-white tracking-tight">Rendered Animations</h2>
                             <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => { setResults([]); handleGenerate(); }}
-                                    className="px-4 py-2 bg-[#1A1A1A] border border-white/10 rounded-lg text-gray-400 text-sm hover:text-white flex items-center gap-2"
+                                    onClick={handleGenerate}
+                                    className="px-5 py-2.5 bg-[#141414] border border-white/10 rounded-xl text-gray-400 text-sm font-bold hover:text-white flex items-center gap-2"
                                 >
-                                    <RotateCw className="w-4 h-4" />
-                                    Regenerate
+                                    <RotateCw className="w-4 h-4" /> REGENERATE
                                 </button>
-                                <button className="px-4 py-2 bg-[#00FF88] text-[#0A0A0A] font-medium text-sm rounded-lg flex items-center gap-2">
-                                    <Folder className="w-4 h-4" />
-                                    Save to Assets
+                                <button className="px-5 py-2.5 bg-[#00FF88] text-black font-bold text-sm rounded-xl flex items-center gap-2 hover:scale-105 transition-transform shadow-lg">
+                                    <Folder className="w-4 h-4" /> SAVE TO ASSETS
                                 </button>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             {results.map((video, i) => (
-                                <div key={i} className="bg-[#141414] border border-white/10 rounded-xl overflow-hidden group hover:border-[#00FF88]/30 transition-all">
-                                    <div className="aspect-video relative">
-                                        <img src={video.thumbnail} alt={`Animated ${i + 1}`} className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button className="w-14 h-14 rounded-full bg-[#00FF88] flex items-center justify-center hover:scale-110 transition-transform">
-                                                <Play className="w-6 h-6 text-[#0A0A0A] ml-0.5" />
+                                <div key={i} className="group bg-[#141414] border border-white/5 rounded-[32px] overflow-hidden hover:border-orange-500/40 transition-all shadow-2xl">
+                                    <div className="aspect-video relative overflow-hidden">
+                                        <img src={video.thumbnail} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <button className="w-16 h-16 rounded-full bg-orange-500 flex items-center justify-center shadow-xl hover:scale-110 transition-transform">
+                                                <Play className="w-6 h-6 text-white fill-white ml-1" />
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="p-3 flex items-center justify-between">
-                                        <span className="text-xs text-gray-500">Variation {i + 1}</span>
-                                        <div className="flex items-center gap-1">
-                                            <button className="p-1.5 text-gray-500 hover:text-white transition-colors">
-                                                <Download className="w-4 h-4" />
-                                            </button>
-                                        </div>
+                                    <div className="p-5 flex items-center justify-between">
+                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">MOTION CLIP {i + 1}</span>
+                                        <button className="p-2 text-gray-500 hover:text-white transition-colors"><Download className="w-5 h-5" /></button>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    </section>
+                    </GSAPTransition>
                 )}
 
-                {/* Empty State */}
                 {!isGenerating && results.length === 0 && !sourceImage && (
-                    <section className="text-center py-16">
-                        <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-orange-500/20 to-red-600/20 flex items-center justify-center">
-                            <Move className="w-10 h-10 text-gray-600" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-white mb-2">Bring Images to Life</h3>
-                        <p className="text-gray-500 max-w-md mx-auto">
-                            Upload or select an image above to animate it with AI-powered motion effects.
-                        </p>
-                    </section>
+                    <div className="text-center py-24 bg-[#141414]/30 rounded-[40px] border border-dashed border-white/5">
+                        <ImageIcon className="w-16 h-16 text-gray-700 mx-auto mb-6" />
+                        <h3 className="text-white font-bold text-xl">Waiting for source image...</h3>
+                        <p className="text-gray-500 text-sm mt-2">Upload an image to start animating</p>
+                    </div>
                 )}
             </main>
 

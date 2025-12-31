@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { responseHandler } from "../utils/responseHandler";
 import { aiImageService } from "../services/ai-image.service";
 import { aiVideoService } from "../services/ai-video.service";
+import { ActivityService } from "../services/activity.service";
 import { AssetModel } from "../models/asset.model";
 import { GenerationHistoryModel } from "../models/generation-history.model";
 import mongoose from "mongoose";
@@ -88,6 +89,22 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
                 })),
                 provider: results[0]?.provider,
                 status: "completed"
+            });
+
+            // Log activity
+            await ActivityService.logActivity({
+                userId: userId as any,
+                type: "generation",
+                action: "Image Generation",
+                description: `Generated ${imageCount} image(s) with prompt: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}"`,
+                metadata: {
+                    provider: results[0]?.provider,
+                    count: imageCount,
+                    style
+                },
+                status: "success",
+                ip: req.ip,
+                userAgent: req.get('user-agent')
             });
         }
 
@@ -178,6 +195,21 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
                     status: result.status
                 }],
                 status: "processing"
+            });
+
+            // Log activity
+            await ActivityService.logActivity({
+                userId,
+                type: "generation",
+                action: "Video Generation Started",
+                description: `Started video generation with prompt: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}"`,
+                metadata: {
+                    jobId: result.jobId,
+                    duration
+                },
+                status: "success",
+                ip: req.ip,
+                userAgent: req.get('user-agent')
             });
         }
 
@@ -327,7 +359,10 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
         // Process scenes in parallel (limit to 6 to avoid hitting rate limits too hard/timeouts)
         const scenePromises = generatedData.scenes.slice(0, 6).map(async (scene: any, index: number) => {
             // Generate clear visual description
-            const visualPrompt = `${style} style. ${scene.description}. High quality, cinematic lighting, 4k.`;
+            let visualPrompt = `${style} style. ${scene.description}. High quality, cinematic lighting, 4k.`;
+
+            // Clean prompt of double dots or other potential URL issues
+            visualPrompt = visualPrompt.replace(/\.\.+/g, '.').replace(/\s+/g, ' ').trim();
 
             const imageResult = await aiImageService.generateImage({
                 prompt: visualPrompt,
@@ -353,7 +388,10 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
         // Process remaining scenes if more than 6 (to avoid timeout)
         if (generatedData.scenes.length > 6) {
             const remainingPromises = generatedData.scenes.slice(6).map(async (scene: any, index: number) => {
-                const visualPrompt = `${style} style. ${scene.description}. High quality, cinematic lighting, 4k.`;
+                let visualPrompt = `${style} style. ${scene.description}. High quality, cinematic lighting, 4k.`;
+
+                // Clean prompt
+                visualPrompt = visualPrompt.replace(/\.\.+/g, '.').replace(/\s+/g, ' ').trim();
 
                 const imageResult = await aiImageService.generateImage({
                     prompt: visualPrompt,
@@ -407,7 +445,7 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
             }] : [])
         ];
 
-        return responseHandler(res, 200, "Project generated successfully", {
+        const projectData = {
             projectId: `proj_${Date.now()}`,
             prompt,
             settings: {
@@ -422,7 +460,46 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
             characters,
             tracks: audioTracks,
             createdAt: new Date().toISOString(),
-        });
+        };
+
+        // Save to generation history
+        const userId = (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
+        if (userId) {
+            await GenerationHistoryModel.create({
+                userId: new mongoose.Types.ObjectId(userId),
+                type: "video-project",
+                prompt,
+                settings: {
+                    style,
+                    duration,
+                    aspectRatio: "16:9"
+                },
+                results: scenes.map(s => ({
+                    url: s.imageUrl,
+                    thumbnailUrl: s.imageUrl,
+                    status: "completed"
+                })),
+                status: "completed"
+            });
+
+            // Log activity
+            await ActivityService.logActivity({
+                userId: userId as any,
+                type: "generation",
+                action: "Project Generation",
+                description: `Created a full video project with ${scenes.length} scenes based on: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}"`,
+                metadata: {
+                    projectId: projectData.projectId,
+                    sceneCount: scenes.length,
+                    duration
+                },
+                status: "success",
+                ip: req.ip,
+                userAgent: req.get('user-agent')
+            });
+        }
+
+        return responseHandler(res, 200, "Project generated successfully", projectData);
 
     } catch (error: any) {
         console.error("Gemini Project Generation Failed:", error);
@@ -481,6 +558,22 @@ export const updateOnboarding = asyncHandler(async (req: Request, res: Response)
     if (!user) {
         return responseHandler(res, 404, "User not found");
     }
+
+    // Log activity
+    await ActivityService.logActivity({
+        userId: userId as any,
+        type: "profile_update",
+        action: "Onboarding Completed",
+        description: "Successfully completed the account onboarding process.",
+        metadata: {
+            industry,
+            useCase,
+            skillLevel
+        },
+        status: "success",
+        ip: req.ip,
+        userAgent: req.get('user-agent')
+    });
 
     return responseHandler(res, 200, "Onboarding completed", user);
 });

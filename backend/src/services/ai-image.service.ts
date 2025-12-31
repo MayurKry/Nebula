@@ -272,15 +272,28 @@ class AIImageService {
 
         // Build URL with parameters
         const baseUrl = "https://image.pollinations.ai/prompt";
-        let url = `${baseUrl}/${encodeURIComponent(prompt)}`;
+
+        // Clean and potentially shorten prompt for Pollinations reliability
+        let cleanPrompt = prompt
+            .replace(/\.\.+/g, '.') // remove double dots
+            .replace(/[\\/:*?"<>|]/g, ' ') // remove invalid path characters
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        // Truncate if extremely long (Pollinations limit)
+        if (cleanPrompt.length > 500) {
+            cleanPrompt = cleanPrompt.substring(0, 500);
+        }
+
+        let url = `${baseUrl}/${encodeURIComponent(cleanPrompt)}`;
 
         // Add optional parameters
         const queryParams: string[] = [];
         if (width) queryParams.push(`width=${width}`);
         if (height) queryParams.push(`height=${height}`);
         if (seed) queryParams.push(`seed=${seed}`);
-        queryParams.push("nologo=true"); // Remove watermark
-        queryParams.push("enhance=true"); // Better quality
+        queryParams.push("nologo=true");
+        queryParams.push("enhance=false"); // Disable enhance if potentially causing issues with custom ratios
 
         if (queryParams.length > 0) {
             url += `?${queryParams.join("&")}`;

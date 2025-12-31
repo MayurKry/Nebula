@@ -74,12 +74,16 @@ const VideoPreview = () => {
                                     e.currentTarget.style.display = 'none';
                                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
                                 }}
+                                onLoad={(e) => {
+                                    e.currentTarget.style.display = 'block';
+                                }}
                                 className="w-full h-full object-cover transition-opacity duration-300"
                             />
                             {/* Fallback Element (Hidden by default, shown on error) */}
-                            <div className="absolute inset-0 bg-[#1A1A1A] hidden flex flex-col items-center justify-center text-gray-500">
-                                <Maximize className="w-12 h-12 mb-2 opacity-20" />
-                                <span className="text-sm">Preview Unavailable</span>
+                            <div className="absolute inset-0 bg-[#0F0F0F] hidden flex flex-col items-center justify-center text-gray-500">
+                                <VideoIcon className="w-12 h-12 mb-2 opacity-10" />
+                                <span className="text-sm font-medium text-gray-400">Preview Unavailable</span>
+                                <p className="text-[10px] text-gray-600 mt-1 max-w-[140px] text-center">Cloud visual could not be loaded</p>
                             </div>
 
                             {/* Playback Overlay */}
