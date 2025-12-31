@@ -7,6 +7,7 @@ import {
   LogIn, ShieldAlert, Settings, Info
 } from 'lucide-react';
 import { userService, type Activity } from '@/services/user.service';
+import { useSidebar } from '@/components/ui/sidebar';
 
 interface NavItem {
   label: string;
@@ -72,11 +73,15 @@ const navGroups: NavGroup[] = [
 ];
 
 interface AppSidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-const AppSidebar = ({ isOpen, onClose }: AppSidebarProps) => {
+const AppSidebar = ({ isOpen: isOpenProp, onClose: onCloseProp }: AppSidebarProps) => {
+  const { openMobile, setOpenMobile } = useSidebar();
+  const isOpen = isOpenProp ?? openMobile;
+  const onClose = onCloseProp ?? (() => setOpenMobile(false));
+
   const location = useLocation();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
     navGroups.reduce((acc, group) => ({ ...acc, [group.title]: group.defaultOpen ?? false }), {})

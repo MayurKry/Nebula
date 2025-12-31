@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import {
     Loader2, Upload, Move, Wind, ZoomIn, Eye,
     Layers, RotateCw, Folder, Play, Download,
-    Camera, Image as ImageIcon, X
+    Camera, Image as ImageIcon
 } from 'lucide-react';
 import { useGeneration, SAMPLE_IMAGES, SAMPLE_VIDEO_THUMBS } from '@/components/generation/GenerationContext';
 import { AdvancedPanel } from '@/components/generation/AdvancedControls';

@@ -1,6 +1,6 @@
 import {
     Video, Image,
-    Paperclip, Wand2, X, Download, Share2
+    Wand2, X, Download, Share2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -158,9 +158,9 @@ const DashboardPage = () => {
                 <div className="text-center space-y-12 sm:space-y-16 py-8 sm:py-12">
                     <div className="space-y-4">
                         <h1 className="text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-tighter leading-tight">
-                            Prompt. Refine. <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00FF88] to-[#00CC6A]">Ship.</span>
+                            Prompt. Direct. <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00FF88] to-[#00CC6A]">Render.</span>
                         </h1>
-                        <p className="text-gray-500 text-lg sm:text-xl font-medium max-w-2xl mx-auto italic">Build real, working software and content just by describing it</p>
+                        <p className="text-gray-500 text-lg sm:text-xl font-medium max-w-2xl mx-auto italic">Transform your raw ideas into cinematic video projects with AI-driven choreography.</p>
                     </div>
 
                     <div className="max-w-3xl mx-auto relative group">
@@ -196,11 +196,11 @@ const DashboardPage = () => {
                             onEnhance={handleEnhancePrompt}
                             isGenerating={isGenerating}
                             isEnhancing={isEnhancing}
-                            placeholder={`Describe your ${generationMode}...`}
+                            placeholder={`State your vision for this ${generationMode}...`}
                             actions={[
-                                { label: 'Clone a Screenshot', onClick: () => setPrompt('Create a high-fidelity clone of this dashboard screenshot...'), icon: <Image className="w-3 h-3" /> },
-                                { label: 'Import from Figma', onClick: () => setPrompt('Import this design from Figma and convert to code...'), icon: <Paperclip className="w-3 h-3" /> },
-                                { label: 'Landing Page', onClick: () => setPrompt('A modern, high-converting landing page for a SaaS product...'), icon: <Wand2 className="w-3 h-3" /> },
+                                { label: 'Sci-Fi Epic', onClick: () => setPrompt('A high-octane cinematic trailer for a sci-fi epic, massive space stations and neon cities, volumetric lighting'), icon: <Video className="w-3 h-3" /> },
+                                { label: 'Macro Product', onClick: () => setPrompt('An elegant product showcase for a luxury watch, smooth macro shots, soft bokeh, 8k photorealistic'), icon: <Wand2 className="w-3 h-3" /> },
+                                { label: 'Nature Doc', onClick: () => setPrompt('A serene nature documentary scene of a snow leopard in a blizzard, cinematic slow motion, National Geographic style'), icon: <Image className="w-3 h-3" /> },
                             ]}
                         />
                     </div>

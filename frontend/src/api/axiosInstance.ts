@@ -86,12 +86,16 @@ axiosInstance.interceptors.response.use(
         const refreshToken = TokenStorage.getRefreshToken();
         if (!refreshToken) throw new Error("No refresh token available");
 
-        const response = await axios.post<RefreshResponse>(
-          `${BASE_URL}/auth/refresh-token`,
+        const response = await axios.post<{
+          success: boolean;
+          message: string;
+          data: RefreshResponse;
+        }>(
+          `${BASE_URL}/auth/refresh`,
           { refreshToken }
         );
 
-        const { accessToken, refreshToken: newRefreshToken } = response.data;
+        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
         TokenStorage.setAccessToken(accessToken);
         TokenStorage.setRefreshToken(newRefreshToken);
 
