@@ -1,5 +1,5 @@
 import {
-    Video, Image,
+    Video, Image, Mic, Mic2,
     Wand2, X, Download, Share2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -16,7 +16,7 @@ const DashboardPage = () => {
     useAuth();
     const navigate = useNavigate();
     const [prompt, setPrompt] = useState('');
-    const [generationMode, setGenerationMode] = useState<'image' | 'video'>('video');
+    const [generationMode, setGenerationMode] = useState<'image' | 'video' | 'voice'>('video');
     const [selectedModel] = useState('Nebula Turbo');
 
     // Generation States
@@ -66,6 +66,8 @@ const DashboardPage = () => {
                     duration: 5
                 });
                 navigate(`/app/editor/${result.projectId}`);
+            } else if (generationMode === 'voice') {
+                navigate('/app/create/ai-voices');
             } else {
                 const result = await aiService.generateImage({
                     prompt: prompt,
@@ -88,12 +90,13 @@ const DashboardPage = () => {
     // Mock Suggestions Data
     const suggestions = [
         { id: 1, mode: 'video', category: 'Cinematic', label: 'Cyberpunk Detective', text: 'A cyberpunk detective walking through rainy neon streets, investigating a mystery', icon: Video },
-        { id: 2, mode: 'image', category: '3D Render', label: 'Abstract Glass', text: '3D render of abstract glass shapes with iridescent lighting, 8k resolution', icon: Image },
-        { id: 3, mode: 'video', category: 'Nature', label: 'Drone Landscape', text: 'Aerial drone shot of a majestic waterfall in Iceland, mossy rocks, 4k', icon: Video },
-        { id: 4, mode: 'image', category: 'Portrait', label: 'Future Warrior', text: 'Portrait of a futuristic warrior with glowing armor, intricate details', icon: Image },
+        { id: 2, mode: 'voice', category: 'Narrative', label: 'Audiobook Narration', text: 'A soothing but authoritative professional voice for a thriller audiobook', icon: Mic2 },
+        { id: 3, mode: 'image', category: '3D Render', label: 'Abstract Glass', text: '3D render of abstract glass shapes with iridescent lighting, 8k resolution', icon: Image },
+        { id: 4, mode: 'video', category: 'Nature', label: 'Drone Landscape', text: 'Aerial drone shot of a majestic waterfall in Iceland, mossy rocks, 4k', icon: Video },
+        { id: 5, mode: 'voice', category: 'Marketing', label: 'Commercial Tagline', text: 'Excited energetic voice-over for a high-performance sports brand holiday sale', icon: Mic },
     ];
 
-    const categories = ['All', 'Cinematic', 'Marketing', '3D Render', 'Anime', 'Nature'];
+    const categories = ['All', 'Cinematic', 'Marketing', '3D Render', 'Narrative', 'Nature'];
     const [activeCategory, setActiveCategory] = useState('All');
 
     const filteredSuggestions = suggestions.filter(s => activeCategory === 'All' || s.category === activeCategory);
@@ -172,19 +175,26 @@ const DashboardPage = () => {
                                     className={`relative z-10 px-6 py-2.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${generationMode === 'video' ? 'text-black' : 'text-gray-500 hover:text-white'}`}
                                 >
                                     <Video className="w-4 h-4" />
-                                    <span>Text to Video</span>
+                                    <span>Video</span>
                                 </button>
                                 <button
                                     onClick={() => setGenerationMode('image')}
                                     className={`relative z-10 px-6 py-2.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${generationMode === 'image' ? 'text-black' : 'text-gray-500 hover:text-white'}`}
                                 >
                                     <Image className="w-4 h-4" />
-                                    <span>Text to Image</span>
+                                    <span>Image</span>
+                                </button>
+                                <button
+                                    onClick={() => setGenerationMode('voice')}
+                                    className={`relative z-10 px-6 py-2.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${generationMode === 'voice' ? 'text-black' : 'text-gray-500 hover:text-white'}`}
+                                >
+                                    <Mic2 className="w-4 h-4" />
+                                    <span>Voice</span>
                                 </button>
 
                                 {/* Sliding Background */}
                                 <div
-                                    className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[#00FF88] rounded-full transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${generationMode === 'video' ? 'left-1' : 'left-[calc(50%+4px)]'}`}
+                                    className={`absolute top-1 bottom-1 w-[calc(33.33%-4px)] bg-[#00FF88] rounded-full transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${generationMode === 'video' ? 'left-1' : generationMode === 'image' ? 'left-[calc(33.33%+2px)]' : 'left-[calc(66.66%+2px)]'}`}
                                 />
                             </div>
                         </div>
@@ -196,11 +206,11 @@ const DashboardPage = () => {
                             onEnhance={handleEnhancePrompt}
                             isGenerating={isGenerating}
                             isEnhancing={isEnhancing}
-                            placeholder={`State your vision for this ${generationMode}...`}
+                            placeholder={`State your vision for this ${generationMode === 'voice' ? 'voiceover' : generationMode}...`}
                             actions={[
                                 { label: 'Sci-Fi Epic', onClick: () => setPrompt('A high-octane cinematic trailer for a sci-fi epic, massive space stations and neon cities, volumetric lighting'), icon: <Video className="w-3 h-3" /> },
+                                { label: 'British Narrator', onClick: () => { setPrompt('A deep professional British voice with a calm and wise tone'); setGenerationMode('voice'); }, icon: <Mic2 className="w-3 h-3" /> },
                                 { label: 'Macro Product', onClick: () => setPrompt('An elegant product showcase for a luxury watch, smooth macro shots, soft bokeh, 8k photorealistic'), icon: <Wand2 className="w-3 h-3" /> },
-                                { label: 'Nature Doc', onClick: () => setPrompt('A serene nature documentary scene of a snow leopard in a blizzard, cinematic slow motion, National Geographic style'), icon: <Image className="w-3 h-3" /> },
                             ]}
                         />
                     </div>

@@ -6,6 +6,7 @@ import projectRoutes from "./project.routes";
 import assetRoutes from "./asset.routes";
 import folderRoutes from "./folder.routes";
 import aiRoutes from "./ai.routes";
+import supportRoutes from "./support.routes";
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.use("/projects", projectRoutes);
 router.use("/assets", assetRoutes);
 router.use("/folders", folderRoutes);
 router.use("/ai", aiRoutes);
+router.use("/support", supportRoutes);
 
 export default router;
 

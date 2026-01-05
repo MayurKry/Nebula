@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { User, LogOut, HelpCircle, BookOpen, ChevronDown, Bell, Menu } from 'lucide-react';
+import { User, LogOut, HelpCircle, BookOpen, ChevronDown, Menu } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import FeedbackModal from './FeedbackModal';
+import NotificationDropdown from './NotificationDropdown';
 
 interface TopbarProps {
     onMenuClick: () => void;
@@ -63,10 +65,11 @@ const Topbar = ({ onMenuClick }: TopbarProps) => {
                     <BookOpen className="w-5 h-5" />
                 </a>
 
-                {/* Notifications (Placeholder) */}
-                <button className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
-                    <Bell className="w-5 h-5" />
-                </button>
+                {/* Feedback Module */}
+                <FeedbackModal />
+
+                {/* Notifications Module */}
+                <NotificationDropdown />
 
                 {/* Profile Dropdown */}
                 <div className="relative" ref={dropdownRef}>

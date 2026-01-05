@@ -66,7 +66,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Brand Kits', path: '/app/brand-kits', icon: <Palette className="w-4 h-4" />, badge: 'Soon' },
       { label: 'AI Avatars', path: '/app/avatars', icon: <Users className="w-4 h-4" />, badge: 'Soon' },
-      { label: 'AI Voices', path: '/app/voices', icon: <Mic className="w-4 h-4" />, badge: 'Soon' },
+      { label: 'AI Voices', path: '/app/create/ai-voices', icon: <Mic className="w-4 h-4" /> },
       { label: '3D Assets', path: '/app/3d', icon: <Box className="w-4 h-4" />, badge: 'Soon' },
     ],
   },

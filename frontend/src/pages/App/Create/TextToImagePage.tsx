@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import {
     Sparkles,
-    Loader2, Image as ImageIcon,
+    Loader2,
     RotateCw, Folder, Wand2, Download, Grid3X3
 } from 'lucide-react';
 import { useGeneration } from '@/components/generation/GenerationContext';
-import { AdvancedPanel, StyleSelector, AspectRatioSelector, SeedToggle } from '@/components/generation/AdvancedControls';
+import { StyleSelector, AspectRatioSelector, SeedToggle } from '@/components/generation/AdvancedControls';
 import GenerationQueue from '@/components/generation/GenerationQueue';
 import { aiService } from '@/services/ai.service';
 import { toast } from 'sonner';
@@ -25,9 +25,6 @@ const TextToImagePage = () => {
     const [aspectRatio, setAspectRatio] = useState('16:9');
     const [seedEnabled, setSeedEnabled] = useState(false);
     const [seed, setSeed] = useState(42);
-    const [advancedSettings, setAdvancedSettings] = useState({
-        cameraAngle: 'Eye Level',
-    });
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<string[]>([]);
@@ -50,7 +47,6 @@ const TextToImagePage = () => {
                     style,
                     aspectRatio,
                     seed: seedEnabled ? seed : undefined,
-                    ...advancedSettings,
                 },
             });
 
@@ -61,7 +57,6 @@ const TextToImagePage = () => {
                     style,
                     aspectRatio,
                     seed: seedEnabled ? seed : undefined,
-                    cameraAngle: advancedSettings.cameraAngle,
                 },
                 2
             );
@@ -125,7 +120,7 @@ const TextToImagePage = () => {
                 <GSAPTransition animation="fade-in-up">
                     <div className="text-center space-y-4 pt-4 mb-4">
                         <div className="inline-flex p-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl mb-2">
-                            <ImageIcon className="w-8 h-8 text-blue-400" />
+                            <Sparkles className="w-8 h-8 text-blue-400" />
                         </div>
                         <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
                             Text to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-500">Image</span>
@@ -148,7 +143,7 @@ const TextToImagePage = () => {
                             actions={[
                                 { label: 'Cinematic Sunset', onClick: () => setPrompt('A majestic dragon flying over a crystal castle at sunset, cinematic lighting, 8K'), icon: <Sparkles className="w-3 h-3" /> },
                                 { label: 'Abstract Glass', onClick: () => setPrompt('3D render of abstract glass shapes with iridescent lighting, 8k resolution'), icon: <Grid3X3 className="w-3 h-3" /> },
-                                { label: 'Future Warrior', onClick: () => setPrompt('Portrait of a futuristic warrior with glowing armor, intricate details'), icon: <ImageIcon className="w-3 h-3" /> },
+                                { label: 'Future Warrior', onClick: () => setPrompt('Portrait of a futuristic warrior with glowing armor, intricate details'), icon: <Sparkles className="w-3 h-3" /> },
                             ]}
                         />
 
@@ -173,13 +168,6 @@ const TextToImagePage = () => {
                     </div>
                 </GSAPTransition>
 
-                {/* Advanced Options */}
-                <GSAPTransition animation="fade-in-up" delay={0.2}>
-                    <AdvancedPanel
-                        settings={advancedSettings}
-                        onChange={setAdvancedSettings}
-                    />
-                </GSAPTransition>
 
                 {/* Loading State */}
                 {isGenerating && (
@@ -276,18 +264,6 @@ const TextToImagePage = () => {
                     </section>
                 )}
 
-                {/* Empty State */}
-                {!isGenerating && results.length === 0 && (
-                    <section className="text-center py-24 bg-[#141414]/30 rounded-[40px] border border-dashed border-white/5">
-                        <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-blue-500/10 to-purple-600/10 flex items-center justify-center border border-white/5">
-                            <ImageIcon className="w-12 h-12 text-gray-700" />
-                        </div>
-                        <h3 className="text-2xl font-bold text-white mb-3">Create Stunning Images</h3>
-                        <p className="text-gray-500 max-w-md mx-auto leading-relaxed">
-                            Enter a detailed prompt above and click the arrow to create AI-powered images with Nebula.
-                        </p>
-                    </section>
-                )}
             </main>
 
             {/* Image Viewer Modal */}

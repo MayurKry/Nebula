@@ -4,7 +4,7 @@ import {
     Video as VideoIcon, Upload, Camera, Film,
     RotateCw, Download, Play, Pause, Music,
     Edit3, SkipBack, SkipForward,
-    X, Layers
+    X, Layers, ChevronDown
 } from 'lucide-react';
 import { useGeneration } from '@/components/generation/GenerationContext';
 import { StyleSelector } from '@/components/generation/AdvancedControls';
@@ -398,24 +398,40 @@ const TextToVideoPage = () => {
 
                         <div>
                             <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">Audio Mix</h3>
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-[10px] font-bold text-gray-500">
-                                        <span>DYNAMIC SCORE</span>
-                                        <span>80%</span>
+                            <div className="space-y-6">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-[10px] font-bold text-gray-500">
+                                            <span>DYNAMIC SCORE</span>
+                                            <span>80%</span>
+                                        </div>
+                                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-full bg-purple-500" style={{ width: '80%' }} />
+                                        </div>
                                     </div>
-                                    <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                                        <div className="h-full bg-purple-500" style={{ width: '80%' }} />
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-[10px] font-bold text-gray-500">
+                                            <span>AI NARRATION</span>
+                                            <span>100%</span>
+                                        </div>
+                                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-full bg-[#00FF88]" style={{ width: '100%' }} />
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-[10px] font-bold text-gray-500">
-                                        <span>AI NARRATION</span>
-                                        <span>100%</span>
-                                    </div>
-                                    <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                                        <div className="h-full bg-[#00FF88]" style={{ width: '100%' }} />
-                                    </div>
+
+                                <div className="pt-4 border-t border-white/5">
+                                    <label className="block text-[10px] font-black text-gray-500 mb-3 uppercase tracking-widest">Voice Model (ElevenLabs)</label>
+                                    <button className="w-full bg-[#141414] border border-white/5 rounded-xl p-3 flex items-center justify-between group hover:border-purple-500/40 transition-all text-left">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-[10px] font-bold text-purple-400">R</div>
+                                            <div>
+                                                <p className="text-xs font-bold text-white">Rachel</p>
+                                                <p className="text-[9px] text-gray-500">American • Narrative</p>
+                                            </div>
+                                        </div>
+                                        <ChevronDown className="w-4 h-4 text-gray-600 group-hover:text-gray-400" />
+                                    </button>
                                 </div>
                             </div>
                         </div>

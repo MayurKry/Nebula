@@ -4,6 +4,7 @@ import { responseHandler } from "../utils/responseHandler";
 import { aiImageService } from "../services/ai-image.service";
 import { aiVideoService } from "../services/ai-video.service";
 import { ActivityService } from "../services/activity.service";
+import { NotificationService } from "../services/notification.service";
 import { AssetModel } from "../models/asset.model";
 import { GenerationHistoryModel } from "../models/generation-history.model";
 import mongoose from "mongoose";

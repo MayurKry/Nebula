@@ -3,7 +3,7 @@ import {
     Music,
     Loader2,
     RotateCw, Download,
-    Volume2, Waves, Play, Pause,
+    Volume2, Play, Pause,
     Share2, Layers
 } from 'lucide-react';
 import { useGeneration } from '@/components/generation/GenerationContext';
@@ -121,7 +121,7 @@ const TextToAudioPage = () => {
                             actions={[
                                 { label: 'Cinematic Thriller', onClick: () => setPrompt('A tense cinematic thriller track with deep bass and high-pitched violins'), icon: <Volume2 className="w-3 h-3" /> },
                                 { label: 'Lo-Fi Study', onClick: () => setPrompt('Chill lo-fi beats with a rainy background and muffled piano'), icon: <Music className="w-3 h-3" /> },
-                                { label: 'Cyberpunk Chase', onClick: () => setPrompt('Aggressive dark synthwave for a high-speed chase in a futuristic city'), icon: <Waves className="w-3 h-3" /> },
+                                { label: 'Cyberpunk Chase', onClick: () => setPrompt('Aggressive dark synthwave for a high-speed chase in a futuristic city'), icon: <Volume2 className="w-3 h-3" /> },
                             ]}
                         />
 
@@ -213,14 +213,6 @@ const TextToAudioPage = () => {
                     ))}
                 </div>
 
-                {/* Empty State */}
-                {!isGenerating && results.length === 0 && (
-                    <div className="text-center py-20 bg-[#141414]/50 rounded-[40px] border border-dashed border-white/5">
-                        <Waves className="w-12 h-12 text-gray-700 mx-auto mb-4" />
-                        <h3 className="text-gray-400 font-medium">Your generated tracks will appear here</h3>
-                        <p className="text-gray-600 text-sm mt-2">Start by describing a soundscape in the prompt bar above</p>
-                    </div>
-                )}
             </main>
         </div>
     );

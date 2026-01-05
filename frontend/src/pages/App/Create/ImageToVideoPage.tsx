@@ -2,10 +2,9 @@ import { useState, useRef } from 'react';
 import {
     Loader2, Upload, Move, Wind, ZoomIn, Eye,
     Layers, RotateCw, Folder, Play, Download,
-    Camera, Image as ImageIcon
+    Camera
 } from 'lucide-react';
 import { useGeneration, SAMPLE_IMAGES, SAMPLE_VIDEO_THUMBS } from '@/components/generation/GenerationContext';
-import { AdvancedPanel } from '@/components/generation/AdvancedControls';
 import GenerationQueue from '@/components/generation/GenerationQueue';
 import PromptBar from '@/components/ui/PromptBar';
 import GSAPTransition from '@/components/ui/GSAPTransition';
@@ -37,12 +36,6 @@ const ImageToVideoPage = () => {
     const [sceneEffect, setSceneEffect] = useState('parallax');
     const [prompt, setPrompt] = useState('');
 
-    const [advancedSettings, setAdvancedSettings] = useState({
-        cameraAngle: 'Eye Level',
-        depth: 50,
-        fidelity: 80,
-        colorTemperature: 50,
-    });
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [generationProgress, setGenerationProgress] = useState(0);
@@ -78,7 +71,6 @@ const ImageToVideoPage = () => {
             settings: {
                 motionLevel: motionDynamics,
                 cameraPath: cameraMove,
-                ...advancedSettings,
             },
         });
 
@@ -230,7 +222,6 @@ const ImageToVideoPage = () => {
                             </div>
                         </div>
 
-                        <AdvancedPanel settings={advancedSettings} onChange={setAdvancedSettings} />
                     </GSAPTransition>
                 </div>
 
@@ -301,14 +292,6 @@ const ImageToVideoPage = () => {
                             ))}
                         </div>
                     </GSAPTransition>
-                )}
-
-                {!isGenerating && results.length === 0 && !sourceImage && (
-                    <div className="text-center py-24 bg-[#141414]/30 rounded-[40px] border border-dashed border-white/5">
-                        <ImageIcon className="w-16 h-16 text-gray-700 mx-auto mb-6" />
-                        <h3 className="text-white font-bold text-xl">Waiting for source image...</h3>
-                        <p className="text-gray-500 text-sm mt-2">Upload an image to start animating</p>
-                    </div>
                 )}
             </main>
 
