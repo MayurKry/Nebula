@@ -18,12 +18,16 @@ export interface ActivityLogResponse {
 }
 
 class UserService {
-    async getActivityLog(limit: number = 20, skip: number = 0): Promise<ActivityLogResponse> {
+    async getActivityLog(limit: number = 20, skip: number = 0, startDate?: string, endDate?: string): Promise<ActivityLogResponse> {
+        let url = `/users/activity-log?limit=${limit}&skip=${skip}`;
+        if (startDate) url += `&startDate=${startDate}`;
+        if (endDate) url += `&endDate=${endDate}`;
+
         const response = await axiosInstance.get<{
             success: boolean;
             message: string;
             data: ActivityLogResponse;
-        }>(`/users/activity-log?limit=${limit}&skip=${skip}`);
+        }>(url);
 
         return response.data.data;
     }

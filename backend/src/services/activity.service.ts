@@ -31,16 +31,28 @@ export class ActivityService {
         }
     }
 
-    static async getUserActivity(userId: string | Types.ObjectId, limit: number = 20, skip: number = 0) {
+    static async getUserActivity(userId: string | Types.ObjectId, limit: number = 20, skip: number = 0, startDate?: string, endDate?: string) {
         const uid = typeof userId === 'string' && Types.ObjectId.isValid(userId)
             ? new Types.ObjectId(userId)
             : userId;
-        const activities = await ActivityModel.find({ userId: uid })
+
+        const query: any = { userId: uid };
+        if (startDate || endDate) {
+            query.createdAt = {};
+            if (startDate) query.createdAt.$gte = new Date(startDate);
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                query.createdAt.$lte = end;
+            }
+        }
+
+        const activities = await ActivityModel.find(query)
             .sort({ createdAt: -1 })
             .limit(limit)
             .skip(skip);
 
-        const total = await ActivityModel.countDocuments({ userId: uid });
+        const total = await ActivityModel.countDocuments(query);
 
         return {
             activities,

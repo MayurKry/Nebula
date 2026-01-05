@@ -22,14 +22,21 @@ const ActivityLogPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<string>('all');
 
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+
     useEffect(() => {
-        fetchActivityLog();
-    }, []);
+        const delayDebounce = setTimeout(() => {
+            fetchActivityLog();
+        }, 500);
+
+        return () => clearTimeout(delayDebounce);
+    }, [startDate, endDate]);
 
     const fetchActivityLog = async () => {
         setLoading(true);
         try {
-            const data = await userService.getActivityLog(50);
+            const data = await userService.getActivityLog(50, 0, startDate, endDate);
             setActivities(data.activities);
         } catch (err: any) {
             console.error('Failed to fetch activity log:', err);
@@ -72,24 +79,41 @@ const ActivityLogPage = () => {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-white mb-2">Activity Log</h1>
-                        <p className="text-gray-400 text-sm">Review your account and generation history in detail.</p>
+                        <p className="text-gray-400 text-sm">Review your account and generation history.</p>
                     </div>
                 </div>
             </GSAPTransition>
 
             <GSAPTransition animation="fade-in-up" delay={0.1}>
-                <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                    <div className="relative flex-1 group">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#00FF88] transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Filter activities..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-[#141414] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#00FF88]/50 transition-all"
-                        />
+                <div className="flex flex-col xl:flex-row gap-4 mb-6">
+                    <div className="flex-1 flex flex-col md:flex-row gap-4">
+                        <div className="relative flex-1 group min-w-[200px]">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#00FF88] transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="Search activities..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-[#141414] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#00FF88]/50 transition-all"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="bg-[#141414] border border-white/10 rounded-xl px-4 py-2 text-sm text-gray-400 focus:outline-none focus:border-[#00FF88]/50 focus:text-white transition-all uppercase"
+                            />
+                            <span className="self-center text-gray-600">-</span>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="bg-[#141414] border border-white/10 rounded-xl px-4 py-2 text-sm text-gray-400 focus:outline-none focus:border-[#00FF88]/50 focus:text-white transition-all uppercase"
+                            />
+                        </div>
                     </div>
-                    <div className="flex bg-[#141414] border border-white/10 rounded-xl p-1 overflow-x-auto scrollbar-hide">
+                    <div className="flex bg-[#141414] border border-white/10 rounded-xl p-1 overflow-x-auto scrollbar-hide self-start">
                         {['all', 'generation', 'login', 'security_alert'].map((type) => (
                             <button
                                 key={type}

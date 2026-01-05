@@ -14,7 +14,7 @@ const AppLayout = () => {
     return (
         <ProtectedRoute>
             <SidebarProvider>
-                <div className="min-h-screen bg-[#0A0A0A] flex w-full">
+                <div className="h-screen bg-[#0A0A0A] flex w-full overflow-hidden">
                     <AppSidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
 
                     {/* Overlay for mobile */}
@@ -25,9 +25,9 @@ const AppLayout = () => {
                         />
                     )}
 
-                    <main className="flex-1 min-h-screen flex flex-col w-full">
+                    <main className="flex-1 h-full flex flex-col w-full relative overflow-hidden">
                         <Topbar onMenuClick={toggleSidebar} />
-                        <div className="flex-1 overflow-x-hidden">
+                        <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                             <Outlet />
                         </div>
                     </main>

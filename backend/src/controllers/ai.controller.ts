@@ -365,12 +365,23 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
             // Clean prompt of double dots or other potential URL issues
             visualPrompt = visualPrompt.replace(/\.\.+/g, '.').replace(/\s+/g, ' ').trim();
 
-            const imageResult = await aiImageService.generateImage({
-                prompt: visualPrompt,
-                width: 1280,
-                height: 720,
-                style: style
-            });
+            let imageResult;
+            try {
+                imageResult = await aiImageService.generateImage({
+                    prompt: visualPrompt,
+                    width: 1280,
+                    height: 720,
+                    style: style
+                });
+            } catch (imageErr) {
+                console.warn(`[VideoProject] Failed to generate image for scene ${index + 1}, using placeholder:`, imageErr);
+                imageResult = {
+                    url: `https://placehold.co/1280x720/1a1a1a/ffffff?text=Scene+${index + 1}`,
+                    provider: 'placeholder',
+                    width: 1280,
+                    height: 720
+                };
+            }
 
             return {
                 ...scene,
@@ -394,12 +405,23 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
                 // Clean prompt
                 visualPrompt = visualPrompt.replace(/\.\.+/g, '.').replace(/\s+/g, ' ').trim();
 
-                const imageResult = await aiImageService.generateImage({
-                    prompt: visualPrompt,
-                    width: 1280,
-                    height: 720,
-                    style: style
-                });
+                let imageResult;
+                try {
+                    imageResult = await aiImageService.generateImage({
+                        prompt: visualPrompt,
+                        width: 1280,
+                        height: 720,
+                        style: style
+                    });
+                } catch (imageErr) {
+                    console.warn(`[VideoProject] Failed to generate image for remaining scene ${index + 7}:`, imageErr);
+                    imageResult = {
+                        url: `https://placehold.co/1280x720/1a1a1a/ffffff?text=Scene+${index + 7}`,
+                        provider: 'placeholder',
+                        width: 1280,
+                        height: 720
+                    };
+                }
 
                 return {
                     ...scene,
