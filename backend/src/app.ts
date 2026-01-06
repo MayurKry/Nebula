@@ -11,18 +11,42 @@ import { rateLimiter } from "./middlewares/rateLimiter";
 
 const app: Application = express();
 
+// CORS Configuration - Must be before other middleware
 app.use(
   cors({
-    origin: [
-      "https://nebula-fe.vercel.app",
-      "http://localhost:5173",
-      "http://localhost:3000",
-    ],
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        "https://nebula-fe.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+      ];
+
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin"
+    ],
+    exposedHeaders: ["Set-Cookie"],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
   })
 );
+
+// Explicitly handle OPTIONS requests
+app.options('*', cors());
 
 app.use(helmet());
 
