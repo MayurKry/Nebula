@@ -714,7 +714,7 @@ const CampaignPage = () => {
                     <div className="absolute top-1/2 left-0 h-0.5 bg-[#00FF88] -translate-y-1/2 rounded-full transition-all duration-500" style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }} />
 
                     <div className="relative flex justify-between">
-                        {STEPS.map((step, index) => {
+                        {STEPS.map((step) => {
                             const isActive = currentStep >= step.id;
                             const isCurrent = currentStep === step.id;
                             return (
