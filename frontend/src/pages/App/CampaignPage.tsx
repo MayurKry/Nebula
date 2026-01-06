@@ -257,7 +257,7 @@ const CampaignPage = () => {
                                 value={campaignData.name}
                                 onChange={(e) => updateField('name', e.target.value)}
                                 placeholder="e.g., Summer Sale 2024"
-                                className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-[#00FF88]/50 focus:outline-none transition-colors"
+                                className="w-full px-5 py-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-[#00FF88]/50 focus:ring-1 focus:ring-[#00FF88]/20 focus:outline-none transition-all"
                             />
                         </div>
                         <div>
@@ -269,9 +269,9 @@ const CampaignPage = () => {
                                     <button
                                         key={goal}
                                         onClick={() => updateField('goal', goal)}
-                                        className={`px-4 py-3 rounded-xl border text-sm font-medium transition-all ${campaignData.goal === goal
-                                            ? 'bg-[#00FF88]/10 border-[#00FF88] text-[#00FF88]'
-                                            : 'bg-[#1A1A1A] border-white/10 text-gray-400 hover:border-white/20'
+                                        className={`px-4 py-4 rounded-xl border text-sm font-bold transition-all duration-300 ${campaignData.goal === goal
+                                            ? 'bg-[#00FF88] border-[#00FF88] text-black shadow-[0_0_20px_rgba(0,255,136,0.3)] scale-[1.02]'
+                                            : 'bg-black/40 border-white/5 text-gray-400 hover:border-white/20 hover:text-white hover:bg-white/5'
                                             }`}
                                     >
                                         {goal}
@@ -293,8 +293,8 @@ const CampaignPage = () => {
                                 value={campaignData.audienceDescription}
                                 onChange={(e) => updateField('audienceDescription', e.target.value)}
                                 placeholder="e.g., Young professionals interested in fitness and wellness..."
-                                rows={3}
-                                className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-[#00FF88]/50 focus:outline-none transition-colors resize-none"
+                                rows={4}
+                                className="w-full px-5 py-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-[#00FF88]/50 focus:ring-1 focus:ring-[#00FF88]/20 focus:outline-none transition-all resize-none"
                             />
                         </div>
                         <div>
@@ -304,9 +304,9 @@ const CampaignPage = () => {
                                     <button
                                         key={age}
                                         onClick={() => updateField('ageRange', age)}
-                                        className={`px-4 py-2 rounded-lg border text-sm transition-all ${campaignData.ageRange === age
-                                            ? 'bg-[#00FF88]/10 border-[#00FF88] text-[#00FF88]'
-                                            : 'bg-[#1A1A1A] border-white/10 text-gray-400 hover:border-white/20'
+                                        className={`px-4 py-2 rounded-full border text-sm transition-all ${campaignData.ageRange === age
+                                            ? 'bg-[#00FF88] border-[#00FF88] text-black font-bold'
+                                            : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20 hover:text-white'
                                             }`}
                                     >
                                         {age}
@@ -321,7 +321,7 @@ const CampaignPage = () => {
                                 value={campaignData.location}
                                 onChange={(e) => updateField('location', e.target.value)}
                                 placeholder="e.g., United States, Global, New York..."
-                                className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-[#00FF88]/50 focus:outline-none transition-colors"
+                                className="w-full px-5 py-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-[#00FF88]/50 focus:ring-1 focus:ring-[#00FF88]/20 focus:outline-none transition-all"
                             />
                         </div>
                     </div>
@@ -339,9 +339,9 @@ const CampaignPage = () => {
                                     <button
                                         key={tone}
                                         onClick={() => updateField('tone', tone)}
-                                        className={`px-4 py-2 rounded-lg border text-sm transition-all ${campaignData.tone === tone
-                                            ? 'bg-[#00FF88]/10 border-[#00FF88] text-[#00FF88]'
-                                            : 'bg-[#1A1A1A] border-white/10 text-gray-400 hover:border-white/20'
+                                        className={`px-5 py-2.5 rounded-full border text-sm transition-all ${campaignData.tone === tone
+                                            ? 'bg-white border-white text-black font-bold shadow-lg shadow-white/10'
+                                            : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/30 hover:text-white'
                                             }`}
                                     >
                                         {tone}
@@ -356,7 +356,7 @@ const CampaignPage = () => {
                                 value={campaignData.keyMessage}
                                 onChange={(e) => updateField('keyMessage', e.target.value)}
                                 placeholder="e.g., Transform Your Life Today"
-                                className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-[#00FF88]/50 focus:outline-none transition-colors"
+                                className="w-full px-5 py-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-[#00FF88]/50 focus:ring-1 focus:ring-[#00FF88]/20 focus:outline-none transition-all"
                             />
                         </div>
                         <div>
@@ -369,8 +369,8 @@ const CampaignPage = () => {
                                         key={platform}
                                         onClick={() => updateField('platform', platform)}
                                         className={`px-4 py-3 rounded-xl border text-sm font-medium transition-all ${campaignData.platform === platform
-                                            ? 'bg-[#00FF88]/10 border-[#00FF88] text-[#00FF88]'
-                                            : 'bg-[#1A1A1A] border-white/10 text-gray-400 hover:border-white/20'
+                                            ? 'bg-[#00FF88] border-[#00FF88] text-black font-bold'
+                                            : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20 hover:text-white'
                                             }`}
                                     >
                                         {platform}
@@ -396,7 +396,7 @@ const CampaignPage = () => {
                                 value={campaignData.productName}
                                 onChange={(e) => updateField('productName', e.target.value)}
                                 placeholder="e.g., Nike Air Max 2024"
-                                className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-[#00FF88]/50 focus:outline-none transition-colors"
+                                className="w-full px-5 py-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-[#00FF88]/50 focus:ring-1 focus:ring-[#00FF88]/20 focus:outline-none transition-all"
                             />
                         </div>
                         <div>
@@ -406,7 +406,7 @@ const CampaignPage = () => {
                                 value={campaignData.productLink}
                                 onChange={(e) => updateField('productLink', e.target.value)}
                                 placeholder="https://yourstore.com/product"
-                                className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-[#00FF88]/50 focus:outline-none transition-colors"
+                                className="w-full px-5 py-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-[#00FF88]/50 focus:ring-1 focus:ring-[#00FF88]/20 focus:outline-none transition-all"
                             />
                         </div>
                         <div>
@@ -416,7 +416,7 @@ const CampaignPage = () => {
                                 onChange={(e) => updateField('productDescription', e.target.value)}
                                 placeholder="Brief description of your product..."
                                 rows={3}
-                                className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-[#00FF88]/50 focus:outline-none transition-colors resize-none"
+                                className="w-full px-5 py-4 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-[#00FF88]/50 focus:ring-1 focus:ring-[#00FF88]/20 focus:outline-none transition-all resize-none"
                             />
                         </div>
                         <div>
@@ -427,8 +427,8 @@ const CampaignPage = () => {
                                         key={cta}
                                         onClick={() => updateField('cta', cta)}
                                         className={`px-4 py-2 rounded-lg border text-sm transition-all ${campaignData.cta === cta
-                                            ? 'bg-[#00FF88]/10 border-[#00FF88] text-[#00FF88]'
-                                            : 'bg-[#1A1A1A] border-white/10 text-gray-400 hover:border-white/20'
+                                            ? 'bg-[#00FF88] border-[#00FF88] text-black font-bold'
+                                            : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20 hover:text-white'
                                             }`}
                                     >
                                         {cta}
@@ -455,14 +455,14 @@ const CampaignPage = () => {
                                         key={char.id}
                                         onClick={() => updateField('character', char.id)}
                                         className={`p-4 rounded-xl border text-left transition-all ${campaignData.character === char.id
-                                            ? 'bg-[#00FF88]/10 border-[#00FF88]'
-                                            : 'bg-[#1A1A1A] border-white/10 hover:border-white/20'
+                                            ? 'bg-[#00FF88] border-[#00FF88] shadow-lg shadow-[#00FF88]/20'
+                                            : 'bg-black/40 border-white/10 hover:border-white/30 hover:bg-white/5'
                                             }`}
                                     >
-                                        <p className={`font-medium ${campaignData.character === char.id ? 'text-[#00FF88]' : 'text-white'}`}>
+                                        <p className={`font-bold mb-1 ${campaignData.character === char.id ? 'text-black' : 'text-white'}`}>
                                             {char.name}
                                         </p>
-                                        <p className="text-sm text-gray-500">{char.description}</p>
+                                        <p className={`text-sm ${campaignData.character === char.id ? 'text-black/70' : 'text-gray-500'}`}>{char.description}</p>
                                     </button>
                                 ))}
                             </div>
@@ -475,8 +475,8 @@ const CampaignPage = () => {
                                         key={region.id}
                                         onClick={() => updateField('voiceRegion', region.id)}
                                         className={`px-4 py-3 rounded-xl border text-sm font-medium transition-all flex items-center gap-2 ${campaignData.voiceRegion === region.id
-                                            ? 'bg-[#00FF88]/10 border-[#00FF88] text-[#00FF88]'
-                                            : 'bg-[#1A1A1A] border-white/10 text-gray-400 hover:border-white/20'
+                                            ? 'bg-[#00FF88] border-[#00FF88] text-black font-bold'
+                                            : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20 hover:text-white'
                                             }`}
                                     >
                                         <span>{region.flag}</span>
@@ -709,50 +709,53 @@ const CampaignPage = () => {
                 </div>
 
                 {/* Progress Steps */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between">
-                        {STEPS.map((step, index) => (
-                            <div key={step.id} className="flex items-center">
-                                <div
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${currentStep >= step.id
-                                        ? 'bg-[#00FF88] text-[#0A0A0A]'
-                                        : 'bg-[#1A1A1A] text-gray-500'
-                                        }`}
-                                >
-                                    {currentStep > step.id ? (
-                                        <Check className="w-5 h-5" />
-                                    ) : (
-                                        <step.icon className="w-5 h-5" />
-                                    )}
-                                </div>
-                                {index < STEPS.length - 1 && (
+                <div className="mb-12 relative">
+                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-[#1A1A1A] -translate-y-1/2 rounded-full" />
+                    <div className="absolute top-1/2 left-0 h-0.5 bg-[#00FF88] -translate-y-1/2 rounded-full transition-all duration-500" style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }} />
+
+                    <div className="relative flex justify-between">
+                        {STEPS.map((step, index) => {
+                            const isActive = currentStep >= step.id;
+                            const isCurrent = currentStep === step.id;
+                            return (
+                                <div key={step.id} className="flex flex-col items-center gap-3 relative z-10 group">
                                     <div
-                                        className={`h-1 w-8 md:w-16 mx-1 rounded transition-all ${currentStep > step.id ? 'bg-[#00FF88]' : 'bg-[#1A1A1A]'
+                                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ring-4 ${isActive
+                                            ? 'bg-[#00FF88] text-[#0A0A0A] ring-[#00FF88]/20 shadow-[0_0_15px_rgba(0,255,136,0.5)] scale-110'
+                                            : 'bg-[#0A0A0A] text-gray-600 ring-[#0A0A0A] border border-white/10'
                                             }`}
-                                    />
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                    <div className="flex justify-between mt-2">
-                        {STEPS.map((step) => (
-                            <p
-                                key={step.id}
-                                className={`text-xs text-center w-16 md:w-20 ${currentStep >= step.id ? 'text-[#00FF88]' : 'text-gray-500'
-                                    }`}
-                            >
-                                {step.title}
-                            </p>
-                        ))}
+                                    >
+                                        {currentStep > step.id ? (
+                                            <Check className="w-5 h-5" />
+                                        ) : (
+                                            <step.icon className="w-5 h-5" />
+                                        )}
+                                    </div>
+                                    <div className={`absolute top-12 whitespace-nowrap px-3 py-1 rounded-full text-xs font-bold transition-all duration-300 ${isCurrent
+                                        ? 'opacity-100 translate-y-0 bg-[#00FF88]/10 text-[#00FF88] border border-[#00FF88]/20'
+                                        : 'opacity-0 -translate-y-2 pointer-events-none'
+                                        }`}>
+                                        {step.title}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 
                 {/* Step Content */}
-                <div className="bg-[#141414] border border-white/10 rounded-2xl p-6 md:p-8">
-                    <h2 className="text-xl font-semibold text-white mb-6">
-                        Step {currentStep}: {STEPS[currentStep - 1].title}
-                    </h2>
-                    {renderStepContent()}
+                <div className="bg-[#111] border border-white/5 rounded-3xl p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                    <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
+                        <Target className="w-64 h-64 text-white" />
+                    </div>
+
+                    <div className="relative z-10">
+                        <h2 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
+                            <span className="text-[#00FF88] opacity-50">0{currentStep}</span>
+                            {STEPS[currentStep - 1].title}
+                        </h2>
+                        {renderStepContent()}
+                    </div>
                 </div>
 
                 {/* Navigation Buttons - Hide overlap with generation buttons in step 6 & 7 */}

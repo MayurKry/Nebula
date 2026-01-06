@@ -12,6 +12,8 @@ import CampaignPage from "@/pages/App/CampaignPage";
 import HistoryPage from "@/pages/App/HistoryPage";
 import SettingsPage from "@/pages/App/SettingsPage";
 import ActivityLogPage from "@/pages/App/ActivityLogPage";
+import LibraryPage from "@/pages/App/LibraryPage";
+import PaymentPage from "@/pages/App/PaymentPage";
 import NotFoundPage from "@/pages/Shared/NotFoundPage";
 import MarketingRoutes from "./MarketingRoute";
 import PublicRoutes from "./PublicRoute";
@@ -30,6 +32,8 @@ function AppRoutes() {
         <Route path="create/image-to-video" element={<ImageToVideoPage />} />
         <Route path="create/ai-voices" element={<AIVoicesPage />} />
         <Route path="editor/:projectId" element={<TextToVideoPage />} />
+        <Route path="library" element={<LibraryPage />} />
+        <Route path="payment" element={<PaymentPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="campaign" element={<CampaignPage />} />
         <Route path="history" element={<HistoryPage />} />

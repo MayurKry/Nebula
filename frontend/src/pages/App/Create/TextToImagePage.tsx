@@ -122,7 +122,7 @@ const TextToImagePage = () => {
                         <div className="inline-flex p-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl mb-2">
                             <Sparkles className="w-8 h-8 text-blue-400" />
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
+                        <h1 className="text-5xl md:text-6xl font-black text-white tracking-tight">
                             Text to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-500">Image</span>
                         </h1>
                         <p className="text-gray-400 max-w-xl mx-auto">

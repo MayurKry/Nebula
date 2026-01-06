@@ -107,7 +107,7 @@ const ImageToVideoPage = () => {
                         <div className="inline-flex p-3 bg-orange-500/10 border border-orange-500/20 rounded-2xl mb-2">
                             <Move className="w-8 h-8 text-orange-400" />
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
+                        <h1 className="text-5xl md:text-6xl font-black text-white tracking-tight">
                             Image to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Video</span>
                         </h1>
                         <p className="text-gray-400 max-w-xl mx-auto">

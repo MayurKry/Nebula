@@ -160,7 +160,7 @@ const DashboardPage = () => {
             <GSAPTransition animation="fade-in-up" duration={1}>
                 <div className="text-center space-y-12 sm:space-y-16 py-8 sm:py-12">
                     <div className="space-y-4">
-                        <h1 className="text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-tighter leading-tight">
+                        <h1 className="text-5xl md:text-6xl font-black text-white tracking-tight">
                             Prompt. Direct. <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00FF88] to-[#00CC6A]">Render.</span>
                         </h1>
                         <p className="text-gray-500 text-lg sm:text-xl font-medium max-w-2xl mx-auto italic">Transform your raw ideas into cinematic video projects with AI-driven choreography.</p>

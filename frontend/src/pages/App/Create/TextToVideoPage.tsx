@@ -230,7 +230,7 @@ const TextToVideoPage = () => {
                                 <VideoIcon className="w-10 h-10 text-purple-400" />
                             </div>
                             <div className="space-y-2">
-                                <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none">
+                                <h1 className="text-5xl md:text-6xl font-black text-white tracking-tight">
                                     Text to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00FF88] to-blue-500">Cinema.</span>
                                 </h1>
                                 <p className="text-gray-400 text-lg max-w-xl mx-auto font-medium">

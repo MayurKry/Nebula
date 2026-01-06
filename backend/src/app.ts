@@ -3,7 +3,7 @@ import morgan from "morgan";
 import cors from "cors";
 import helmet from "helmet";
 import mongoose from "mongoose";
-import logger from "./utils/logger"; 
+import logger from "./utils/logger";
 import routes from "./routes";
 
 import { errorHandler } from "./middlewares/errorHandler";
@@ -23,6 +23,7 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/public", express.static("public"));
 
 app.get("/", (req: Request, res: Response) => {
   logger.info("Root endpoint was called 🌐");
