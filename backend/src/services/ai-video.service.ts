@@ -23,15 +23,36 @@ class AIVideoService {
     private replicateKey?: string;
     private huggingfaceKey?: string;
     private readonly ZEROSCOPE_VERSION = "02fa9c6c4493eb21c7205126fe837e5c52c676c8c10508a8f4c4784a0d810ba7"; // Zeroscope XL
-    private readonly PUBLIC_DIR = path.join(process.cwd(), "public", "generated");
+    private PUBLIC_DIR: string; // Not readonly anymore to allow dynamic assignment
 
     constructor() {
         this.replicateKey = process.env.REPLICATE_API_KEY;
         this.huggingfaceKey = process.env.HUGGINGFACE_API_KEY;
 
+        // Determine output directory based on environment
+        // Vercel (and other serverless) file systems are read-only except /tmp
+        if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+            this.PUBLIC_DIR = path.join("/tmp", "generated");
+        } else {
+            this.PUBLIC_DIR = path.join(process.cwd(), "public", "generated");
+        }
+
         // Ensure output directory exists
-        if (!fs.existsSync(this.PUBLIC_DIR)) {
-            fs.mkdirSync(this.PUBLIC_DIR, { recursive: true });
+        try {
+            if (!fs.existsSync(this.PUBLIC_DIR)) {
+                fs.mkdirSync(this.PUBLIC_DIR, { recursive: true });
+            }
+        } catch (error) {
+            console.warn(`[AIVideoService] Failed to create output directory at ${this.PUBLIC_DIR}. Falling back to system temp dir.`);
+            // Ultimate fallback
+            this.PUBLIC_DIR = path.join(require('os').tmpdir(), "generated");
+            try {
+                if (!fs.existsSync(this.PUBLIC_DIR)) {
+                    fs.mkdirSync(this.PUBLIC_DIR, { recursive: true });
+                }
+            } catch (e) {
+                console.error("[AIVideoService] Critical: Could not create any temp directory.", e);
+            }
         }
     }
 
