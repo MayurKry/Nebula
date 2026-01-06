@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Home, FolderOpen, ChevronDown, ChevronRight,
   Video, Image as ImageIcon, Film, Palette, Music2, Layers,
-  LayoutGrid, Users, Box, Mic, Crown, Zap, Target, X, Clock,
-  LogIn, ShieldAlert, Settings, Info
+  LayoutGrid, Users, Box, Mic, Crown, Zap, Target, X, Clock
 } from 'lucide-react';
-import { userService, type Activity } from '@/services/user.service';
 import { useSidebar } from '@/components/ui/sidebar';
 
 interface NavItem {
@@ -87,34 +85,6 @@ const AppSidebar = ({ isOpen: isOpenProp, onClose: onCloseProp }: AppSidebarProp
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
     navGroups.reduce((acc, group) => ({ ...acc, [group.title]: group.defaultOpen ?? false }), {})
   );
-  const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
-  const [loadingActivity, setLoadingActivity] = useState(false);
-
-  useEffect(() => {
-    const fetchRecent = async () => {
-      setLoadingActivity(true);
-      try {
-        const data = await userService.getActivityLog(3);
-        setRecentActivity(data.activities);
-      } catch (err) {
-        console.error('Failed to fetch sidebar activity:', err);
-      } finally {
-        setLoadingActivity(false);
-      }
-    };
-    fetchRecent();
-  }, []);
-
-  const getActivityIcon = (type: Activity['type']) => {
-    switch (type) {
-      case 'generation': return <Zap className="w-3 h-3 text-[#00FF88]" />;
-      case 'login': return <LogIn className="w-3 h-3 text-blue-400" />;
-      case 'profile_update': return <Users className="w-3 h-3 text-purple-400" />;
-      case 'settings_change': return <Settings className="w-3 h-3 text-orange-400" />;
-      case 'security_alert': return <ShieldAlert className="w-3 h-3 text-red-400" />;
-      default: return <Info className="w-3 h-3 text-gray-400" />;
-    }
-  };
 
   const toggleGroup = (title: string) => {
     setOpenGroups(prev => ({ ...prev, [title]: !prev[title] }));
@@ -184,36 +154,7 @@ const AppSidebar = ({ isOpen: isOpenProp, onClose: onCloseProp }: AppSidebarProp
           </div>
         ))}
 
-        {/* Recent Activity Mini-Section */}
-        <div className="pt-4 mt-2 border-t border-white/5">
-          <div className="flex items-center justify-between px-2 mb-3">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recent Activity</span>
-            <Link to="/app/activity" onClick={onClose} className="text-[10px] text-[#00FF88] hover:underline">View All</Link>
-          </div>
-          <div className="space-y-2 px-1">
-            {loadingActivity ? (
-              <div className="px-2 py-1 animate-pulse flex gap-2">
-                <div className="w-3 h-3 bg-white/5 rounded-full" />
-                <div className="h-3 w-20 bg-white/5 rounded" />
-              </div>
-            ) : recentActivity.length > 0 ? (
-              recentActivity.map((act) => (
-                <div key={act._id} className="flex items-start gap-2.5 px-2 py-1 group cursor-default">
-                  <div className="mt-0.5 flex-shrink-0">
-                    {getActivityIcon(act.type)}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[11px] text-gray-400 leading-tight line-clamp-2 group-hover:text-gray-200 transition-colors">
-                      {act.action}
-                    </p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="px-2 py-1 text-[10px] text-gray-600 italic">No recent activity</p>
-            )}
-          </div>
-        </div>
+
       </nav>
 
       {/* Bottom Section */}
