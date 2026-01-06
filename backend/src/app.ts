@@ -12,41 +12,36 @@ import { rateLimiter } from "./middlewares/rateLimiter";
 const app: Application = express();
 
 // CORS Configuration - Must be before other middleware
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      const allowedOrigins = [
-        "https://nebula-fe.vercel.app",
-        "http://localhost:5173",
-        "http://localhost:3000",
-      ];
+const corsOptions = {
+  origin: [
+    "https://nebula-fe.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+    "X-CSRF-Token",
+    "Accept-Version",
+    "Content-Length",
+    "Content-MD5",
+    "Date",
+    "X-Api-Version"
+  ],
+  exposedHeaders: ["Set-Cookie"],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+};
 
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-Requested-With",
-      "Accept",
-      "Origin"
-    ],
-    exposedHeaders: ["Set-Cookie"],
-    preflightContinue: false,
-    optionsSuccessStatus: 204
-  })
-);
+app.use(cors(corsOptions));
 
 // Explicitly handle OPTIONS requests
-app.options('*', cors());
+app.options('*', cors(corsOptions));
 
 app.use(helmet());
 
