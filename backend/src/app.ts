@@ -11,6 +11,19 @@ import { rateLimiter } from "./middlewares/rateLimiter";
 
 const app: Application = express();
 
+app.use(
+  cors({
+    origin: [
+      "https://nebula-fe.vercel.app",
+      "http://localhost:5173",
+      "http://localhost:3000",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  })
+);
+
 app.use(helmet());
 
 app.use(rateLimiter);
