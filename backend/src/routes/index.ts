@@ -7,6 +7,8 @@ import assetRoutes from "./asset.routes";
 import folderRoutes from "./folder.routes";
 import aiRoutes from "./ai.routes";
 import supportRoutes from "./support.routes";
+import jobRoutes from "./job.routes";
+import campaignRoutes from "./campaign.routes";
 
 const router = Router();
 
@@ -18,6 +20,8 @@ router.use("/assets", assetRoutes);
 router.use("/folders", folderRoutes);
 router.use("/ai", aiRoutes);
 router.use("/support", supportRoutes);
+router.use("/jobs", jobRoutes);
+router.use("/campaigns", campaignRoutes);
 
 export default router;
 

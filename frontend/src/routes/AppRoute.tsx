@@ -8,7 +8,7 @@ import ImageToVideoPage from "@/pages/App/Create/ImageToVideoPage";
 import AIVoicesPage from "@/pages/App/Create/AIVoicesPage";
 
 import ProfilePage from "@/pages/App/ProfilePage";
-import CampaignPage from "@/pages/App/CampaignPage";
+import CampaignWizardPage from "@/pages/App/CampaignWizardPage";
 import HistoryPage from "@/pages/App/HistoryPage";
 import SettingsPage from "@/pages/App/SettingsPage";
 import ActivityLogPage from "@/pages/App/ActivityLogPage";
@@ -35,7 +35,7 @@ function AppRoutes() {
         <Route path="library" element={<LibraryPage />} />
         <Route path="payment" element={<PaymentPage />} />
         <Route path="profile" element={<ProfilePage />} />
-        <Route path="campaign" element={<CampaignPage />} />
+        <Route path="campaign" element={<CampaignWizardPage />} />
         <Route path="history" element={<HistoryPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="activity" element={<ActivityLogPage />} />
