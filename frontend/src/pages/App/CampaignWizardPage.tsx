@@ -4,7 +4,7 @@ import {
     Target, ChevronLeft, ChevronRight, Sparkles, Check,
     Loader2, FileText, RotateCw, Download, Zap, AlertCircle,
     Globe, Palette, Package, Video,
-    Eye, Play, Upload, Image as ImageIcon, Search, X
+    Eye, Play, Upload, Search, X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { campaignService, type Campaign } from '@/services/campaign.service';
@@ -276,7 +276,7 @@ const CampaignWizardPage = () => {
             setIsLoading(true);
             setLoadingMessage('Processing export request...');
             // In a real scenario, we might pass specific asset IDs here if we only want to export some
-            const _exportJob = await campaignService.exportCampaign(campaignId);
+            await campaignService.exportCampaign(campaignId);
             toast.success('Export started! Check your jobs panel.');
             setCurrentStep(9);
         } catch (error) {
@@ -330,8 +330,8 @@ const CampaignWizardPage = () => {
                                         key={obj}
                                         onClick={() => updateField('objective', obj)}
                                         className={`px-4 py-4 rounded-xl border text-sm font-bold transition-all ${campaignData.objective === obj
-                                                ? 'bg-[#00FF88] border-[#00FF88] text-black shadow-lg'
-                                                : 'bg-black/40 border-white/5 text-gray-400 hover:border-white/20 hover:text-white'
+                                            ? 'bg-[#00FF88] border-[#00FF88] text-black shadow-lg'
+                                            : 'bg-black/40 border-white/5 text-gray-400 hover:border-white/20 hover:text-white'
                                             }`}
                                     >
                                         {obj}
@@ -350,8 +350,8 @@ const CampaignWizardPage = () => {
                                         key={platform}
                                         onClick={() => togglePlatform(platform)}
                                         className={`px-4 py-3 rounded-xl border text-sm font-medium transition-all ${campaignData.platforms?.includes(platform)
-                                                ? 'bg-[#00FF88]/10 border-[#00FF88] text-[#00FF88]'
-                                                : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20'
+                                            ? 'bg-[#00FF88]/10 border-[#00FF88] text-[#00FF88]'
+                                            : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20'
                                             }`}
                                     >
                                         {platform}
@@ -445,8 +445,8 @@ const CampaignWizardPage = () => {
                                         key={type}
                                         onClick={() => updateField('audienceType', type)}
                                         className={`flex-1 px-6 py-4 rounded-xl border text-sm font-bold transition-all ${campaignData.audienceType === type
-                                                ? 'bg-[#00FF88] border-[#00FF88] text-black'
-                                                : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20'
+                                            ? 'bg-[#00FF88] border-[#00FF88] text-black'
+                                            : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20'
                                             }`}
                                     >
                                         {type}
@@ -540,8 +540,8 @@ const CampaignWizardPage = () => {
                                         key={tone}
                                         onClick={() => updateField('brandTone', tone)}
                                         className={`px-5 py-2.5 rounded-full border text-sm transition-all ${campaignData.brandTone === tone
-                                                ? 'bg-white border-white text-black font-bold'
-                                                : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/30'
+                                            ? 'bg-white border-white text-black font-bold'
+                                            : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/30'
                                             }`}
                                     >
                                         {tone}
@@ -626,8 +626,8 @@ const CampaignWizardPage = () => {
                                         key={cta}
                                         onClick={() => updateField('cta', cta)}
                                         className={`px-4 py-2 rounded-lg border text-sm transition-all ${campaignData.cta === cta
-                                                ? 'bg-[#00FF88] border-[#00FF88] text-black font-bold'
-                                                : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20'
+                                            ? 'bg-[#00FF88] border-[#00FF88] text-black font-bold'
+                                            : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20'
                                             }`}
                                     >
                                         {cta}
@@ -651,8 +651,8 @@ const CampaignWizardPage = () => {
                                         key={type}
                                         onClick={() => updateField('contentType', type)}
                                         className={`px-6 py-4 rounded-xl border text-sm font-bold capitalize transition-all ${campaignData.contentType === type
-                                                ? 'bg-[#00FF88] border-[#00FF88] text-black'
-                                                : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20'
+                                            ? 'bg-[#00FF88] border-[#00FF88] text-black'
+                                            : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20'
                                             }`}
                                     >
                                         {type}
@@ -672,8 +672,8 @@ const CampaignWizardPage = () => {
                                             key={duration}
                                             onClick={() => updateField('videoDuration', duration)}
                                             className={`flex-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${campaignData.videoDuration === duration
-                                                    ? 'bg-[#00FF88]/10 border-[#00FF88] text-[#00FF88]'
-                                                    : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20'
+                                                ? 'bg-[#00FF88]/10 border-[#00FF88] text-[#00FF88]'
+                                                : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/20'
                                                 }`}
                                         >
                                             {duration}s
@@ -693,8 +693,8 @@ const CampaignWizardPage = () => {
                                         key={style}
                                         onClick={() => updateField('visualStyle', style)}
                                         className={`px-5 py-2.5 rounded-full border text-sm transition-all ${campaignData.visualStyle === style
-                                                ? 'bg-white border-white text-black font-bold'
-                                                : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/30'
+                                            ? 'bg-white border-white text-black font-bold'
+                                            : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/30'
                                             }`}
                                     >
                                         {style}
@@ -1048,8 +1048,8 @@ const CampaignWizardPage = () => {
                                 <div key={step.id} className="flex flex-col items-center gap-3 relative z-10">
                                     <div
                                         className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ring-4 ${isActive
-                                                ? 'bg-[#00FF88] text-[#0A0A0A] ring-[#00FF88]/20 shadow-lg scale-110'
-                                                : 'bg-[#0A0A0A] text-gray-600 ring-[#0A0A0A] border border-white/10'
+                                            ? 'bg-[#00FF88] text-[#0A0A0A] ring-[#00FF88]/20 shadow-lg scale-110'
+                                            : 'bg-[#0A0A0A] text-gray-600 ring-[#0A0A0A] border border-white/10'
                                             }`}
                                     >
                                         {currentStep > step.id ? (
@@ -1093,8 +1093,8 @@ const CampaignWizardPage = () => {
                             onClick={handleBack}
                             disabled={currentStep === 1}
                             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${currentStep === 1
-                                    ? 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed'
-                                    : 'bg-[#1A1A1A] text-white hover:bg-[#252525]'
+                                ? 'bg-[#1A1A1A] text-gray-600 cursor-not-allowed'
+                                : 'bg-[#1A1A1A] text-white hover:bg-[#252525]'
                                 }`}
                         >
                             <ChevronLeft className="w-5 h-5" />

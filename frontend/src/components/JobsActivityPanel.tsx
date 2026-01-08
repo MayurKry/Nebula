@@ -4,12 +4,13 @@ import {
     Zap, Loader2, Check, AlertCircle, Clock, RotateCw,
     ChevronRight, Filter
 } from 'lucide-react';
-import { jobService, Job, JobModule, JobStatus } from '@/services/job.service';
+import { jobService } from '@/services/job.service';
+import type { Job, JobModule, JobStatus } from '@/services/job.service';
 
 const JobsActivityPanel = () => {
     const [jobs, setJobs] = useState<Job[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filterModule, setFilterModule] = useState<JobModule | 'all'>('all');
+    const [filterModule] = useState<JobModule | 'all'>('all');
     const [filterStatus, setFilterStatus] = useState<JobStatus | 'all'>('all');
 
     useEffect(() => {
@@ -116,8 +117,8 @@ const JobsActivityPanel = () => {
                 <button
                     onClick={() => setFilterStatus('all')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterStatus === 'all'
-                            ? 'bg-[#00FF88]/10 text-[#00FF88]'
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        ? 'bg-[#00FF88]/10 text-[#00FF88]'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
                         }`}
                 >
                     All
@@ -125,8 +126,8 @@ const JobsActivityPanel = () => {
                 <button
                     onClick={() => setFilterStatus('processing')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterStatus === 'processing'
-                            ? 'bg-blue-500/10 text-blue-400'
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        ? 'bg-blue-500/10 text-blue-400'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
                         }`}
                 >
                     Active
@@ -134,8 +135,8 @@ const JobsActivityPanel = () => {
                 <button
                     onClick={() => setFilterStatus('failed')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterStatus === 'failed'
-                            ? 'bg-red-500/10 text-red-400'
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                        ? 'bg-red-500/10 text-red-400'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
                         }`}
                 >
                     Failed
