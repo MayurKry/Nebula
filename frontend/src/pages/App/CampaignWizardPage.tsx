@@ -298,13 +298,39 @@ const CampaignWizardPage = () => {
             toast.success('Export started! Check your jobs panel.');
             toast.success('Export started! Check your jobs panel.');
             setCurrentStep(10);
-        } catch (error) {
-            toast.error('Failed to start export');
+        } catch (error: any) {
+            toast.error(error.message || 'Export failed');
         } finally {
             setIsLoading(false);
+            setLoadingMessage('');
         }
     };
 
+    const handleCancelGeneration = async () => {
+        if (!campaignId) return;
+
+        if (!window.confirm("Are you sure you want to cancel the generation? This will stop all active tasks.")) {
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            setLoadingMessage('Cancelling generation...');
+            await campaignService.cancelGeneration(campaignId);
+            toast.success('Generation cancelled');
+
+            // Refetch to see updated statuses
+            await updateCampaignStatus();
+
+            // Go back to review step
+            setCurrentStep(6);
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to cancel generation');
+        } finally {
+            setIsLoading(false);
+            setLoadingMessage('');
+        }
+    };
     const getJobStatusColor = (status: Job['status']) => {
         switch (status) {
             case 'completed': return 'text-green-400 bg-green-500/10 border-green-500/20';
@@ -919,17 +945,27 @@ const CampaignWizardPage = () => {
                             ))}
                         </div>
 
-                        {progress.processing === 0 && progress.total > 0 && (
-                            <button
-                                onClick={() => setCurrentStep(8)}
-                                className="w-full px-6 py-4 bg-[#00FF88] text-[#0A0A0A] font-bold rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#00FF88]/20"
-                            >
-                                <Check className="w-5 h-5" />
-                                Proceed to Preview
-                            </button>
-                        )}
+                        <div className="flex flex-col gap-3 pt-4">
+                            {progress.processing === 0 && progress.total > 0 && (
+                                <button
+                                    onClick={() => setCurrentStep(8)}
+                                    className="w-full px-6 py-4 bg-[#00FF88] text-[#0A0A0A] font-bold rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#00FF88]/20"
+                                >
+                                    <Check className="w-5 h-5" />
+                                    Proceed to Preview
+                                </button>
+                            )}
 
-                        <div className="text-center pt-4">
+                            {progress.processing > 0 && (
+                                <button
+                                    onClick={handleCancelGeneration}
+                                    className="w-full px-6 py-4 bg-red-500/10 text-red-400 font-bold border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <X className="w-5 h-5" />
+                                    Cancel Generation
+                                </button>
+                            )}
+
                             <button
                                 onClick={() => navigate('/app/history')}
                                 className="text-sm text-[#00FF88] hover:underline flex items-center gap-2 mx-auto"

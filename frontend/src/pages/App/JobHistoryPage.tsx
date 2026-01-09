@@ -51,12 +51,41 @@ const JobHistoryPage = () => {
         }
     };
 
+    const [pollInterval, setPollInterval] = useState(30000); // Default 30s
+    const [isLive, setIsLive] = useState(false);
+
+    // Calculate active jobs to adjust polling
+    const activeJobCount = jobs.filter(j => ['processing', 'queued', 'retrying'].includes(j.status)).length;
+
     useEffect(() => {
-        fetchJobs();
-        // Optional: Poll every 10 seconds to update status
-        const interval = setInterval(fetchJobs, 10000);
-        return () => clearInterval(interval);
-    }, [filterModule, filterStatus]);
+        // If there are active jobs, poll faster (10s), otherwise slow (60s)
+        setPollInterval(activeJobCount > 0 ? 10000 : 60000);
+    }, [activeJobCount]);
+
+    useEffect(() => {
+        const fetchIfAuth = () => {
+            const token = localStorage.getItem('accessToken');
+            if (token) fetchJobs();
+        };
+
+        // Initial fetch only
+        fetchIfAuth();
+
+        let interval: NodeJS.Timeout;
+
+        if (isLive) {
+            interval = setInterval(() => {
+                const token = localStorage.getItem('accessToken');
+                if (token && document.hasFocus()) {
+                    fetchJobs();
+                }
+            }, pollInterval);
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [isLive, pollInterval, filterModule, filterStatus]);
 
     const handleRetry = async (jobId: string) => {
         try {
@@ -76,13 +105,25 @@ const JobHistoryPage = () => {
                         <h1 className="text-3xl font-bold text-white mb-2">Job Queue & History</h1>
                         <p className="text-gray-400">Monitor your generation tasks across all modules.</p>
                     </div>
-                    <button
-                        onClick={fetchJobs}
-                        className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors flex items-center gap-2"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setIsLive(!isLive)}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border ${isLive
+                                    ? 'bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/20 shadow-[0_0_15px_rgba(0,255,136,0.1)]'
+                                    : 'bg-white/5 text-gray-500 border-white/10 hover:text-white'
+                                }`}
+                        >
+                            <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-[#00FF88] animate-pulse' : 'bg-gray-600'}`} />
+                            {isLive ? 'LIVE MONITORING' : 'ENABLE LIVE MONITORING'}
+                        </button>
+                        <button
+                            onClick={fetchJobs}
+                            className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors flex items-center gap-2 text-xs font-bold"
+                        >
+                            <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
+                            REFRESH
+                        </button>
+                    </div>
                 </div>
             </GSAPTransition>
 

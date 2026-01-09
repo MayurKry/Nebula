@@ -286,5 +286,33 @@ export const campaignController = {
                 message: error.message || "Failed to delete campaign"
             });
         }
+    },
+
+    /**
+     * Cancel campaign generation
+     */
+    async cancelGeneration(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.userId;
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Unauthorized"
+                });
+            }
+
+            const { campaignId } = req.params;
+            await campaignService.cancelCampaignGeneration(campaignId, userId);
+
+            return res.status(200).json({
+                success: true,
+                message: "Generation cancelled successfully"
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                message: error.message || "Failed to cancel generation"
+            });
+        }
     }
 };

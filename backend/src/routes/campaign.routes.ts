@@ -34,4 +34,7 @@ router.get("/:campaignId/status", campaignController.getCampaignStatus);
 // Export campaign
 router.post("/:campaignId/export", campaignController.exportCampaign);
 
+// Cancel generation
+router.post("/:campaignId/cancel", campaignController.cancelGeneration);
+
 export default router;

@@ -203,6 +203,17 @@ class CampaignService {
             { headers: this.getHeaders() }
         );
     }
+
+    /**
+     * Cancel campaign generation
+     */
+    async cancelGeneration(campaignId: string): Promise<void> {
+        await axios.post(
+            `${API_BASE_URL}/campaigns/${campaignId}/cancel`,
+            {},
+            { headers: this.getHeaders() }
+        );
+    }
 }
 
 export const campaignService = new CampaignService();

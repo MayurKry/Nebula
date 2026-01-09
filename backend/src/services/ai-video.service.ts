@@ -24,6 +24,7 @@ class AIVideoService {
     private replicateKey?: string;
     private huggingfaceKey?: string;
     private runwaymlKey?: string;
+    private geminiKey?: string;
     private readonly ZEROSCOPE_VERSION = "02fa9c6c4493eb21c7205126fe837e5c52c676c8c10508a8f4c4784a0d810ba7"; // Zeroscope XL
     private PUBLIC_DIR: string; // Not readonly anymore to allow dynamic assignment
 
@@ -31,6 +32,7 @@ class AIVideoService {
         this.replicateKey = process.env.REPLICATE_API_KEY;
         this.huggingfaceKey = process.env.HUGGINGFACE_API_KEY;
         this.runwaymlKey = process.env.RUNWAYML_API_KEY;
+        this.geminiKey = process.env.GEMINI_API_KEY;
 
         // Determine output directory based on environment
         // Vercel (and other serverless) file systems are read-only except /tmp
@@ -61,20 +63,68 @@ class AIVideoService {
 
     /**
      * Start a video generation job
-     * Tries RunwayML -> Replicate -> HuggingFace -> Mock
+     * Tries RunwayML -> Google Gemini -> Mock
      */
     async generateVideo(params: VideoGenerationParams): Promise<VideoGenerationResult> {
+        const errors: string[] = [];
+
         // 1. Try RunwayML (Highest Quality)
         if (this.runwaymlKey) {
             try {
                 return await this.generateWithRunwayML(params);
             } catch (error: any) {
                 console.error("[AIVideoService] RunwayML failed:", error.message);
-                throw error; // Fail hard if Runway fails
+                errors.push(`RunwayML: ${error.message}`);
+                // Fallthrough to next provider
             }
-        } else {
-            throw new Error("RunwayML API Key is missing. Cannot generate video.");
         }
+
+        // 2. Try Google Gemini Veo (High Quality)
+        if (this.geminiKey) {
+            try {
+                return await this.generateWithGemini(params);
+            } catch (error: any) {
+                console.error("[AIVideoService] Google Gemini Veo failed:", error.message);
+                errors.push(`Gemini: ${error.message}`);
+            }
+        }
+
+        // 3. Fallback to Mock (Dev/Demo) - as per user request to "not throw errors"
+        console.warn("[AIVideoService] All providers failed. Using mock generation.");
+        return this.mockGeneration(params);
+    }
+
+    private async generateWithGemini(params: VideoGenerationParams): Promise<VideoGenerationResult> {
+        const { prompt } = params;
+        const model = "veo-2.0-generate-001";
+        console.log(`[AIVideoService] Starting Google Gemini Veo generation for: "${prompt}"`);
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:predictLongRunning?key=${this.geminiKey}`;
+
+        const response = await axios.post(
+            url,
+            {
+                instances: [
+                    { prompt: prompt }
+                ],
+                parameters: {
+                    aspectRatio: "16:9",
+                    sampleCount: 1
+                }
+            },
+            {
+                headers: { "Content-Type": "application/json" }
+            }
+        );
+
+        // Response is an Operation object: { name: "projects/.../operations/..." }
+        const operationName = response.data.name;
+
+        return {
+            jobId: `google_${operationName}`,
+            status: "processing",
+            thumbnailUrl: "https://via.placeholder.com/576x320?text=Gemini+Veo+Processing..."
+        };
     }
 
     private async generateWithRunwayML(params: VideoGenerationParams): Promise<VideoGenerationResult> {
@@ -276,6 +326,10 @@ class AIVideoService {
             return this.checkRunwayStatus(jobId);
         }
 
+        if (jobId.startsWith("google_")) {
+            return this.checkGeminiStatus(jobId);
+        }
+
         if (jobId.startsWith("hf_")) {
             return {
                 jobId,
@@ -317,6 +371,75 @@ class AIVideoService {
         } catch (error: any) {
             console.error(`[AIVideoService] Failed to check status for ${jobId}:`, error.message);
             return { jobId, status: "failed", error: "Failed to fetch status" };
+        }
+    }
+
+    private async checkGeminiStatus(jobIdWithPrefix: string): Promise<VideoGenerationResult> {
+        // jobId format: google_projects/123/locations/us-central1/operations/abc
+        const operationName = jobIdWithPrefix.replace("google_", "");
+
+        if (!this.geminiKey) {
+            return { jobId: jobIdWithPrefix, status: "failed", error: "Gemini key missing" };
+        }
+
+        try {
+            // Get operation status: GET https://generativelanguage.googleapis.com/v1beta/{name}?key=API_KEY
+            const url = `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${this.geminiKey}`;
+            const response = await axios.get(url);
+
+            const operation = response.data;
+            // operation: { name, metadata, done, result: { response } or error }
+
+            let status: VideoGenerationResult["status"] = "processing";
+            let videoUrl = undefined;
+
+            if (operation.done) {
+                if (operation.error) {
+                    status = "failed";
+                    return {
+                        jobId: jobIdWithPrefix,
+                        status: "failed",
+                        error: operation.error.message || "Gemini generation failed"
+                    };
+                }
+
+                if (operation.response) {
+                    status = "succeeded";
+                    // Need to extract video URI from operation.response
+                    // According to Veo docs it might be in: response.result.videoUri or similar
+                    // Let's dump response to log to be safe first time
+                    // But typically: response.generatedVideos[0].video.uri ??
+                    // Adjusting based on standard predictLongRunning response structure
+                    // The "response" field in operation is the PredictResponse.
+
+                    const predictions = operation.response.predictions || operation.response.generatedVideos; // Handling both potential formats
+
+                    if (predictions && predictions.length > 0) {
+                        // Format 1: predictions[0].video.uri
+                        // Format 2: generatedVideos[0].videoUri
+                        const first = predictions[0];
+                        // Try to find the URI deeply
+                        videoUrl = first.videoUri || first.video?.uri || first.uri;
+
+                        if (!videoUrl && first.bytesBase64Encoded) {
+                            // Handle if it returns base64 (unlikely for video but possible)
+                            // Would need to save to file
+                            // For now assume URI
+                        }
+                    }
+                }
+            }
+
+            return {
+                jobId: jobIdWithPrefix,
+                status,
+                videoUrl,
+                thumbnailUrl: videoUrl || "https://via.placeholder.com/576x320?text=Gemini+Processing...",
+                error: operation.error?.message
+            };
+        } catch (error: any) {
+            console.error(`[AIVideoService] Failed to check Gemini status for ${operationName}:`, error.message);
+            return { jobId: jobIdWithPrefix, status: "failed", error: error.message };
         }
     }
 

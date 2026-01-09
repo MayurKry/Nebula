@@ -5,6 +5,7 @@ import {
     ChevronRight, Filter
 } from 'lucide-react';
 import { jobService } from '@/services/job.service';
+import { authService } from '@/services/auth.service';
 import type { Job, JobModule, JobStatus } from '@/services/job.service';
 
 const JobsActivityPanel = () => {
@@ -13,12 +14,29 @@ const JobsActivityPanel = () => {
     const [filterModule] = useState<JobModule | 'all'>('all');
     const [filterStatus, setFilterStatus] = useState<JobStatus | 'all'>('all');
 
+    const [pollInterval, setPollInterval] = useState(30000); // Default slow polling (30s)
+
+    // Calculate active jobs to adjust polling
+    const activeJobCount = jobs.filter(j => ['processing', 'queued', 'retrying'].includes(j.status)).length;
+
     useEffect(() => {
-        fetchJobs();
-        // Poll for updates every 5 seconds
-        const interval = setInterval(fetchJobs, 5000);
+        // If there are active jobs, poll faster (5s), otherwise slow (30s)
+        setPollInterval(activeJobCount > 0 ? 5000 : 30000);
+    }, [activeJobCount]);
+
+    useEffect(() => {
+        // Initial fetch
+        if (authService.isAuthenticated()) {
+            fetchJobs();
+        }
+
+        const interval = setInterval(() => {
+            if (authService.isAuthenticated()) {
+                fetchJobs();
+            }
+        }, pollInterval);
         return () => clearInterval(interval);
-    }, [filterModule, filterStatus]);
+    }, [pollInterval, filterModule, filterStatus]);
 
     const fetchJobs = async () => {
         try {

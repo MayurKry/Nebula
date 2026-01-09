@@ -411,6 +411,42 @@ etc.`;
         }
     }
 
+    /**
+     * Cancel all active jobs for a campaign
+     */
+    async cancelCampaignGeneration(campaignId: string, userId: string): Promise<boolean> {
+        try {
+            const campaign = await this.getCampaignById(campaignId, userId);
+            if (!campaign) {
+                throw new Error("Campaign not found");
+            }
+
+            // Find all processing or queued jobs for this campaign
+            const jobsToCancel = await JobModel.find({
+                _id: { $in: campaign.jobIds },
+                status: { $in: ["processing", "queued", "retrying"] }
+            });
+
+            logger.info(`[Campaign Cancel] Cancelling ${jobsToCancel.length} jobs for campaign ${campaignId}`);
+
+            for (const job of jobsToCancel) {
+                try {
+                    await jobService.cancelJob((job as any)._id.toString(), userId);
+                } catch (err: any) {
+                    logger.warn(`Failed to cancel job ${job._id}: ${err.message}`);
+                }
+            }
+
+            // Update campaign status
+            await this.updateCampaign(campaignId, userId, { status: "failed" });
+
+            return true;
+        } catch (error: any) {
+            logger.error("Failed to cancel campaign generation:", error);
+            throw error;
+        }
+    }
+
     // Helper methods
 
     private generateMockScript(campaign: ICampaign): string {
