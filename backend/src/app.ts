@@ -43,7 +43,9 @@ app.use(cors(corsOptions));
 // Explicitly handle OPTIONS requests
 app.options('*', cors(corsOptions));
 
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
 
 app.use(rateLimiter);
 app.use(

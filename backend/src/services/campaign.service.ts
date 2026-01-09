@@ -1,5 +1,7 @@
 import { CampaignModel, ICampaign } from "../models/campaign.model";
 import { jobService } from "./job.service";
+import { aiImageService } from "./ai-image.service";
+import { JobModel, IJob } from "../models/job.model";
 import mongoose from "mongoose";
 import logger from "../utils/logger";
 
@@ -129,9 +131,72 @@ class CampaignService {
                 }
             });
 
-            // Generate mock script for demo
-            const script = this.generateMockScript(campaign);
-            const sceneOutline = this.generateMockSceneOutline(campaign);
+            let script: string;
+            let sceneOutline: string[];
+
+            try {
+                // Use real AI to generate campaign script
+                const scriptPrompt = `You are an expert marketing copywriter and campaign strategist. Create a professional, compelling marketing campaign script based on the following details:
+
+Brand Name: ${campaign.brandName}
+Product/Service: ${campaign.productName || 'Not specified'}
+Campaign Objective: ${campaign.objective}
+Target Audience: ${campaign.audienceDescription || campaign.audienceType}
+Brand Tone: ${campaign.brandTone || 'Professional'}
+Call to Action: ${campaign.cta}
+Platforms: ${campaign.platforms.join(', ')}
+Visual Style: ${campaign.visualStyle || 'Modern'}
+${campaign.productDescription ? `Product Description: ${campaign.productDescription}` : ''}
+${campaign.primaryColor ? `Brand Color: ${campaign.primaryColor}` : ''}
+
+Create a compelling marketing script with clear sections: Opening Hook, Main Message, Key Benefits, and Call to Action. Keep it concise, engaging, and suitable for ${campaign.contentType} content. The script should be ready for ${campaign.platforms.join(' and ')} platforms.`;
+
+                logger.info(`[Campaign Script] Generating AI script for campaign ${campaignId}`);
+                const aiScript = await aiImageService.generateText(scriptPrompt);
+                script = aiScript.trim();
+
+                // Generate scene outline using AI
+                const scenePrompt = `Based on this marketing campaign script, create a detailed scene-by-scene breakdown for ${campaign.contentType} production. Each scene should be a single line describing the visual content.
+
+Script:
+${script}
+
+Campaign Details:
+- Visual Style: ${campaign.visualStyle || 'Modern'}
+- Platforms: ${campaign.platforms.join(', ')}
+- Content Type: ${campaign.contentType}
+- Duration: ${campaign.videoDuration ? `${campaign.videoDuration} seconds` : 'Standard'}
+
+Provide 4-6 scene descriptions, each on a new line, formatted as:
+Scene 1: [Description]
+Scene 2: [Description]
+etc.`;
+
+                logger.info(`[Campaign Script] Generating AI scene outline for campaign ${campaignId}`);
+                const aiScenes = await aiImageService.generateText(scenePrompt);
+
+                // Parse scene outline from AI response
+                sceneOutline = aiScenes
+                    .split('\n')
+                    .filter(line => line.trim().match(/^Scene \d+:/i))
+                    .map(line => line.trim());
+
+                // Fallback if parsing failed
+                if (sceneOutline.length === 0) {
+                    sceneOutline = aiScenes
+                        .split('\n')
+                        .filter(line => line.trim().length > 10)
+                        .slice(0, 6);
+                }
+
+                logger.info(`[Campaign Script] Successfully generated AI content: ${sceneOutline.length} scenes`);
+
+            } catch (aiError: any) {
+                // Fallback to template-based generation if AI fails
+                logger.warn(`[Campaign Script] AI generation failed, using template fallback: ${aiError.message}`);
+                script = this.generateMockScript(campaign);
+                sceneOutline = this.generateMockSceneOutline(campaign);
+            }
 
             // Update campaign with generated content
             await this.updateCampaign(campaignId, userId, {
@@ -162,7 +227,7 @@ class CampaignService {
             // Update campaign status
             await this.updateCampaign(campaignId, userId, { status: "generating" });
 
-            const jobs = [];
+            const jobs: IJob[] = [];
             const assets: ICampaign["assets"] = [];
 
             // Create jobs based on content type and platforms
@@ -191,7 +256,7 @@ class CampaignService {
                     jobs.push(imageJob);
                     assets.push({
                         type: "image",
-                        jobId: imageJob._id,
+                        jobId: imageJob._id as mongoose.Types.ObjectId,
                         status: "generating",
                         metadata: { platform }
                     });
@@ -224,7 +289,7 @@ class CampaignService {
                     jobs.push(videoJob);
                     assets.push({
                         type: "video",
-                        jobId: videoJob._id,
+                        jobId: videoJob._id as mongoose.Types.ObjectId,
                         status: "generating",
                         metadata: { platform }
                     });
@@ -233,7 +298,7 @@ class CampaignService {
 
             // Update campaign with jobs and assets
             const updatedCampaign = await this.updateCampaign(campaignId, userId, {
-                jobIds: jobs.map(j => j._id),
+                jobIds: jobs.map(j => (j as any)._id),
                 assets
             });
 
@@ -266,14 +331,13 @@ class CampaignService {
                 throw new Error("Campaign not found");
             }
 
-            // Get all jobs for this campaign
-            const { jobs } = await jobService.getUserJobs(userId, {
-                limit: 100
+            // Get all jobs for this campaign directly by IDs
+            // This is more reliable than fetching user jobs with a limit
+            const campaignJobs = await JobModel.find({
+                _id: { $in: campaign.jobIds }
             });
 
-            const campaignJobs = jobs.filter(job =>
-                campaign.jobIds.some(id => id.toString() === job._id.toString())
-            );
+            logger.info(`[Campaign Status] Found ${campaignJobs.length} jobs for campaign ${campaignId} (Expected: ${campaign.jobIds.length})`);
 
             // Calculate progress
             const progress = {

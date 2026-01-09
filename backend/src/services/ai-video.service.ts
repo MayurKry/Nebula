@@ -2,6 +2,7 @@ import axios from "axios";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { aiImageService } from "./ai-image.service";
 
 export interface VideoGenerationParams {
     prompt: string;
@@ -22,12 +23,14 @@ export interface VideoGenerationResult {
 class AIVideoService {
     private replicateKey?: string;
     private huggingfaceKey?: string;
+    private runwaymlKey?: string;
     private readonly ZEROSCOPE_VERSION = "02fa9c6c4493eb21c7205126fe837e5c52c676c8c10508a8f4c4784a0d810ba7"; // Zeroscope XL
     private PUBLIC_DIR: string; // Not readonly anymore to allow dynamic assignment
 
     constructor() {
         this.replicateKey = process.env.REPLICATE_API_KEY;
         this.huggingfaceKey = process.env.HUGGINGFACE_API_KEY;
+        this.runwaymlKey = process.env.RUNWAYML_API_KEY;
 
         // Determine output directory based on environment
         // Vercel (and other serverless) file systems are read-only except /tmp
@@ -58,30 +61,82 @@ class AIVideoService {
 
     /**
      * Start a video generation job
-     * Tries Replicate -> HuggingFace -> Mock
+     * Tries RunwayML -> Replicate -> HuggingFace -> Mock
      */
     async generateVideo(params: VideoGenerationParams): Promise<VideoGenerationResult> {
-        // 1. Try Replicate (High Quality, Paid)
-        if (this.replicateKey) {
+        // 1. Try RunwayML (Highest Quality)
+        if (this.runwaymlKey) {
             try {
-                return await this.generateWithReplicate(params);
+                return await this.generateWithRunwayML(params);
             } catch (error: any) {
-                console.warn("[AIVideoService] Replicate failed, trying fallback:", error.message);
+                console.error("[AIVideoService] RunwayML failed:", error.message);
+                throw error; // Fail hard if Runway fails
             }
+        } else {
+            throw new Error("RunwayML API Key is missing. Cannot generate video.");
+        }
+    }
+
+    private async generateWithRunwayML(params: VideoGenerationParams): Promise<VideoGenerationResult> {
+        const { prompt } = params;
+        console.log(`[AIVideoService] Starting RunwayML generation for: "${prompt}"`);
+
+        // 1. Generate Image first (Gen-3a Turbo requires an image input)
+        console.log("[AIVideoService] Generating initial image for video...");
+        const imageResult = await aiImageService.generateImage({
+            prompt: prompt,
+            width: 1280,
+            height: 768
+        });
+
+        // 2. Read image file and convert to Base64
+        // Extract filename from URL (e.g., http://localhost:5000/public/generated/img_123.png -> img_123.png)
+        const filename = imageResult.url.split('/').pop();
+        if (!filename) throw new Error("Failed to extract filename from generated image");
+
+        // Construct local path (assuming same public/generated structure)
+        const imagePath = path.join(this.PUBLIC_DIR, filename);
+
+        if (!fs.existsSync(imagePath)) {
+            // Try explicit path check if public dir varies
+            const fallbackPath = path.join(process.cwd(), 'public', 'generated', filename);
+            if (fs.existsSync(fallbackPath)) {
+                // Use fallback
+                const fallbackBuffer = fs.readFileSync(fallbackPath);
+                const base64Image = `data:image/png;base64,${fallbackBuffer.toString('base64')}`;
+                return this.callRunwayImageToVideo(prompt, base64Image, imageResult.url);
+            }
+            throw new Error(`Generated image not found at ${imagePath}`);
         }
 
-        // 2. Try Hugging Face (Medium Quality, Free/Rate-limited)
-        if (this.huggingfaceKey) {
-            try {
-                return await this.generateWithHuggingFace(params);
-            } catch (error: any) {
-                console.warn("[AIVideoService] Hugging Face failed, using mock:", error.message);
-            }
-        }
+        const imageBuffer = fs.readFileSync(imagePath);
+        const base64Image = `data:image/png;base64,${imageBuffer.toString('base64')}`;
 
-        // 3. Fallback to Mock (Dev/Demo)
-        console.warn("[AIVideoService] No working providers found. Using mock generation.");
-        return this.mockGeneration(params);
+        return this.callRunwayImageToVideo(prompt, base64Image, imageResult.url);
+    }
+
+    private async callRunwayImageToVideo(prompt: string, base64Image: string, thumbnailUrl: string): Promise<VideoGenerationResult> {
+        // 3. Call RunwayML Image-to-Video
+        const response = await axios.post(
+            "https://api.dev.runwayml.com/v1/image_to_video",
+            {
+                promptImage: base64Image,
+                promptText: prompt,
+                model: "gen3a_turbo",
+            },
+            {
+                headers: {
+                    "Authorization": `Bearer ${this.runwaymlKey}`,
+                    "X-Runway-Version": "2024-11-06"
+                }
+            }
+        );
+
+        return {
+            jobId: `runway_${response.data.id}`,
+            status: "processing",
+            thumbnailUrl: thumbnailUrl // Use the generated image as thumbnail
+        };
     }
 
     /**
@@ -212,12 +267,13 @@ class AIVideoService {
         return this.mockGeneration({ prompt: prompt || "Animation", duration: 3 });
     }
 
-    /**
-     * Check the status of a specific job
-     */
     async checkStatus(jobId: string): Promise<VideoGenerationResult> {
         if (jobId.startsWith("mock_")) {
             return this.checkMockStatus(jobId);
+        }
+
+        if (jobId.startsWith("runway_")) {
+            return this.checkRunwayStatus(jobId);
         }
 
         if (jobId.startsWith("hf_")) {
@@ -264,6 +320,48 @@ class AIVideoService {
         }
     }
 
+    private async checkRunwayStatus(jobIdWithPrefix: string): Promise<VideoGenerationResult> {
+        const realId = jobIdWithPrefix.replace("runway_", "");
+        if (!this.runwaymlKey) {
+            return { jobId: jobIdWithPrefix, status: "failed", error: "RunwayML key missing" };
+        }
+
+        try {
+            const response = await axios.get(
+                `https://api.dev.runwayml.com/v1/tasks/${realId}`,
+                {
+                    headers: {
+                        "Authorization": `Bearer ${this.runwaymlKey}`,
+                        "X-Runway-Version": "2024-11-06"
+                    }
+                }
+            );
+
+            const task = response.data;
+            let status: VideoGenerationResult["status"] = "processing";
+            let videoUrl = undefined;
+
+            if (task.status === "SUCCEEDED") {
+                status = "succeeded";
+                // Runway output is typically an array of URLs
+                videoUrl = task.output && task.output[0];
+            } else if (task.status === "FAILED") {
+                status = "failed";
+            }
+
+            return {
+                jobId: jobIdWithPrefix,
+                status,
+                videoUrl,
+                thumbnailUrl: videoUrl || "https://via.placeholder.com/576x320?text=Runway+Processing...",
+                error: task.failure
+            };
+        } catch (error: any) {
+            console.error(`[AIVideoService] Failed to check Runway status for ${realId}:`, error.message);
+            return { jobId: jobIdWithPrefix, status: "failed", error: error.message };
+        }
+    }
+
     // --- Mock Fallbacks ---
 
     private mockGeneration(params: VideoGenerationParams): VideoGenerationResult {
@@ -284,7 +382,7 @@ class AIVideoService {
             return {
                 jobId,
                 status: "succeeded",
-                videoUrl: "https://joy1.videvo.net/videvo_files/video/free/2019-11/large_watermarked/190301_1_25_11_preview.mp4",
+                videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
                 thumbnailUrl: "https://via.placeholder.com/576x320?text=Video+Ready"
             };
         }

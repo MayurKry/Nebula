@@ -1051,7 +1051,7 @@ const CampaignWizardPage = () => {
                                         <div>
                                             <div className="flex items-center justify-between mb-3">
                                                 <h4 className="text-lg font-bold text-white flex items-center gap-3">
-                                                    Scene {index + 1}
+                                                    {job.output?.[0]?.type === 'video' ? 'Video' : 'Image'}
                                                     <span className="text-xs px-2 py-1 rounded bg-white/10 text-gray-400 font-normal border border-white/5">
                                                         {job.metadata?.platform || 'Universal'}
                                                     </span>
@@ -1077,14 +1077,20 @@ const CampaignWizardPage = () => {
 
                                         {/* Edit Controls */}
                                         <div className="pt-4 border-t border-white/5 grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="text-xs text-gray-500 mb-1 flex items-center gap-1">
-                                                    <Clock className="w-3 h-3" /> Duration
-                                                </label>
-                                                <div className="text-sm text-white font-medium">
-                                                    {campaignData.videoDuration || 15}s <span className="text-gray-600 text-xs">(Fixed)</span>
+                                            {job.output?.[0]?.type === 'video' ? (
+                                                <div>
+                                                    <label className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                                                        <Clock className="w-3 h-3" /> Duration
+                                                    </label>
+                                                    <div className="text-sm text-white font-medium">
+                                                        {campaignData.videoDuration || 15}s <span className="text-gray-600 text-xs">(Fixed)</span>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            ) : (
+                                                <div>
+                                                    {/* Spacer for alignment if needed, or just let the grid handle it */}
+                                                </div>
+                                            )}
                                             <div className="flex items-end justify-end gap-3">
                                                 <button
                                                     onClick={() => toast.info('Edit script feature coming soon')}

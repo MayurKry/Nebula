@@ -1,4 +1,8 @@
 import axios from "axios";
+import fs from "fs";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
+import os from "os";
 
 /**
  * AI Image Generation Service
@@ -30,6 +34,8 @@ class AIImageService {
     private huggingfaceKey?: string;
     private segmindKey?: string;
     private replicateKey?: string;
+    private PUBLIC_DIR: string;
+    private BASE_URL: string;
 
     constructor() {
         // Load API keys from environment
@@ -37,6 +43,27 @@ class AIImageService {
         this.huggingfaceKey = process.env.HUGGINGFACE_API_KEY;
         this.segmindKey = process.env.SEGMIND_API_KEY;
         this.replicateKey = process.env.REPLICATE_API_KEY;
+        this.BASE_URL = process.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+        // Determine output directory
+        if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+            this.PUBLIC_DIR = path.join("/tmp", "generated");
+        } else {
+            this.PUBLIC_DIR = path.join(process.cwd(), "public", "generated");
+        }
+
+        // Ensure output directory exists
+        try {
+            if (!fs.existsSync(this.PUBLIC_DIR)) {
+                fs.mkdirSync(this.PUBLIC_DIR, { recursive: true });
+            }
+        } catch (error) {
+            console.warn(`[AI Service] Failed to create output directory at ${this.PUBLIC_DIR}. Falling back to system temp.`);
+            this.PUBLIC_DIR = path.join(os.tmpdir(), "generated");
+            if (!fs.existsSync(this.PUBLIC_DIR)) {
+                fs.mkdirSync(this.PUBLIC_DIR, { recursive: true });
+            }
+        }
 
         // Set provider priority from env or use default with fallback
         const priorityString = process.env.AI_PROVIDER_PRIORITY || "gemini,pollinations";
@@ -199,11 +226,17 @@ class AIImageService {
                         continue;
                     }
 
-                    const imageUrl = `data:image/png;base64,${imageData}`;
-                    console.log(`[Gemini] Success with ${model}`);
+                    // Save Base64 to file instead of returning data URI
+                    const filename = `img_${uuidv4()}.png`;
+                    const filepath = path.join(this.PUBLIC_DIR, filename);
+
+                    fs.writeFileSync(filepath, Buffer.from(imageData, 'base64'));
+
+                    const imageUrl = `/public/generated/${filename}`; // Relative URL for frontend
+                    console.log(`[Gemini] Success with ${model}, saved to ${filepath}`);
 
                     return {
-                        url: imageUrl,
+                        url: `${this.BASE_URL}${imageUrl}`, // Absolute URL
                         provider: "gemini",
                         seed,
                         width,
@@ -230,12 +263,6 @@ class AIImageService {
             }
             throw lastError || new Error("All Gemini models failed");
         } catch (error: any) {
-            if (error.response?.status === 429) {
-                throw new Error("Gemini API rate limit exceeded");
-            }
-            if (error.response?.status === 403) {
-                throw new Error("Gemini API key invalid or unauthorized (check billing/quotas)");
-            }
             if (error.response?.status === 400) {
                 console.error("[Gemini] Bad request error:", JSON.stringify(error.response.data, null, 2));
                 throw new Error(`Gemini API bad request: ${error.response.data?.error?.message || "Unknown error"}`);
