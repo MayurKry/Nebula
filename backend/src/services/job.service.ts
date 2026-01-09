@@ -1,4 +1,5 @@
 import { JobModel, IJob, JobModule, JobStatus } from "../models/job.model";
+import { UserModel } from "../models/user.model";
 import mongoose from "mongoose";
 import logger from "../utils/logger";
 
@@ -13,6 +14,21 @@ class JobService {
         metadata?: Record<string, any>;
     }): Promise<IJob> {
         try {
+            const cost = this.calculateCredits(data.module);
+            const user = await UserModel.findById(data.userId);
+
+            if (!user) {
+                throw new Error("User not found");
+            }
+
+            if ((user.credits || 0) < cost) {
+                throw new Error(`Insufficient credits. Required: ${cost}, Available: ${user.credits || 0}`);
+            }
+
+            // Deduct credits
+            user.credits = (user.credits || 0) - cost;
+            await user.save();
+
             const job = await JobModel.create({
                 userId: new mongoose.Types.ObjectId(data.userId),
                 module: data.module,
@@ -20,7 +36,7 @@ class JobService {
                 input: data.input,
                 metadata: data.metadata,
                 queuedAt: new Date(),
-                creditsUsed: 0,
+                creditsUsed: cost,
                 retryCount: 0,
                 maxRetries: 3
             });
@@ -29,12 +45,12 @@ class JobService {
 
             // In a real implementation, this would trigger the job processor
             // For now, we'll simulate async processing
-            this.processJobAsync(job._id.toString());
+            this.processJobAsync((job._id as any).toString());
 
             return job;
         } catch (error: any) {
             logger.error("Failed to create job:", error);
-            throw new Error("Failed to create job");
+            throw new Error(error.message || "Failed to create job");
         }
     }
 
@@ -190,11 +206,11 @@ class JobService {
                 // Update to processing
                 await this.updateJobStatus(jobId, "processing");
 
-                // Simulate processing time
-                await new Promise(resolve => setTimeout(resolve, 3000 + Math.random() * 5000));
+                // Simulate processing time (faster for demo)
+                await new Promise(resolve => setTimeout(resolve, 2000));
 
-                // Simulate success/failure (90% success rate)
-                const success = Math.random() > 0.1;
+                // Simulate success/failure (100% success for demo)
+                const success = true;
 
                 if (success) {
                     // Simulate successful output based on module

@@ -20,6 +20,7 @@ export interface AuthResponse {
         lastName: string;
         email: string;
         role: string;
+        credits: number;
     };
     accessToken: string;
     refreshToken: string;
@@ -57,6 +58,7 @@ class AuthService {
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
+            credits: user.credits,
         });
 
         return response.data.data;
@@ -84,6 +86,7 @@ class AuthService {
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
+            credits: user.credits,
         });
 
         return response.data.data;

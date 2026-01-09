@@ -68,20 +68,17 @@ const jobSchema = new Schema<IJob>(
         userId: {
             type: Schema.Types.ObjectId,
             ref: "User",
-            required: true,
-            index: true
+            required: true
         },
         module: {
             type: String,
             enum: ["campaign_wizard", "text_to_image", "text_to_video", "image_to_video", "text_to_audio", "export"],
-            required: true,
-            index: true
+            required: true
         },
         status: {
             type: String,
             enum: ["queued", "processing", "completed", "failed", "retrying", "cancelled"],
-            default: "queued",
-            index: true
+            default: "queued"
         },
         input: {
             prompt: { type: String },

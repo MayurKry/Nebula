@@ -9,7 +9,7 @@ import AIVoicesPage from "@/pages/App/Create/AIVoicesPage";
 
 import ProfilePage from "@/pages/App/ProfilePage";
 import CampaignWizardPage from "@/pages/App/CampaignWizardPage";
-import HistoryPage from "@/pages/App/HistoryPage";
+import JobHistoryPage from "@/pages/App/JobHistoryPage";
 import SettingsPage from "@/pages/App/SettingsPage";
 import ActivityLogPage from "@/pages/App/ActivityLogPage";
 import LibraryPage from "@/pages/App/LibraryPage";
@@ -36,7 +36,7 @@ function AppRoutes() {
         <Route path="payment" element={<PaymentPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="campaign" element={<CampaignWizardPage />} />
-        <Route path="history" element={<HistoryPage />} />
+        <Route path="history" element={<JobHistoryPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="activity" element={<ActivityLogPage />} />
       </Route>

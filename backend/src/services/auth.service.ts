@@ -51,6 +51,7 @@ export const AuthService = {
       lastName: user.lastName,
       email: user.email,
       role: user.role,
+      credits: user.credits,
     };
 
     return { user: safeUser, accessToken, refreshToken };
@@ -90,6 +91,7 @@ export const AuthService = {
       lastName: user.lastName,
       email: user.email,
       role: user.role,
+      credits: user.credits,
     };
 
     return { user: safeUser, accessToken, refreshToken };

@@ -204,6 +204,9 @@ const DashboardPage = () => {
                             onChange={setPrompt}
                             onGenerate={handleGenerate}
                             onEnhance={handleEnhancePrompt}
+                            onFileSelect={(file) => alert(`Selected file for ${generationMode}: ${file.name}`)}
+                            settings={{ quality: 'Pro', aspectRatio: '16:9' }}
+                            onSettingsChange={() => { }}
                             isGenerating={isGenerating}
                             isEnhancing={isEnhancing}
                             placeholder={`State your vision for this ${generationMode === 'voice' ? 'voiceover' : generationMode}...`}

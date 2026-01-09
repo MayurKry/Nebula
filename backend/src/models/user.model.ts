@@ -13,6 +13,7 @@ export interface IUser extends Document {
   skillLevel?: "beginner" | "intermediate" | "expert";
   onboardingCompleted: boolean;
   avatar?: string;
+  credits: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,6 +35,7 @@ const userSchema = new Schema<IUser>(
     },
     onboardingCompleted: { type: Boolean, default: false },
     avatar: { type: String },
+    credits: { type: Number, default: 100 },
   },
   { timestamps: true }
 );

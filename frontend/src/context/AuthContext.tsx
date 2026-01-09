@@ -50,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 name: `${response.user.firstName} ${response.user.lastName}`,
                 email: response.user.email,
                 role: response.user.role,
+                credits: response.user.credits,
             };
             setUser(userData);
         } catch (error) {
@@ -71,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 name: `${response.user.firstName} ${response.user.lastName}`,
                 email: response.user.email,
                 role: response.user.role,
+                credits: response.user.credits,
             };
             setUser(userData);
         } catch (error) {

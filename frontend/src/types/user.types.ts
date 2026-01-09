@@ -6,5 +6,6 @@ export interface User {
   email: string;
   role?: string;
   avatar?: string;
+  credits?: number;
   [key: string]: any;
 }

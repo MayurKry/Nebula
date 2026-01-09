@@ -250,6 +250,9 @@ const TextToVideoPage = () => {
                                 value={prompt}
                                 onChange={setPrompt}
                                 onGenerate={handleGenerateProject}
+                                onFileSelect={(file) => toast.info(`File attached: ${file.name}`)}
+                                settings={{ quality: 'Pro', aspectRatio: '16:9' }}
+                                onSettingsChange={() => { }}
                                 isGenerating={isGenerating}
                                 placeholder="A cinematic trailer for a sci-fi epic set in 2099..."
                             />

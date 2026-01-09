@@ -4,7 +4,7 @@ import {
     Target, ChevronLeft, ChevronRight, Sparkles, Check,
     Loader2, FileText, RotateCw, Download, Zap, AlertCircle,
     Globe, Palette, Package, Video,
-    Eye, Play, Upload, Search, X
+    Eye, Upload, Search, X, Clock, Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { campaignService, type Campaign } from '@/services/campaign.service';
@@ -25,8 +25,9 @@ const STEPS = [
     { id: 5, title: 'Content Preferences', icon: Video },
     { id: 6, title: 'AI Review', icon: Eye },
     { id: 7, title: 'Generation Progress', icon: Zap },
-    { id: 8, title: 'Results', icon: Check },
+    { id: 8, title: 'Preview Assets', icon: Eye },
     { id: 9, title: 'Export', icon: Download },
+    { id: 10, title: 'Finish', icon: Check },
 ];
 
 const CampaignWizardPage = () => {
@@ -181,7 +182,7 @@ const CampaignWizardPage = () => {
             await saveDraft();
         }
 
-        if (currentStep < 9) {
+        if (currentStep < 10) {
             setCurrentStep(prev => prev + 1);
         }
     };
@@ -204,8 +205,16 @@ const CampaignWizardPage = () => {
             setIsEditingScript(false);
 
             toast.success(`Script ${isRegeneration ? 'regenerated' : 'generated'} successfully!`);
-        } catch (error) {
-            toast.error('Failed to generate script');
+        } catch (error: any) {
+            const message = error.response?.data?.message || error.message || 'Failed to generate script';
+
+            if (message.includes('Insufficient credits')) {
+                toast.error('Not enough credits to generate script', {
+                    description: `This action requires ${CREDIT_COSTS.script_generation} credits. Please top up.`
+                });
+            } else {
+                toast.error(message);
+            }
         } finally {
             setIsLoading(false);
             setLoadingMessage('');
@@ -233,8 +242,17 @@ const CampaignWizardPage = () => {
 
             setCurrentStep(7);
             toast.success('Generation started!');
-        } catch (error) {
-            toast.error('Failed to start generation');
+        } catch (error: any) {
+            const message = error.response?.data?.message || error.message || 'Failed to start generation';
+
+            if (message.includes('Insufficient credits')) {
+                toast.error('Not enough credits to generate assets', {
+                    description: 'Please upgrade your plan or purchase more credits.'
+                });
+                // Could also set a specific 'error' state variable here to show in the UI
+            } else {
+                toast.error(message);
+            }
         } finally {
             setIsLoading(false);
             setLoadingMessage('');
@@ -278,7 +296,8 @@ const CampaignWizardPage = () => {
             // In a real scenario, we might pass specific asset IDs here if we only want to export some
             await campaignService.exportCampaign(campaignId);
             toast.success('Export started! Check your jobs panel.');
-            setCurrentStep(9);
+            toast.success('Export started! Check your jobs panel.');
+            setCurrentStep(10);
         } catch (error) {
             toast.error('Failed to start export');
         } finally {
@@ -899,82 +918,267 @@ const CampaignWizardPage = () => {
                                 </div>
                             ))}
                         </div>
+
+                        {progress.processing === 0 && progress.total > 0 && (
+                            <button
+                                onClick={() => setCurrentStep(8)}
+                                className="w-full px-6 py-4 bg-[#00FF88] text-[#0A0A0A] font-bold rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#00FF88]/20"
+                            >
+                                <Check className="w-5 h-5" />
+                                Proceed to Preview
+                            </button>
+                        )}
+
+                        <div className="text-center pt-4">
+                            <button
+                                onClick={() => navigate('/app/history')}
+                                className="text-sm text-[#00FF88] hover:underline flex items-center gap-2 mx-auto"
+                            >
+                                <Clock className="w-4 h-4" />
+                                View Detailed Job Queue
+                            </button>
+                        </div>
                     </div>
                 );
 
             case 8:
                 const completedJobs = jobs.filter(j => j.status === 'completed');
+                const failedJobs = jobs.filter(j => j.status === 'failed');
+                const processingJobs = jobs.filter(j => j.status === 'processing' || j.status === 'queued');
+
+                // Case: All failed logic
+                if (completedJobs.length === 0 && processingJobs.length === 0 && failedJobs.length > 0) {
+                    return (
+                        <div className="text-center py-20 bg-[#1A1A1A] rounded-3xl border border-white/10 border-dashed">
+                            <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <AlertCircle className="w-10 h-10 text-red-500" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">Generation Failed</h3>
+                            <p className="text-gray-400 mb-8 max-w-md mx-auto">
+                                We couldn't generate your assets.
+                                {failedJobs[0]?.error?.message ? (
+                                    <span className="block mt-2 text-sm text-red-400 bg-red-500/10 p-2 rounded">
+                                        Error: {failedJobs[0].error.message}
+                                    </span>
+                                ) : " Please try again."}
+                            </p>
+                            <div className="flex gap-4 justify-center">
+                                <button
+                                    onClick={() => setCurrentStep(7)}
+                                    className="px-6 py-3 bg-white/5 text-white font-bold rounded-xl hover:bg-white/10 transition-all flex items-center gap-2 border border-white/10"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                    Back to Generation
+                                </button>
+                                <button
+                                    onClick={() => navigate('/app/history')}
+                                    className="px-6 py-3 bg-[#00FF88]/10 text-[#00FF88] font-bold rounded-xl hover:bg-[#00FF88]/20 transition-all flex items-center gap-2 border border-[#00FF88]/20"
+                                >
+                                    <Clock className="w-4 h-4" />
+                                    Monitor Queue
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (completedJobs.length === 0 && processingJobs.length === 0) {
+                    return (
+                        <div className="text-center py-20 bg-[#1A1A1A] rounded-3xl border border-white/10 border-dashed">
+                            <div className="w-20 h-20 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <AlertCircle className="w-10 h-10 text-yellow-500" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">No Assets Generated</h3>
+                            <p className="text-gray-400 mb-8 max-w-md mx-auto">
+                                It looks like the generation didn't start or was cancelled.
+                            </p>
+                            <button
+                                onClick={() => setCurrentStep(7)} // Go back to progress to see if anything is stuck, or 6 to restart
+                                className="px-6 py-3 bg-[#1A1A1A] text-white border border-white/20 rounded-xl hover:bg-[#252525] transition-all"
+                            >
+                                Back to Generation
+                            </button>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="space-y-8">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-6">
+                            <div>
+                                <h3 className="text-2xl font-bold text-white mb-1">Preview Assets</h3>
+                                <p className="text-gray-400 text-sm">
+                                    Review your {completedJobs.length} generated assets. You can regenerate specific scenes if needed.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setCurrentStep(9)}
+                                className="px-6 py-3 bg-[#00FF88] text-[#0A0A0A] font-bold rounded-xl hover:opacity-90 transition-all flex items-center gap-2"
+                            >
+                                Proceed to Export
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-6">
+                            {completedJobs.map((job, index) => (
+                                <div key={job._id} className="bg-[#1A1A1A] border border-white/10 rounded-2xl p-6 flex flex-col md:flex-row gap-6 hover:border-[#00FF88]/30 transition-all group">
+                                    {/* Asset Preview Section */}
+                                    <div className="w-full md:w-80 aspect-video bg-black/50 rounded-xl overflow-hidden border border-white/5 relative flex-shrink-0">
+                                        {job.output?.[0]?.type === 'image' && job.output[0].url && (
+                                            <img
+                                                src={job.output[0].url}
+                                                alt={`Scene ${index + 1}`}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        )}
+                                        {job.output?.[0]?.type === 'video' && job.output[0].url && (
+                                            <div className="w-full h-full relative">
+                                                <video
+                                                    src={job.output[0].url}
+                                                    className="w-full h-full object-cover"
+                                                    controls
+                                                />
+                                            </div>
+                                        )}
+                                        <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-xs font-bold text-white border border-white/10 uppercase">
+                                            {job.output?.[0]?.type || 'Asset'}
+                                        </div>
+                                    </div>
+
+                                    {/* Details Section */}
+                                    <div className="flex-1 flex flex-col justify-between">
+                                        <div>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h4 className="text-lg font-bold text-white flex items-center gap-3">
+                                                    Scene {index + 1}
+                                                    <span className="text-xs px-2 py-1 rounded bg-white/10 text-gray-400 font-normal border border-white/5">
+                                                        {job.metadata?.platform || 'Universal'}
+                                                    </span>
+                                                </h4>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        title="Download"
+                                                        className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                                                        onClick={() => window.open(job.output?.[0]?.url, '_blank')}
+                                                    >
+                                                        <Download className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="mb-4">
+                                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Context & Script</label>
+                                                <p className="text-sm text-gray-300 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5">
+                                                    {job.input?.prompt || sceneOutline[index] || 'No specific script or prompt data available for this asset.'}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Edit Controls */}
+                                        <div className="pt-4 border-t border-white/5 grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" /> Duration
+                                                </label>
+                                                <div className="text-sm text-white font-medium">
+                                                    {campaignData.videoDuration || 15}s <span className="text-gray-600 text-xs">(Fixed)</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-end justify-end gap-3">
+                                                <button
+                                                    onClick={() => toast.info('Edit script feature coming soon')}
+                                                    className="text-xs font-medium text-gray-400 hover:text-white flex items-center gap-1.5 px-3 py-2 hover:bg-white/5 rounded-lg transition-colors"
+                                                >
+                                                    <Pencil className="w-3 h-3" />
+                                                    Edit Details
+                                                </button>
+                                                <button
+                                                    onClick={() => handleRetryJob(job._id)}
+                                                    className="text-xs font-bold text-[#00FF88] hover:text-[#00CC6A] flex items-center gap-1.5 px-3 py-2 bg-[#00FF88]/10 rounded-lg border border-[#00FF88]/20 hover:bg-[#00FF88]/20 transition-all"
+                                                >
+                                                    <RotateCw className="w-3 h-3" />
+                                                    Regenerate
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex justify-between items-center pt-8 border-t border-white/5">
+                            <button
+                                onClick={() => setCurrentStep(7)}
+                                className="text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-2 text-sm"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                                Back to Generation
+                            </button>
+                        </div>
+                    </div>
+                );
+
+            case 9:
                 return (
                     <div className="space-y-6">
                         <div className="text-center">
                             <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Check className="w-10 h-10 text-green-400" />
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">Campaign Assets Ready!</h3>
+                            <h3 className="text-2xl font-bold text-white mb-2">Ready to Export</h3>
                             <p className="text-gray-400">
-                                {completedJobs.length} assets generated successfully
+                                {jobs.filter(j => j.status === 'completed').length} assets are ready for export
                             </p>
                         </div>
 
-                        {/* Asset Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            {completedJobs.map((job) => (
-                                <div key={job._id} className="group relative aspect-square bg-[#1A1A1A] rounded-xl overflow-hidden border border-white/10">
-                                    {job.output?.[0]?.type === 'image' && job.output[0].url && (
-                                        <img
-                                            src={job.output[0].url}
-                                            alt="Generated asset"
-                                            className="w-full h-full object-cover"
-                                        />
-                                    )}
-                                    {job.output?.[0]?.type === 'video' && job.output[0].url && (
-                                        <div className="w-full h-full flex items-center justify-center bg-black/50">
-                                            <Play className="w-12 h-12 text-white/50" />
-                                        </div>
-                                    )}
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                        {job.output?.[0]?.url && (
-                                            <a
-                                                href={job.output[0].url}
-                                                download={`campaign-asset-${job._id}.${job.output[0].type === 'image' ? 'png' : 'mp4'}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="p-3 bg-white/20 hover:bg-white/30 rounded-lg text-white backdrop-blur-sm transition-colors flex items-center gap-2 text-xs font-bold"
-                                                title={`Download ${job.output[0].type}`}
-                                            >
-                                                <Download className="w-4 h-4" />
-                                                <span>Download</span>
-                                            </a>
-                                        )}
-                                    </div>
-                                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 rounded text-xs text-white">
-                                        {job.metadata?.platform}
-                                    </div>
+                        <div className="p-6 bg-[#1A1A1A] border border-white/10 rounded-xl">
+                            <h4 className="text-sm font-medium text-gray-300 mb-4">Export Summary</h4>
+                            <div className="space-y-3">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-500">Total Assets</span>
+                                    <span className="text-white">{jobs.filter(j => j.status === 'completed').length}</span>
                                 </div>
-                            ))}
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-500">Format</span>
+                                    <span className="text-white">ZIP Archive</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-500">includes</span>
+                                    <span className="text-white">Images, Videos, Scripts</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <button
-                            onClick={handleExport}
-                            disabled={isLoading}
-                            className="w-full px-6 py-4 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0A0A0A] font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    Preparing Export...
-                                </>
-                            ) : (
-                                <>
-                                    <Download className="w-5 h-5" />
-                                    Export All Assets (ZIP)
-                                </>
-                            )}
-                        </button>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setCurrentStep(8)}
+                                className="flex-1 px-6 py-4 bg-[#1A1A1A] text-white font-bold rounded-xl hover:bg-[#252525] transition-all"
+                            >
+                                Back to Preview
+                            </button>
+                            <button
+                                onClick={handleExport}
+                                disabled={isLoading}
+                                className="flex-[2] px-6 py-4 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] text-[#0A0A0A] font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Preparing Export...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download className="w-5 h-5" />
+                                        Export All Assets
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 );
 
-            case 9:
+            case 10:
                 return (
                     <div className="text-center py-12">
                         <div className="w-20 h-20 bg-[#00FF88]/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -1029,7 +1233,7 @@ const CampaignWizardPage = () => {
                         </div>
                         Campaign Wizard
                     </h1>
-                    <p className="text-gray-400 mt-2">Create AI-powered campaign content in 9 simple steps</p>
+                    <p className="text-gray-400 mt-2">Create AI-powered campaign content in {STEPS.length} simple steps</p>
                 </div>
 
                 {/* Progress Steps */}
@@ -1071,7 +1275,7 @@ const CampaignWizardPage = () => {
 
                 {/* Mobile Step Indicator */}
                 <div className="md:hidden mb-8 flex items-center justify-between text-white">
-                    <span className="font-bold">Step {currentStep} of 9</span>
+                    <span className="font-bold">Step {currentStep} of {STEPS.length}</span>
                     <span className="text-[#00FF88]">{STEPS[currentStep - 1].title}</span>
                 </div>
 

@@ -138,6 +138,9 @@ const TextToImagePage = () => {
                             value={prompt}
                             onChange={setPrompt}
                             onGenerate={handleGenerate}
+                            onFileSelect={(file) => toast.info(`File attached: ${file.name}`)}
+                            settings={{ quality: 'Pro', aspectRatio: aspectRatio }}
+                            onSettingsChange={(s) => setAspectRatio(s.aspectRatio)}
                             isGenerating={isGenerating}
                             placeholder="Describe the image you want to create in detail..."
                             actions={[

@@ -6,6 +6,7 @@ import {
   LayoutGrid, Users, Box, Mic, Crown, Zap, Target, X, Clock
 } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
+import { useAuth } from '@/context/AuthContext';
 
 interface NavItem {
   label: string;
@@ -86,6 +87,8 @@ const AppSidebar = ({ isOpen: isOpenProp, onClose: onCloseProp }: AppSidebarProp
     navGroups.reduce((acc, group) => ({ ...acc, [group.title]: group.defaultOpen ?? false }), {})
   );
 
+  const { user } = useAuth();
+
   const toggleGroup = (title: string) => {
     setOpenGroups(prev => ({ ...prev, [title]: !prev[title] }));
   };
@@ -164,11 +167,14 @@ const AppSidebar = ({ isOpen: isOpenProp, onClose: onCloseProp }: AppSidebarProp
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-medium text-white">100 Credits</span>
+              <span className="text-sm font-medium text-white">{user?.credits || 0} Credits</span>
             </div>
           </div>
           <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full w-full bg-gradient-to-r from-[#00FF88] to-[#00CC6A]" />
+            <div
+              className="h-full bg-gradient-to-r from-[#00FF88] to-[#00CC6A] transition-all duration-1000"
+              style={{ width: `${Math.min(((user?.credits || 0) / 1000) * 100, 100)}%` }}
+            />
           </div>
         </div>
 
