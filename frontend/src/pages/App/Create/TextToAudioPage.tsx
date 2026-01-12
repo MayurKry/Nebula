@@ -4,7 +4,7 @@ import {
     Loader2,
     RotateCw, Download,
     Volume2, Play, Pause,
-    Share2, Layers, Disc, Clock
+    Share2, Layers, Disc
 } from 'lucide-react';
 import { useGeneration } from '@/components/generation/GenerationContext';
 import { aiService } from '@/services/ai.service';
@@ -47,7 +47,7 @@ const TextToAudioPage = () => {
             addJob({
                 type: 'text-to-video', // Reusing video type queue just for demo
                 prompt: `[Audio] ${prompt}`,
-                settings: { style, duration },
+                settings: { style, duration: parseInt(duration) },
             });
 
             // Mocking audio generation for now
@@ -216,7 +216,7 @@ const TextToAudioPage = () => {
                 {/* Results Section */}
                 {results.length > 0 && !isGenerating && (
                     <GSAPTransition animation="scale-in" className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 px-4 pb-20">
-                        {results.map((audio, idx) => (
+                        {results.map((audio) => (
                             <div key={audio.id} className="group bg-[#141414] border border-white/5 hover:border-purple-500/30 rounded-[2rem] p-6 transition-all hover:shadow-2xl hover:shadow-purple-500/5 cursor-pointer">
                                 <div className="flex items-center gap-6">
                                     {/* Play Button */}

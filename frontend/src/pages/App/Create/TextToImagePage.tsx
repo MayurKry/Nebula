@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
     Sparkles,
     Loader2,
-    RotateCw, Folder, Wand2, Download, Grid3X3, Palette, Ratio, Box, X
+    RotateCw, Folder, Wand2, Download, Palette, Ratio, Box, X
 } from 'lucide-react';
 import { useGeneration } from '@/components/generation/GenerationContext';
 import GenerationQueue from '@/components/generation/GenerationQueue';
@@ -23,7 +23,7 @@ const TextToImagePage = () => {
     const [style, setStyle] = useState('Cinematic');
     const [aspectRatio, setAspectRatio] = useState('16:9');
     const [seedEnabled, setSeedEnabled] = useState(false);
-    const [seed, setSeed] = useState(42);
+    const [seed] = useState(42);
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<string[]>([]);

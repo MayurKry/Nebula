@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import {
     Loader2, Move, Wind, ZoomIn, Eye,
     Layers, RotateCw, Folder, Play, Download,
-    Camera, Zap, Maximize, Plus
+    Camera, Maximize, Plus
 } from 'lucide-react';
 import { useGeneration, SAMPLE_VIDEO_THUMBS } from '@/components/generation/GenerationContext';
 import GenerationQueue from '@/components/generation/GenerationQueue';
