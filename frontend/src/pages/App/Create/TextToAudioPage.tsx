@@ -4,7 +4,7 @@ import {
     Loader2,
     RotateCw, Download,
     Volume2, Play, Pause,
-    Share2, Layers
+    Share2, Layers, Disc, Clock
 } from 'lucide-react';
 import { useGeneration } from '@/components/generation/GenerationContext';
 import { aiService } from '@/services/ai.service';
@@ -32,6 +32,7 @@ const TextToAudioPage = () => {
 
     const [prompt, setPrompt] = useState('');
     const [style, setStyle] = useState('Epic Hybrid');
+    const [duration, setDuration] = useState('30s');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isEnhancing, setIsEnhancing] = useState(false);
     const [results, setResults] = useState<AudioResult[]>([]);
@@ -44,9 +45,9 @@ const TextToAudioPage = () => {
         try {
             // Add job to queue
             addJob({
-                type: 'text-to-video', // Reusing video type for queue as audio is new
+                type: 'text-to-video', // Reusing video type queue just for demo
                 prompt: `[Audio] ${prompt}`,
-                settings: { style },
+                settings: { style, duration },
             });
 
             // Mocking audio generation for now
@@ -56,7 +57,7 @@ const TextToAudioPage = () => {
                 id: Math.random().toString(36).substr(2, 9),
                 url: '#',
                 title: prompt.substring(0, 30) + '...',
-                duration: '0:30',
+                duration: duration === '30s' ? '0:30' : duration === '60s' ? '1:00' : '0:15',
                 style: style,
             };
 
@@ -89,27 +90,82 @@ const TextToAudioPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#0A0A0A] p-4 sm:p-8">
-            <main className="max-w-5xl mx-auto space-y-12">
+        <div className="min-h-screen bg-[#0A0A0A] p-4 flex flex-col items-center relative overflow-hidden">
+            <main className="w-full max-w-5xl z-10 flex flex-col items-center">
 
                 {/* Header */}
-                <GSAPTransition animation="fade-in-up">
-                    <div className="text-center space-y-4 pt-8">
-                        <div className="inline-flex p-3 bg-purple-500/10 border border-purple-500/20 rounded-2xl mb-2">
-                            <Music className="w-8 h-8 text-purple-400" />
-                        </div>
-                        <h1 className="text-5xl md:text-6xl font-black text-white tracking-tight">
-                            Text to <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">Audio</span>
-                        </h1>
-                        <p className="text-gray-400 max-w-xl mx-auto">
-                            Transform your descriptions into high-fidelity music tracks, cinematic soundscapes, or sound effects.
-                        </p>
+                <GSAPTransition animation="fade-in-up" className="text-center space-y-4 pt-12 mb-12">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full mb-4">
+                        <Music className="w-3 h-3 text-purple-400" />
+                        <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Nebula Audio 2.0</span>
                     </div>
+                    <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter">
+                        Text to <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Audio</span>
+                    </h1>
+                    <p className="text-gray-500 text-lg max-w-xl mx-auto">
+                        Transform your descriptions into high-fidelity music tracks, cinematic soundscapes, or sound effects.
+                    </p>
                 </GSAPTransition>
 
+                {/* Control Grid (Visible Controls) */}
+                <div className="w-full relative z-20">
+                    <div className="bg-[#141414] border border-white/5 p-1 rounded-2xl flex flex-wrap items-center justify-center gap-2 md:inline-flex md:left-1/2 md:relative md:-translate-x-1/2 mb-6 shadow-2xl">
+
+                        {/* Model Selector */}
+                        <div className="flex items-center gap-2 px-3 py-2 bg-black/40 rounded-xl cursor-not-allowed opacity-50 border border-transparent">
+                            <div className="p-1.5 bg-purple-500/20 rounded-lg">
+                                <Music className="w-4 h-4 text-purple-400" />
+                            </div>
+                            <div className="flex flex-col text-left">
+                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Model</span>
+                                <span className="text-xs font-semibold text-gray-300">Nebula Audio 2.0</span>
+                            </div>
+                        </div>
+
+                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
+
+                        {/* Duration Selector */}
+                        <div className="flex items-center gap-2">
+                            {['15s', '30s', '60s'].map(d => (
+                                <button
+                                    key={d}
+                                    onClick={() => setDuration(d)}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${duration === d
+                                        ? 'bg-[#00FF88] text-black border-[#00FF88] shadow-[0_0_15px_rgba(0,255,136,0.3)]'
+                                        : 'bg-transparent text-gray-500 border-transparent hover:bg-white/5 hover:text-white'
+                                        }`}
+                                >
+                                    {d}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
+
+                        {/* Style Selector */}
+                        <div className="relative group">
+                            <button className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all border text-gray-500 border-transparent hover:text-white hover:bg-white/5 min-w-[140px]">
+                                <Disc className="w-3.5 h-3.5" />
+                                <div className="flex flex-col text-left">
+                                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Musical Style</span>
+                                    <span className="text-xs font-bold text-white truncate max-w-[100px]">{style}</span>
+                                </div>
+                            </button>
+                            <select
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                value={style}
+                                onChange={(e) => setStyle(e.target.value)}
+                            >
+                                {audioStyles.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Prompt Section */}
-                <GSAPTransition animation="fade-in-up" delay={0.1}>
-                    <div className="space-y-6">
+                <GSAPTransition animation="fade-in-up" delay={0.2} className="w-full max-w-4xl mb-16">
+                    <div className="relative group mb-6">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/20 via-[#00FF88]/20 to-blue-500/20 rounded-[28px] blur-lg group-hover:blur-xl transition-all opacity-50 group-hover:opacity-100 duration-1000" />
                         <PromptBar
                             value={prompt}
                             onChange={setPrompt}
@@ -118,55 +174,57 @@ const TextToAudioPage = () => {
                             isGenerating={isGenerating}
                             isEnhancing={isEnhancing}
                             placeholder="Describe the sound or music track you want to create..."
-                            actions={[
-                                { label: 'Cinematic Thriller', onClick: () => setPrompt('A tense cinematic thriller track with deep bass and high-pitched violins'), icon: <Volume2 className="w-3 h-3" /> },
-                                { label: 'Lo-Fi Study', onClick: () => setPrompt('Chill lo-fi beats with a rainy background and muffled piano'), icon: <Music className="w-3 h-3" /> },
-                                { label: 'Cyberpunk Chase', onClick: () => setPrompt('Aggressive dark synthwave for a high-speed chase in a futuristic city'), icon: <Volume2 className="w-3 h-3" /> },
-                            ]}
+                            settings={{ style, duration }}
+                            onSettingsChange={() => { }}
                         />
+                    </div>
 
-                        {/* Quick Style Select */}
-                        <div className="flex flex-wrap items-center justify-center gap-2">
-                            {audioStyles.map(s => (
-                                <button
-                                    key={s}
-                                    onClick={() => setStyle(s)}
-                                    className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${style === s
-                                        ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
-                                        : 'bg-[#141414] text-gray-500 border-white/5 hover:border-white/10 hover:text-gray-300'
-                                        }`}
-                                >
-                                    {s}
-                                </button>
-                            ))}
-                        </div>
+                    {/* Prompt Pills / Suggestions (Outside Glow) */}
+                    <div className="flex flex-wrap items-center justify-center gap-2.5 px-4">
+                        {[
+                            { label: 'Cinematic Thriller', onClick: () => setPrompt('A tense cinematic thriller track with deep bass and high-pitched violins'), icon: <Volume2 className="w-3 h-3" /> },
+                            { label: 'Cyberpunk Chase', onClick: () => setPrompt('Aggressive dark synthwave for a high-speed chase in a futuristic city'), icon: <Volume2 className="w-3 h-3" /> },
+                        ].map((action, idx) => (
+                            <button
+                                key={idx}
+                                onClick={action.onClick}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-[#141414] border border-white/5 hover:border-white/20 rounded-full text-[13px] font-medium text-gray-400 hover:text-white transition-all hover:bg-white/10 hover:shadow-xl hover:-translate-y-0.5"
+                            >
+                                {action.icon}
+                                {action.label}
+                            </button>
+                        ))}
                     </div>
                 </GSAPTransition>
 
-                {/* Results Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
-                    {isGenerating && (
-                        <div className="bg-[#141414] border border-white/5 rounded-3xl p-6 flex items-center gap-4 animate-pulse">
-                            <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center">
-                                <Loader2 className="w-6 h-6 text-purple-500 animate-spin" />
+                {/* Loading State */}
+                {isGenerating && (
+                    <div className="w-full px-4 mb-20 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                        <div className="bg-[#141414] border border-white/5 rounded-[2rem] p-8 flex flex-col items-center justify-center gap-6 animate-pulse">
+                            <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center">
+                                <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
                             </div>
-                            <div className="flex-1 space-y-2">
-                                <div className="h-4 bg-white/5 rounded w-3/4" />
-                                <div className="h-3 bg-white/5 rounded w-1/2" />
+                            <div className="text-center space-y-2">
+                                <h3 className="text-white font-bold text-lg">Composing Audio</h3>
+                                <p className="text-gray-500 text-sm">Generating waveforms and mastering track...</p>
                             </div>
                         </div>
-                    )}
+                    </div>
+                )}
 
-                    {results.map((audio, idx) => (
-                        <GSAPTransition key={audio.id} animation="fade-in-up" delay={idx * 0.1}>
-                            <div className="group bg-[#141414] border border-white/5 hover:border-white/10 rounded-3xl p-6 transition-all hover:shadow-2xl">
+
+                {/* Results Section */}
+                {results.length > 0 && !isGenerating && (
+                    <GSAPTransition animation="scale-in" className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 px-4 pb-20">
+                        {results.map((audio, idx) => (
+                            <div key={audio.id} className="group bg-[#141414] border border-white/5 hover:border-purple-500/30 rounded-[2rem] p-6 transition-all hover:shadow-2xl hover:shadow-purple-500/5 cursor-pointer">
                                 <div className="flex items-center gap-6">
                                     {/* Play Button */}
                                     <button
                                         onClick={() => togglePlay(audio.id)}
-                                        className="w-14 h-14 bg-white text-black rounded-2xl flex items-center justify-center hover:scale-105 transition-transform shadow-lg"
+                                        className={`w-14 h-14 rounded-2xl flex items-center justify-center hover:scale-105 transition-transform shadow-lg ${activeAudio === audio.id ? 'bg-purple-500 text-white' : 'bg-white text-black'}`}
                                     >
-                                        {activeAudio === audio.id ? <Pause className="w-6 h-6 fill-black" /> : <Play className="w-6 h-6 fill-black ml-1" />}
+                                        {activeAudio === audio.id ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-1" />}
                                     </button>
 
                                     <div className="flex-1 min-w-0">
@@ -174,16 +232,16 @@ const TextToAudioPage = () => {
                                             <h3 className="font-bold text-white truncate group-hover:text-purple-400 transition-colors">
                                                 {audio.title}
                                             </h3>
-                                            <span className="text-[10px] text-gray-500 font-mono">{audio.duration}</span>
+                                            <span className="text-[10px] text-gray-500 font-mono bg-white/5 px-2 py-0.5 rounded">{audio.duration}</span>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <span className="text-[10px] text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded font-bold uppercase tracking-widest border border-purple-500/10">
+                                            <span className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">
                                                 {audio.style}
                                             </span>
                                             {activeAudio === audio.id && (
-                                                <div className="flex items-center gap-0.5">
-                                                    {[1, 2, 3, 4].map(i => (
-                                                        <div key={i} className={`w-0.5 bg-purple-400 rounded-full animate-wave-sm`} style={{ animationDelay: `${i * 0.15}s`, height: `${Math.random() * 12 + 4}px` }} />
+                                                <div className="flex items-center gap-0.5 h-3 items-end">
+                                                    {[1, 2, 3, 4, 5].map(i => (
+                                                        <div key={i} className={`w-0.5 bg-purple-400 rounded-full animate-wave-sm`} style={{ animationDelay: `${i * 0.1}s`, height: `${Math.random() * 12 + 4}px` }} />
                                                     ))}
                                                 </div>
                                             )}
@@ -193,25 +251,26 @@ const TextToAudioPage = () => {
 
                                 {/* Controls */}
                                 <div className="flex items-center justify-between mt-6 pt-6 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <div className="flex items-center gap-1">
-                                        <button className="p-2 text-gray-500 hover:text-white transition-colors" title="Download">
+                                    <div className="flex items-center gap-2">
+                                        <button className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors" title="Download">
                                             <Download className="w-4 h-4" />
                                         </button>
-                                        <button className="p-2 text-gray-500 hover:text-white transition-colors" title="Add to Studio">
+                                        <button className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors" title="Add to Studio">
                                             <Layers className="w-4 h-4" />
                                         </button>
-                                        <button className="p-2 text-gray-500 hover:text-white transition-colors" title="Share">
+                                        <button className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors" title="Share">
                                             <Share2 className="w-4 h-4" />
                                         </button>
                                     </div>
-                                    <button className="p-2 text-gray-500 hover:text-white transition-colors" title="Regenerate">
-                                        <RotateCw className="w-4 h-4" />
+                                    <button className="px-3 py-1.5 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-xs font-bold flex items-center gap-2">
+                                        <RotateCw className="w-3.5 h-3.5" />
+                                        Regenerate
                                     </button>
                                 </div>
                             </div>
-                        </GSAPTransition>
-                    ))}
-                </div>
+                        ))}
+                    </GSAPTransition>
+                )}
 
             </main>
         </div>

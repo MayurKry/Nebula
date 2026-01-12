@@ -13,6 +13,7 @@ interface PromptBarProps {
     settings?: any;
     onSettingsChange?: (settings: any) => void;
     actions?: Array<{ label: string; onClick: () => void; icon?: React.ReactNode }>;
+    extraActions?: React.ReactNode;
 }
 
 const PromptBar: React.FC<PromptBarProps> = ({
@@ -26,7 +27,8 @@ const PromptBar: React.FC<PromptBarProps> = ({
     placeholder = "Ask anything",
     isGenerating = false,
     isEnhancing = false,
-    actions = []
+    actions = [],
+    extraActions
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -109,6 +111,7 @@ const PromptBar: React.FC<PromptBarProps> = ({
 
                 <div className="flex items-center justify-between px-3 pb-2 pt-1 border-t border-white/5 mt-1">
                     <div className="flex items-center gap-1">
+                        {extraActions}
                         <button
                             onClick={handleFileClick}
                             className={`p-2.5 rounded-xl hover:bg-white/5 transition-all group relative ${attachedFile ? 'text-[#00FF88]' : 'text-gray-400 hover:text-white'}`}

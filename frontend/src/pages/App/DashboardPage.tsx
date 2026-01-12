@@ -166,7 +166,7 @@ const DashboardPage = () => {
                         <p className="text-gray-500 text-lg sm:text-xl font-medium max-w-2xl mx-auto italic">Transform your raw ideas into cinematic video projects with AI-driven choreography.</p>
                     </div>
 
-                    <div className="max-w-3xl mx-auto relative group">
+                    <div className="max-w-3xl mx-auto relative">
                         {/* Mode Toggle Tabs */}
                         <div className="flex justify-center mb-8">
                             <div className="bg-[#141414] border border-white/10 p-1 rounded-full inline-flex relative shadow-xl">
@@ -199,26 +199,43 @@ const DashboardPage = () => {
                             </div>
                         </div>
 
-                        <PromptBar
-                            value={prompt}
-                            onChange={setPrompt}
-                            onGenerate={handleGenerate}
-                            onEnhance={handleEnhancePrompt}
-                            onFileSelect={(file) => alert(`Selected file for ${generationMode}: ${file.name}`)}
-                            settings={{ quality: 'Pro', aspectRatio: '16:9' }}
-                            onSettingsChange={() => { }}
-                            isGenerating={isGenerating}
-                            isEnhancing={isEnhancing}
-                            placeholder={`State your vision for this ${generationMode === 'voice' ? 'voiceover' : generationMode}...`}
-                            actions={[
+                        {/* Glowing Shadow Wrapper - Only for Prompt */}
+                        <div className="relative group mb-6">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/20 via-[#00FF88]/20 to-blue-500/20 rounded-[28px] blur-lg group-hover:blur-xl transition-all opacity-50 group-hover:opacity-100 duration-1000" />
+                            <PromptBar
+                                value={prompt}
+                                onChange={setPrompt}
+                                onGenerate={handleGenerate}
+                                onEnhance={handleEnhancePrompt}
+                                onFileSelect={(file) => alert(`Selected file for ${generationMode}: ${file.name}`)}
+                                settings={{ quality: 'Pro', aspectRatio: '16:9' }}
+                                onSettingsChange={() => { }}
+                                isGenerating={isGenerating}
+                                isEnhancing={isEnhancing}
+                                placeholder={`State your vision for this ${generationMode === 'voice' ? 'voiceover' : generationMode}...`}
+                            />
+                        </div>
+
+                        {/* Prompt Pills / Suggestions (Outside Glow) */}
+                        <div className="flex flex-wrap items-center justify-center gap-2.5 px-4 mb-4">
+                            {[
                                 { label: 'Sci-Fi Epic', onClick: () => setPrompt('A high-octane cinematic trailer for a sci-fi epic, massive space stations and neon cities, volumetric lighting'), icon: <Video className="w-3 h-3" /> },
                                 { label: 'British Narrator', onClick: () => { setPrompt('A deep professional British voice with a calm and wise tone'); setGenerationMode('voice'); }, icon: <Mic2 className="w-3 h-3" /> },
                                 { label: 'Macro Product', onClick: () => setPrompt('An elegant product showcase for a luxury watch, smooth macro shots, soft bokeh, 8k photorealistic'), icon: <Wand2 className="w-3 h-3" /> },
-                            ]}
-                        />
+                            ].map((action, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={action.onClick}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#141414] border border-white/5 hover:border-white/20 rounded-full text-[13px] font-medium text-gray-400 hover:text-white transition-all hover:bg-white/10 hover:shadow-xl hover:-translate-y-0.5"
+                                >
+                                    {action.icon}
+                                    {action.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Suggestions Section */}
+                    {/* Suggestions Section - Separate */}
                     <div className="max-w-4xl mx-auto pt-12">
                         <div className="flex justify-center gap-2 mb-8 flex-wrap">
                             {categories.map(cat => (

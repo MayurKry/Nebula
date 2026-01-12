@@ -15,6 +15,8 @@ import ActivityLogPage from "@/pages/App/ActivityLogPage";
 import LibraryPage from "@/pages/App/LibraryPage";
 import PaymentPage from "@/pages/App/PaymentPage";
 import NotFoundPage from "@/pages/Shared/NotFoundPage";
+import AssetsNotFoundPage from "@/pages/App/AssetsNotFoundPage";
+import VideoEditorPreviewPage from "@/pages/App/VideoEditorPreviewPage";
 import MarketingRoutes from "./MarketingRoute";
 import PublicRoutes from "./PublicRoute";
 
@@ -32,6 +34,7 @@ function AppRoutes() {
         <Route path="create/image-to-video" element={<ImageToVideoPage />} />
         <Route path="create/ai-voices" element={<AIVoicesPage />} />
         <Route path="editor/:projectId" element={<TextToVideoPage />} />
+        <Route path="studio/editor" element={<VideoEditorPreviewPage />} />
         <Route path="library" element={<LibraryPage />} />
         <Route path="payment" element={<PaymentPage />} />
         <Route path="profile" element={<ProfilePage />} />
@@ -39,6 +42,7 @@ function AppRoutes() {
         <Route path="history" element={<JobHistoryPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="activity" element={<ActivityLogPage />} />
+        <Route path="assets" element={<AssetsNotFoundPage />} />
       </Route>
 
 

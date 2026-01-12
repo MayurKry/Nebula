@@ -56,7 +56,7 @@ const navGroups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { label: 'Storyboard', path: '/app/studio/storyboard', icon: <LayoutGrid className="w-4 h-4" />, badge: 'Soon' },
-      { label: 'Video Editor', path: '/app/studio/editor', icon: <Layers className="w-4 h-4" />, badge: 'Soon' },
+      { label: 'Video Editor', path: '/app/studio/editor', icon: <Layers className="w-4 h-4" /> },
       { label: 'Audio Suite', path: '/app/studio/audio', icon: <Music2 className="w-4 h-4" />, badge: 'Soon' },
     ],
   },
