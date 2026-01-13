@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import {
     Loader2, Move, Wind, ZoomIn, Eye,
     Layers, RotateCw, Folder, Play, Download,
-    Camera, Maximize, Plus
+    Camera, Maximize
 } from 'lucide-react';
 import { useGeneration, SAMPLE_VIDEO_THUMBS } from '@/components/generation/GenerationContext';
 import GenerationQueue from '@/components/generation/GenerationQueue';
@@ -108,7 +108,7 @@ const ImageToVideoPage = () => {
                         <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Nebula Motion 2.0</span>
                     </div>
                     <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter">
-                        Image to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Video</span>
+                        Frame to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Video</span>
                     </h1>
                     <p className="text-gray-500 text-lg max-w-xl mx-auto">
                         Breathe life into static images with AI choreography. Describe the motion or use our cinematic presets.
@@ -186,28 +186,14 @@ const ImageToVideoPage = () => {
                             onGenerate={handleGenerate}
                             isGenerating={isGenerating}
                             placeholder="Describe how parts of the image should move..."
-                            extraActions={
-                                sourceImage ? (
-                                    <button
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="relative w-8 h-8 rounded-lg overflow-hidden border border-white/20 hover:border-[#00FF88] group transition-all mr-2"
-                                        title="Change Source Image"
-                                    >
-                                        <img src={sourceImage} className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                            <RotateCw className="w-3 h-3 text-white" />
-                                        </div>
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="p-2.5 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10 mr-1"
-                                        title="Upload Source Image"
-                                    >
-                                        <Plus className="w-5 h-5" />
-                                    </button>
-                                )
-                            }
+                            onFileSelect={(file) => {
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                    setSourceImage(reader.result as string);
+                                    toast.success('Frame attached successfully');
+                                };
+                                reader.readAsDataURL(file);
+                            }}
                         />
                     </div>
 

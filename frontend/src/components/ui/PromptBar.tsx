@@ -14,6 +14,7 @@ interface PromptBarProps {
     onSettingsChange?: (settings: any) => void;
     actions?: Array<{ label: string; onClick: () => void; icon?: React.ReactNode }>;
     extraActions?: React.ReactNode;
+    hideAspectRatio?: boolean;
 }
 
 const PromptBar: React.FC<PromptBarProps> = ({
@@ -28,7 +29,8 @@ const PromptBar: React.FC<PromptBarProps> = ({
     isGenerating = false,
     isEnhancing = false,
     actions = [],
-    extraActions
+    extraActions,
+    hideAspectRatio = false
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -162,20 +164,22 @@ const PromptBar: React.FC<PromptBarProps> = ({
                                             </div>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <label className="text-xs text-gray-400">Aspect Ratio</label>
-                                            <div className="grid grid-cols-3 gap-2">
-                                                {['1:1', '16:9', '9:16'].map(ratio => (
-                                                    <button
-                                                        key={ratio}
-                                                        onClick={() => onSettingsChange?.({ ...settings, aspectRatio: ratio })}
-                                                        className={`px-2 py-1.5 border rounded-lg text-[10px] transition-all ${settings?.aspectRatio === ratio ? 'bg-[#00FF88] text-black border-[#00FF88]' : 'bg-white/5 border-white/5 text-white hover:border-[#00FF88]/40'}`}
-                                                    >
-                                                        {ratio}
-                                                    </button>
-                                                ))}
+                                        {!hideAspectRatio && (
+                                            <div className="space-y-2">
+                                                <label className="text-xs text-gray-400">Aspect Ratio</label>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    {['1:1', '16:9', '9:16'].map(ratio => (
+                                                        <button
+                                                            key={ratio}
+                                                            onClick={() => onSettingsChange?.({ ...settings, aspectRatio: ratio })}
+                                                            className={`px-2 py-1.5 border rounded-lg text-[10px] transition-all ${settings?.aspectRatio === ratio ? 'bg-[#00FF88] text-black border-[#00FF88]' : 'bg-white/5 border-white/5 text-white hover:border-[#00FF88]/40'}`}
+                                                        >
+                                                            {ratio}
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
+                                        )}
 
                                         <div className="pt-2 border-t border-white/5">
                                             <button className="w-full py-2 bg-[#00FF88] text-black text-xs font-bold rounded-xl hover:opacity-90 transition-all">

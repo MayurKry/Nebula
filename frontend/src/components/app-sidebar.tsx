@@ -40,7 +40,7 @@ const navGroups: NavGroup[] = [
       { label: 'Text → Image', path: '/app/create/text-to-image', icon: <ImageIcon className="w-4 h-4" /> },
       { label: 'Text → Video', path: '/app/create/text-to-video', icon: <Video className="w-4 h-4" /> },
       { label: 'Text → Audio', path: '/app/create/text-to-audio', icon: <Music2 className="w-4 h-4" /> },
-      { label: 'Image → Video', path: '/app/create/image-to-video', icon: <Film className="w-4 h-4" /> },
+      { label: 'Frame → Video', path: '/app/create/frame-to-video', icon: <Film className="w-4 h-4" /> },
     ],
   },
   {

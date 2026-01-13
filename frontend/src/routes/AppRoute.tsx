@@ -31,7 +31,7 @@ function AppRoutes() {
         <Route path="create/text-to-image" element={<TextToImagePage />} />
         <Route path="create/text-to-video" element={<TextToVideoPage />} />
         <Route path="create/text-to-audio" element={<TextToAudioPage />} />
-        <Route path="create/image-to-video" element={<ImageToVideoPage />} />
+        <Route path="create/frame-to-video" element={<ImageToVideoPage />} />
         <Route path="create/ai-voices" element={<AIVoicesPage />} />
         <Route path="editor/:projectId" element={<TextToVideoPage />} />
         <Route path="studio/editor" element={<VideoEditorPreviewPage />} />

@@ -176,6 +176,7 @@ const TextToAudioPage = () => {
                             placeholder="Describe the sound or music track you want to create..."
                             settings={{ style, duration }}
                             onSettingsChange={() => { }}
+                            hideAspectRatio={true}
                         />
                     </div>
 
