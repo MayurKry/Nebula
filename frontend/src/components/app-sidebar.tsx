@@ -35,7 +35,7 @@ const navGroups: NavGroup[] = [
   },
   {
     title: 'AI Playground',
-    defaultOpen: true,
+    defaultOpen: false, // Closed by default on mobile
     items: [
       { label: 'Text → Image', path: '/app/create/text-to-image', icon: <ImageIcon className="w-4 h-4" /> },
       { label: 'Text → Video', path: '/app/create/text-to-video', icon: <Video className="w-4 h-4" /> },
@@ -53,7 +53,7 @@ const navGroups: NavGroup[] = [
   },
   {
     title: 'Studio',
-    defaultOpen: true,
+    defaultOpen: false, // Closed by default on mobile
     items: [
       { label: 'Storyboard', path: '/app/studio/storyboard', icon: <LayoutGrid className="w-4 h-4" />, badge: 'Soon' },
       { label: 'Video Editor', path: '/app/studio/editor', icon: <Layers className="w-4 h-4" /> },
@@ -96,7 +96,7 @@ const AppSidebar = ({ isOpen: isOpenProp, onClose: onCloseProp }: AppSidebarProp
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <aside className={`fixed lg:static inset-y-0 left-0 w-64 bg-[#0A0A0A] border-r border-white/10 flex flex-col z-50 transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+    <aside className={`fixed lg:static top-0 left-0 h-[100dvh] lg:h-auto w-64 bg-[#0A0A0A] border-r border-white/10 flex flex-col z-[100] transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       {/* Logo & Close Button */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
         <Link to="/app/dashboard" className="flex items-center gap-2" title="Nebula">
@@ -110,8 +110,8 @@ const AppSidebar = ({ isOpen: isOpenProp, onClose: onCloseProp }: AppSidebarProp
         </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-hide">
+      {/* Navigation - Enable scrolling on mobile */}
+      <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2">
         {navGroups.map((group) => (
           <div key={group.title}>
             <button

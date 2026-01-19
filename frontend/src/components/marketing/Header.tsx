@@ -5,7 +5,15 @@ import { Menu, X, ChevronDown } from 'lucide-react';
 const Header = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [expandedMobileMenus, setExpandedMobileMenus] = useState<Record<string, boolean>>({});
     const location = useLocation();
+
+    const toggleMobileMenu = (name: string) => {
+        setExpandedMobileMenus(prev => ({
+            ...prev,
+            [name]: !prev[name]
+        }));
+    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -126,61 +134,77 @@ const Header = () => {
 
             {/* Mobile Menu */}
             <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-                <div className="flex items-center justify-between p-4 border-b border-[var(--marketing-border)]">
+                <div className="flex items-center justify-between p-4 border-b border-[var(--marketing-border)] bg-[#0A0A0A] sticky top-0 z-20">
                     <Link to="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
                         <img src="/nebula-logo.png" alt="Nebula" className="h-8 object-contain" />
+                        <span className="text-xs text-[var(--marketing-muted)] ml-2 bg-white/5 px-2 py-0.5 rounded">v2.1</span>
                     </Link>
                     <button
-                        className="p-2 text-white"
+                        className="p-2 text-white hover:bg-white/10 rounded-full transition-colors"
                         onClick={() => setIsMobileMenuOpen(false)}
                     >
                         <X className="w-6 h-6" />
                     </button>
                 </div>
-                <nav className="p-4">
-                    {navLinks.map((link) => (
-                        <div key={link.name} className="mb-2">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                    <nav className="p-4 lowercase-fix">
+                        {navLinks.map((link) => (
+                            <div key={link.name} className="mb-2">
+                                {link.hasDropdown ? (
+                                    <button
+                                        className={`w-full flex items-center justify-between px-4 py-3 text-base nav-link ${expandedMobileMenus[link.name] ? 'text-white' : ''
+                                            }`}
+                                        onClick={() => toggleMobileMenu(link.name)}
+                                    >
+                                        {link.name}
+                                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expandedMobileMenus[link.name] ? 'rotate-180' : ''
+                                            }`} />
+                                    </button>
+                                ) : (
+                                    <Link
+                                        to={link.href}
+                                        className={`block px-4 py-3 text-base nav-link ${isActive(link.href) ? 'active' : ''
+                                            }`}
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        {link.name}
+                                    </Link>
+                                )}
+
+                                {link.hasDropdown && expandedMobileMenus[link.name] && (
+                                    <div className="ml-4 mt-1 space-y-1">
+                                        {link.dropdownItems?.map((item) => (
+                                            <Link
+                                                key={item.name}
+                                                to={item.href}
+                                                className="block px-4 py-2 text-sm text-[var(--marketing-muted)] hover:text-white transition-colors"
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                            >
+                                                {item.name}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                        <div className="mt-6 space-y-3 px-4 pb-8">
                             <Link
-                                to={link.href}
-                                className={`block px-4 py-3 text-base nav-link ${isActive(link.href) ? 'active' : ''
-                                    }`}
+                                to="/login"
+                                className="block w-full text-center btn-secondary text-sm py-3"
                                 onClick={() => setIsMobileMenuOpen(false)}
                             >
-                                {link.name}
+                                Sign In
                             </Link>
-                            {link.hasDropdown && (
-                                <div className="ml-4 mt-1">
-                                    {link.dropdownItems?.map((item) => (
-                                        <Link
-                                            key={item.name}
-                                            to={item.href}
-                                            className="block px-4 py-2 text-sm text-[var(--marketing-muted)] hover:text-white"
-                                            onClick={() => setIsMobileMenuOpen(false)}
-                                        >
-                                            {item.name}
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
+                            <Link
+                                to="/contact"
+                                className="block w-full text-center btn-primary text-sm py-3"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                Book Demo
+                            </Link>
                         </div>
-                    ))}
-                    <div className="mt-6 space-y-3 px-4">
-                        <Link
-                            to="/login"
-                            className="block w-full text-center btn-secondary text-sm py-3"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                            Sign In
-                        </Link>
-                        <Link
-                            to="/contact"
-                            className="block w-full text-center btn-primary text-sm py-3"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                            Book Demo
-                        </Link>
-                    </div>
-                </nav>
+                    </nav>
+                </div>
             </div>
         </>
     );
