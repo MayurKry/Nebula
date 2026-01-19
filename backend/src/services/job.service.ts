@@ -196,6 +196,52 @@ class JobService {
     }
 
     /**
+     * Cancel all processing and queued jobs (for maintenance mode)
+     */
+    async cancelAllProcessingJobs(reason: string = "System maintenance"): Promise<{ count: number; jobs: IJob[] }> {
+        try {
+            const jobs = await JobModel.find({
+                status: { $in: ["queued", "processing", "retrying"] }
+            });
+
+            const updatePromises = jobs.map(job =>
+                JobModel.findByIdAndUpdate(
+                    job._id,
+                    {
+                        status: "cancelled",
+                        error: {
+                            message: reason,
+                            code: "MAINTENANCE_MODE",
+                            timestamp: new Date()
+                        }
+                    },
+                    { new: true }
+                )
+            );
+
+            const updatedJobs = await Promise.all(updatePromises);
+
+            logger.info(`Cancelled ${updatedJobs.length} jobs due to: ${reason}`);
+
+            return {
+                count: updatedJobs.length,
+                jobs: updatedJobs.filter(j => j !== null) as IJob[]
+            };
+        } catch (error: any) {
+            logger.error("Failed to cancel all processing jobs:", error);
+            throw new Error("Failed to cancel all processing jobs");
+        }
+    }
+
+    /**
+     * Check if system is in maintenance mode
+     */
+    isMaintenanceMode(): boolean {
+        return process.env.MAINTENANCE_MODE === "true";
+    }
+
+
+    /**
      * Simulate async job processing
      * In production, this would be handled by a job queue (Bull, BullMQ, etc.)
      */

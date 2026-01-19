@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import os from "os";
+import { isGeminiMaintenance } from "../middlewares/maintenance.middleware";
+import { costTracker } from "../utils/costTracker";
 
 /**
  * AI Image Generation Service
@@ -75,10 +77,15 @@ class AIImageService {
             console.log("[AI Service] Added pollinations as fallback provider (free, no API key required)");
         }
 
-        // Debug: List models on startup to help the user identify their access
+        // DISABLED: Automatic model listing to prevent unnecessary API calls and costs
+        // if (this.geminiKey) {
+        //     console.log("[AI Service] Gemini key found, listing available models...");
+        //     this.listAvailableGeminiModels().catch(() => { });
+        // }
+
         if (this.geminiKey) {
-            console.log("[AI Service] Gemini key found, listing available models...");
-            this.listAvailableGeminiModels().catch(() => { });
+            console.log("[AI Service] ⚠️  Gemini key configured. Cost tracking enabled.");
+            console.log("[AI Service] 💰 All API calls will be logged with cost estimates.");
         }
     }
 
@@ -143,6 +150,11 @@ class AIImageService {
     private async generateWithGemini(
         params: ImageGenerationParams
     ): Promise<ImageGenerationResult> {
+        // Check maintenance mode
+        if (isGeminiMaintenance()) {
+            throw new Error("Gemini AI is currently under maintenance. Please try again later or use alternative providers.");
+        }
+
         if (!this.geminiKey) {
             throw new Error("Gemini API key not configured");
         }
@@ -167,13 +179,23 @@ class AIImageService {
             ];
             let lastError: any;
 
-            // Optional: List available models to console for debugging if we hit issues
-            if (process.env.DEBUG_AI) {
-                this.listAvailableGeminiModels().catch(console.error);
-            }
+            // DISABLED: Optional model listing to prevent unnecessary API calls
+            // if (process.env.DEBUG_AI) {
+            //     this.listAvailableGeminiModels().catch(console.error);
+            // }
 
             for (const model of modelVersions) {
                 try {
+                    // Log attempt
+                    costTracker.logCall({
+                        timestamp: new Date(),
+                        model,
+                        type: 'image',
+                        status: 'attempted',
+                        estimatedCost: costTracker.estimateImageCost(model),
+                        metadata: { prompt: prompt.substring(0, 50) }
+                    });
+
                     console.log(`[Gemini] Attempting with model: ${model}`);
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict`;
 
@@ -235,6 +257,16 @@ class AIImageService {
                     const imageUrl = `/public/generated/${filename}`; // Relative URL for frontend
                     console.log(`[Gemini] Success with ${model}, saved to ${filepath}`);
 
+                    // Log successful API call with cost
+                    costTracker.logCall({
+                        timestamp: new Date(),
+                        model,
+                        type: 'image',
+                        status: 'success',
+                        estimatedCost: costTracker.estimateImageCost(model),
+                        metadata: { prompt: prompt.substring(0, 50), width, height }
+                    });
+
                     return {
                         url: `${this.BASE_URL}${imageUrl}`, // Absolute URL
                         provider: "gemini",
@@ -244,6 +276,17 @@ class AIImageService {
                     };
                 } catch (err: any) {
                     lastError = err;
+
+                    // Log failed attempt
+                    costTracker.logCall({
+                        timestamp: new Date(),
+                        model,
+                        type: 'image',
+                        status: 'failed',
+                        estimatedCost: 0, // Failed calls may or may not be charged
+                        metadata: { error: err.message }
+                    });
+
                     if (err.response?.status === 404) {
                         console.warn(`[Gemini] Model ${model} returned 404. Skipping...`);
                         continue;
@@ -576,6 +619,10 @@ class AIImageService {
      * Google Gemini - Text generation
      */
     async generateText(prompt: string): Promise<string> {
+        // Check maintenance mode
+        if (isGeminiMaintenance()) {
+            throw new Error("Gemini AI is currently under maintenance. Please try again later.");
+        }
         if (!this.geminiKey) {
             throw new Error("Gemini API key not configured");
         }
@@ -612,6 +659,9 @@ class AIImageService {
 
         for (const model of candidateModels) {
             try {
+                // Log text generation attempt
+                const inputChars = prompt.length;
+
                 console.log(`[Gemini Text] Attempting with model: ${model}`);
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
@@ -632,8 +682,28 @@ class AIImageService {
                 const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!text) continue;
 
+                // Log successful text generation
+                const outputChars = text.length;
+                costTracker.logCall({
+                    timestamp: new Date(),
+                    model,
+                    type: 'text',
+                    status: 'success',
+                    estimatedCost: costTracker.estimateTextCost(model, prompt.length, outputChars),
+                    metadata: { inputChars: prompt.length, outputChars, promptPreview: prompt.substring(0, 50) }
+                });
+
                 return text;
             } catch (error: any) {
+                // Log failed text generation
+                costTracker.logCall({
+                    timestamp: new Date(),
+                    model,
+                    type: 'text',
+                    status: 'failed',
+                    estimatedCost: 0,
+                    metadata: { error: error.message }
+                });
                 console.warn(`[Gemini Text] Failed with ${model}:`, error.message);
                 lastError = error;
                 if (error.response?.status === 404) continue;

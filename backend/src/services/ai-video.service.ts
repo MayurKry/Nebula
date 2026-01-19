@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { aiImageService } from "./ai-image.service";
+import { isGeminiMaintenance } from "../middlewares/maintenance.middleware";
+import { costTracker } from "../utils/costTracker";
 
 export interface VideoGenerationParams {
     prompt: string;
@@ -95,9 +97,24 @@ class AIVideoService {
     }
 
     private async generateWithGemini(params: VideoGenerationParams): Promise<VideoGenerationResult> {
-        const { prompt } = params;
+        // Check maintenance mode
+        if (isGeminiMaintenance()) {
+            throw new Error("Gemini AI is currently under maintenance. Please try again later or use alternative providers.");
+        }
+
+        const { prompt, duration = 12 } = params;
         const model = "veo-2.0-generate-001";
         console.log(`[AIVideoService] Starting Google Gemini Veo generation for: "${prompt}"`);
+
+        // Log video generation attempt with cost
+        costTracker.logCall({
+            timestamp: new Date(),
+            model,
+            type: 'video',
+            status: 'attempted',
+            estimatedCost: costTracker.estimateVideoCost(duration),
+            metadata: { prompt: prompt.substring(0, 50), duration }
+        });
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:predictLongRunning?key=${this.geminiKey}`;
 

@@ -204,5 +204,61 @@ export const jobController = {
                 message: error.message || "Failed to get job stats"
             });
         }
+    },
+
+    /**
+     * Cancel all processing and queued jobs (for maintenance mode)
+     */
+    async cancelAllJobs(req: Request, res: Response) {
+        try {
+            const userId = (req as any).user?.userId;
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Unauthorized"
+                });
+            }
+
+            const reason = req.body.reason || "System maintenance";
+            const result = await jobService.cancelAllProcessingJobs(reason);
+
+            return res.status(200).json({
+                success: true,
+                message: `Cancelled ${result.count} jobs`,
+                data: {
+                    count: result.count,
+                    jobs: result.jobs
+                }
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                message: error.message || "Failed to cancel jobs"
+            });
+        }
+    },
+
+    /**
+     * Get maintenance status
+     */
+    async getMaintenanceStatus(req: Request, res: Response) {
+        try {
+            const isMaintenanceMode = process.env.MAINTENANCE_MODE === "true";
+            const isGeminiMaintenance = process.env.GEMINI_MAINTENANCE === "true";
+
+            return res.status(200).json({
+                success: true,
+                data: {
+                    maintenanceMode: isMaintenanceMode,
+                    geminiMaintenance: isGeminiMaintenance,
+                    message: process.env.MAINTENANCE_MESSAGE || "System is under maintenance"
+                }
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                message: error.message || "Failed to get maintenance status"
+            });
+        }
     }
 };

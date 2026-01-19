@@ -145,6 +145,6 @@ const campaignSchema = new Schema<ICampaign>(
 
 // Indexes
 campaignSchema.index({ userId: 1, createdAt: -1 });
-campaignSchema.index({ status: 1 });
+
 
 export const CampaignModel = mongoose.model<ICampaign>("Campaign", campaignSchema);

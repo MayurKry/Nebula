@@ -16,6 +16,9 @@ interface AuthenticatedRequest extends Request {
 
 // AI Image Generation with multiple providers
 export const generateImage = asyncHandler(async (req: Request, res: Response) => {
+    // Maintenance Mode
+    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
+
     const { prompt, style, width = 1024, height = 1024, seed, negativePrompt, count = 2, aspectRatio, cameraAngle } = req.body;
 
     if (!prompt) {
@@ -164,6 +167,9 @@ export const getAIProviders = asyncHandler(async (req: Request, res: Response) =
 
 // Real AI Video Generation (Text-to-Video)
 export const generateVideo = asyncHandler(async (req: Request, res: Response) => {
+    // Maintenance Mode
+    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
+
     const { prompt, style, duration = 3 } = req.body;
 
     if (!prompt) {
@@ -245,6 +251,9 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
 
 // Check video generation status
 export const checkVideoStatus = asyncHandler(async (req: Request, res: Response) => {
+    // Maintenance Mode
+    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
+
     const { jobId } = req.params;
     const userId = (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
 
@@ -303,6 +312,9 @@ export const checkVideoStatus = asyncHandler(async (req: Request, res: Response)
 
 // Generate Full Video Project (Script -> Storyboard -> Video)
 export const generateVideoProject = asyncHandler(async (req: Request, res: Response) => {
+    // Maintenance Mode
+    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
+
     const { prompt, style, duration = 30 } = req.body;
 
     // Use Gemini to generate the project structure
@@ -539,6 +551,9 @@ export const generateVideoProject = asyncHandler(async (req: Request, res: Respo
 
 // Mock Storyboard Generation
 export const generateStoryboard = asyncHandler(async (req: Request, res: Response) => {
+    // Maintenance Mode
+    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
+
     const { script, scenes = 6 } = req.body;
 
     // Simulate processing delay
@@ -603,6 +618,9 @@ export const updateOnboarding = asyncHandler(async (req: Request, res: Response)
 
 // Regenerate a single scene image
 export const regenerateScene = asyncHandler(async (req: Request, res: Response) => {
+    // Maintenance Mode
+    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
+
     const { description, style, width = 1280, height = 720 } = req.body;
 
     if (!description) {
@@ -633,6 +651,9 @@ export const regenerateScene = asyncHandler(async (req: Request, res: Response) 
 
 // Animate a scene (Image-to-Video)
 export const animateScene = asyncHandler(async (req: Request, res: Response) => {
+    // Maintenance Mode
+    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
+
     const { imageUrl, prompt } = req.body;
 
     if (!imageUrl) {
@@ -742,6 +763,9 @@ export const getHistoryItem = asyncHandler(async (req: Request, res: Response) =
 
 // Enhance Prompt using AI
 export const enhancePrompt = asyncHandler(async (req: Request, res: Response) => {
+    // Maintenance Mode
+    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
+
     const { prompt } = req.body;
 
     if (!prompt) {

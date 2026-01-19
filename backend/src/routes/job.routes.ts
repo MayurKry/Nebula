@@ -25,4 +25,10 @@ router.post("/:jobId/retry", jobController.retryJob);
 // Cancel a job
 router.post("/:jobId/cancel", jobController.cancelJob);
 
+// Cancel all processing/queued jobs (for maintenance)
+router.post("/cancel-all", jobController.cancelAllJobs);
+
+// Get maintenance status
+router.get("/maintenance/status", jobController.getMaintenanceStatus);
+
 export default router;
