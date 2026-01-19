@@ -636,11 +636,11 @@ class AIImageService {
 
         // Prioritize models that are confirmed available, otherwise use defaults
         const defaultModels = [
-            "gemini-2.0-flash-exp",
             "gemini-1.5-flash",
-            "gemini-1.5-pro",
+            "gemini-1.0-pro",
             "gemini-pro",
-            "gemini-1.0-pro"
+            "gemini-2.0-flash-exp",
+            "gemini-1.5-pro",
         ];
 
         let candidateModels = [...defaultModels];

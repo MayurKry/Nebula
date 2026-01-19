@@ -136,41 +136,24 @@ class CampaignService {
 
             try {
                 // Use real AI to generate campaign script
-                const scriptPrompt = `You are an expert marketing copywriter and campaign strategist. Create a professional, compelling marketing campaign script based on the following details:
-
-Brand Name: ${campaign.brandName}
-Product/Service: ${campaign.productName || 'Not specified'}
-Campaign Objective: ${campaign.objective}
-Target Audience: ${campaign.audienceDescription || campaign.audienceType}
-Brand Tone: ${campaign.brandTone || 'Professional'}
-Call to Action: ${campaign.cta}
+                const scriptPrompt = `Create a short, professional marketing script for:
+Item: ${campaign.productName || campaign.brandName}
+Goal: ${campaign.objective}
+Audience: ${campaign.audienceDescription || campaign.audienceType}
+Tone: ${campaign.brandTone}
+CTA: ${campaign.cta}
 Platforms: ${campaign.platforms.join(', ')}
-Visual Style: ${campaign.visualStyle || 'Modern'}
-${campaign.productDescription ? `Product Description: ${campaign.productDescription}` : ''}
-${campaign.primaryColor ? `Brand Color: ${campaign.primaryColor}` : ''}
-
-Create a compelling marketing script with clear sections: Opening Hook, Main Message, Key Benefits, and Call to Action. Keep it concise, engaging, and suitable for ${campaign.contentType} content. The script should be ready for ${campaign.platforms.join(' and ')} platforms.`;
+Provide: Hook, Message, Benefits, and CTA. Max 150 words.`;
 
                 logger.info(`[Campaign Script] Generating AI script for campaign ${campaignId}`);
                 const aiScript = await aiImageService.generateText(scriptPrompt);
                 script = aiScript.trim();
 
                 // Generate scene outline using AI
-                const scenePrompt = `Based on this marketing campaign script, create a detailed scene-by-scene breakdown for ${campaign.contentType} production. Each scene should be a single line describing the visual content.
-
-Script:
-${script}
-
-Campaign Details:
-- Visual Style: ${campaign.visualStyle || 'Modern'}
-- Platforms: ${campaign.platforms.join(', ')}
-- Content Type: ${campaign.contentType}
-- Duration: ${campaign.videoDuration ? `${campaign.videoDuration} seconds` : 'Standard'}
-
-Provide 4-6 scene descriptions, each on a new line, formatted as:
-Scene 1: [Description]
-Scene 2: [Description]
-etc.`;
+                const scenePrompt = `Break this script into 4-6 visual scenes (one line each):
+Script: ${script}
+Style: ${campaign.visualStyle}
+Format: Scene X: [Short Description]`;
 
                 logger.info(`[Campaign Script] Generating AI scene outline for campaign ${campaignId}`);
                 const aiScenes = await aiImageService.generateText(scenePrompt);

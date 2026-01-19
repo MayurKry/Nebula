@@ -7,40 +7,52 @@ import { ActivityService } from "../services/activity.service";
 import { NotificationService } from "../services/notification.service";
 import { AssetModel } from "../models/asset.model";
 import { GenerationHistoryModel } from "../models/generation-history.model";
+import { intentService } from "../services/intent.service";
 import mongoose from "mongoose";
 
 // Extend Request type to include user (if not already globally defined, but here for safety/clarity in this file scope)
 interface AuthenticatedRequest extends Request {
     user?: any;
 }
-
-// AI Image Generation with multiple providers
 export const generateImage = asyncHandler(async (req: Request, res: Response) => {
-    // Maintenance Mode
-    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
+    const {
+        prompt,
+        style,
+        width = 1024,
+        height = 1024,
+        seed,
+        negativePrompt,
+        count = 2,
+        aspectRatio,
+        cameraAngle
+    } = req.body;
 
-    const { prompt, style, width = 1024, height = 1024, seed, negativePrompt, count = 2, aspectRatio, cameraAngle } = req.body;
-
-    if (!prompt) {
-        return responseHandler(res, 400, "Prompt is required");
+    if (!prompt || typeof prompt !== 'string') {
+        return responseHandler(res, 400, "Prompt is required and must be a string");
     }
+
+    // Systematic Flow Step 1: Analyze Intent
+    console.log(`[Systematic Flow] Analyzing intent for prompt starting with: "${prompt.substring(0, 30)}..."`);
+    const intentAnalysis = await intentService.analyzeIntent(prompt, "image");
+
+    // Systematic Flow Step 2: Intent-based Enhancement
+    const systematicPrompt = await intentService.getSystematicPrompt(prompt, intentAnalysis);
+    console.log(`[Systematic Flow] Intent: ${intentAnalysis.intent}, Complexity: ${intentAnalysis.complexity}`);
 
     const userId = (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
 
     try {
-        // Generate multiple images using AI service (with automatic fallback)
-        const imageCount = Math.min(Math.max(1, count), 4); // Limit between 1-4 images
+        // Systematic Flow Step 3: Optimized Execution
+        const imageCount = Math.min(Math.max(1, count), 4);
 
-        // Generate images with different seeds to ensure variety
         const promises = Array.from({ length: imageCount }, (_, index) => {
-            // Use provided seed or generate random seed, but make each image different
-            const imageSeed = seed ? seed + index : Math.floor(Math.random() * 1000000) + index;
+            const imageSeed = seed ? (Number(seed) + index) : Math.floor(Math.random() * 1000000) + index;
 
             return aiImageService.generateImage({
-                prompt,
-                style,
-                width,
-                height,
+                prompt: systematicPrompt,
+                style: style || intentAnalysis.intent,
+                width: Number(width),
+                height: Number(height),
                 seed: imageSeed,
                 negativePrompt,
             });
@@ -76,13 +88,13 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
                 type: "image",
                 prompt,
                 settings: {
-                    style,
-                    width,
-                    height,
-                    aspectRatio,
-                    seed,
-                    cameraAngle,
-                    negativePrompt,
+                    style: style || intentAnalysis.intent,
+                    width: Number(width),
+                    height: Number(height),
+                    aspectRatio: aspectRatio || '1:1',
+                    seed: seed || 'random',
+                    cameraAngle: cameraAngle || 'eye-level',
+                    negativePrompt: negativePrompt || '',
                     count: imageCount
                 },
                 results: results.map((result, index) => ({
@@ -135,7 +147,15 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
                 userId: new mongoose.Types.ObjectId(userId),
                 type: "image",
                 prompt,
-                settings: { style, width, height, aspectRatio, seed, negativePrompt, count },
+                settings: {
+                    style: style || 'default',
+                    width: Number(width),
+                    height: Number(height),
+                    aspectRatio: aspectRatio || '1:1',
+                    seed: seed || 'random',
+                    negativePrompt: negativePrompt || '',
+                    count
+                },
                 results: [],
                 status: "failed",
                 error: error.message
@@ -167,21 +187,25 @@ export const getAIProviders = asyncHandler(async (req: Request, res: Response) =
 
 // Real AI Video Generation (Text-to-Video)
 export const generateVideo = asyncHandler(async (req: Request, res: Response) => {
-    // Maintenance Mode
-    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
-
     const { prompt, style, duration = 3 } = req.body;
 
     if (!prompt) {
         return responseHandler(res, 400, "Prompt is required");
     }
 
+    // Systematic Flow Step 1: Analyze Intent
+    const intentAnalysis = await intentService.analyzeIntent(prompt, "video");
+
+    // Systematic Flow Step 2: Intent-based Enhancement
+    const systematicPrompt = await intentService.getSystematicPrompt(prompt, intentAnalysis);
+
     const userId = (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
 
     try {
-        // Use the new AI Video Service
+        // Systematic Flow Step 3: Optimized Execution
         const result = await aiVideoService.generateVideo({
-            prompt: style ? `${style} style. ${prompt}` : prompt,
+            prompt: systematicPrompt,
+            style: style || intentAnalysis.intent,
             duration
         });
 
@@ -312,35 +336,30 @@ export const checkVideoStatus = asyncHandler(async (req: Request, res: Response)
 
 // Generate Full Video Project (Script -> Storyboard -> Video)
 export const generateVideoProject = asyncHandler(async (req: Request, res: Response) => {
-    // Maintenance Mode
-    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
-
     const { prompt, style, duration = 30 } = req.body;
+
+    if (!prompt) {
+        return responseHandler(res, 400, "Prompt is required");
+    }
+
+    // Systematic Flow Step 1: Analyze Intent
+    console.log(`[Systematic Flow] Analyzing project intent for: "${prompt.substring(0, 30)}..."`);
+    const intentAnalysis = await intentService.analyzeIntent(prompt, "video");
+
+    // Systematic Flow Step 2: Intent-based Style
+    const projectStyle = style || intentAnalysis.intent;
 
     // Use Gemini to generate the project structure
     try {
-        const systemSystem = `You are an expert film director and AI video architect. 
-        Create a structured video project plan based on the user's prompt. 
-        Target Duration: ${duration} seconds. Style: ${style}.
-        
-        Output valid JSON only. NO MARKDOWN. Structure:
-        {
-          "script": "string (The full screenplay text)",
-          "language": "string (e.g. English)",
-          "region": "string (e.g. US)",
-          "characters": [
-            { "id": "char_1", "name": "string", "bio": "string", "accent": "string", "voiceId": "string" }
-          ],
-          "scenes": [
-            { 
-               "id": "scene_1", "order": 0, "description": "string (visual prompt for image generation)", 
-               "duration": number (seconds), "cameraPath": "string (Static, Pan, Zoom, Orbit)", 
-               "motionIntensity": number (1-100), "assignedCharacterId": "string (optional)" 
-            }
-          ]
-        }
-        Ensure scene durations sum to approx ${duration}. Create approx ${Math.max(3, Math.floor(duration / 5))} scenes.
-        `;
+        const systemSystem = `Act as an AI Video Director. Create a video plan for: Style: ${projectStyle}, Duration: ${duration}s.
+Output valid JSON only. Structure:
+{
+  "script": "full script",
+  "language": "English",
+  "region": "US",
+  "characters": [{ "id": "char_1", "name": "name", "bio": "bio", "accent": "accent", "voiceId": "voiceId" }],
+  "scenes": [{ "id": "scene_1", "order": 0, "description": "visual prompt", "duration": seconds, "cameraPath": "Static/Pan/Zoom/Orbit", "motionIntensity": 1-100 }]
+}`;
 
         const userPrompt = `Project Prompt: "${prompt}"`;
 
@@ -618,9 +637,6 @@ export const updateOnboarding = asyncHandler(async (req: Request, res: Response)
 
 // Regenerate a single scene image
 export const regenerateScene = asyncHandler(async (req: Request, res: Response) => {
-    // Maintenance Mode
-    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
-
     const { description, style, width = 1280, height = 720 } = req.body;
 
     if (!description) {
@@ -628,13 +644,17 @@ export const regenerateScene = asyncHandler(async (req: Request, res: Response) 
     }
 
     try {
-        const visualPrompt = `${style} style. ${description}. High quality, cinematic lighting, 4k.`;
+        // Systematic Flow Step 1: Analyze Intent
+        const intentAnalysis = await intentService.analyzeIntent(description, "image");
+
+        // Systematic Flow Step 2: Intent-based Enhancement
+        const systematicPrompt = await intentService.getSystematicPrompt(description, intentAnalysis);
 
         const result = await aiImageService.generateImage({
-            prompt: visualPrompt,
-            width,
-            height,
-            style
+            prompt: systematicPrompt,
+            width: Number(width),
+            height: Number(height),
+            style: style || intentAnalysis.intent
         });
 
         return responseHandler(res, 200, "Scene regenerated successfully", {
@@ -651,9 +671,6 @@ export const regenerateScene = asyncHandler(async (req: Request, res: Response) 
 
 // Animate a scene (Image-to-Video)
 export const animateScene = asyncHandler(async (req: Request, res: Response) => {
-    // Maintenance Mode
-    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
-
     const { imageUrl, prompt } = req.body;
 
     if (!imageUrl) {
@@ -661,7 +678,17 @@ export const animateScene = asyncHandler(async (req: Request, res: Response) => 
     }
 
     try {
-        const result = await aiVideoService.animateImage(imageUrl, prompt);
+        let finalPrompt = prompt;
+
+        if (prompt) {
+            // Systematic Flow Step 1: Analyze Intent
+            const intentAnalysis = await intentService.analyzeIntent(prompt, "video");
+
+            // Systematic Flow Step 2: Intent-based Enhancement
+            finalPrompt = await intentService.getSystematicPrompt(prompt, intentAnalysis);
+        }
+
+        const result = await aiVideoService.animateImage(imageUrl, finalPrompt);
 
         return responseHandler(res, 200, "Scene animation started", {
             jobId: result.jobId,
@@ -763,9 +790,6 @@ export const getHistoryItem = asyncHandler(async (req: Request, res: Response) =
 
 // Enhance Prompt using AI
 export const enhancePrompt = asyncHandler(async (req: Request, res: Response) => {
-    // Maintenance Mode
-    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
-
     const { prompt } = req.body;
 
     if (!prompt) {
@@ -773,34 +797,16 @@ export const enhancePrompt = asyncHandler(async (req: Request, res: Response) =>
     }
 
     try {
-        const systemPrompt = `You are an expert prompt engineer for AI video and image generation. 
-Your task is to enhance the user's prompt to make it more detailed, cinematic, and production-ready while MAINTAINING THE EXACT SAME SUBJECT AND CONTEXT.
+        // Systematic Flow Step 1: Analyze Intent
+        const intentAnalysis = await intentService.analyzeIntent(prompt, "image");
 
-Rules:
-1. Keep the original subject, scene, and concept EXACTLY as described
-2. Add cinematic details: lighting, camera angles, atmosphere, mood
-3. Add technical quality descriptors: resolution, rendering style
-4. Keep it concise (max 2-3 sentences)
-5. Make it specific and vivid
-6. DO NOT change the core idea or add unrelated elements
-
-Return ONLY the enhanced prompt text, nothing else.`;
-
-        const userMessage = `Original prompt: "${prompt}"
-
-Enhance this prompt for video/image generation:`;
-
-        const enhancedPrompt = await aiImageService.generateText(`${systemPrompt}\n\n${userMessage}`);
-
-        // Clean up the response
-        const cleanedPrompt = enhancedPrompt
-            .replace(/^["']|["']$/g, '') // Remove quotes
-            .replace(/^Enhanced prompt:\s*/i, '') // Remove "Enhanced prompt:" prefix
-            .trim();
+        // Systematic Flow Step 2: Intent-based Enhancement
+        const systematicPrompt = await intentService.getSystematicPrompt(prompt, intentAnalysis);
 
         return responseHandler(res, 200, "Prompt enhanced successfully", {
             original: prompt,
-            enhanced: cleanedPrompt
+            enhanced: systematicPrompt,
+            intent: intentAnalysis.intent
         });
     } catch (error: any) {
         console.error("Prompt enhancement failed:", error);
