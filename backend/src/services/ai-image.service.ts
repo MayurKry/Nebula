@@ -41,7 +41,9 @@ class AIImageService {
 
     constructor() {
         // Load API keys from environment
-        this.geminiKey = process.env.GEMINI_API_KEY;
+        const rawGeminiKey = process.env.GEMINI_API_KEY;
+        this.geminiKey = (rawGeminiKey && rawGeminiKey !== "api_key_missing") ? rawGeminiKey : undefined;
+
         this.huggingfaceKey = process.env.HUGGINGFACE_API_KEY;
         this.segmindKey = process.env.SEGMIND_API_KEY;
         this.replicateKey = process.env.REPLICATE_API_KEY;

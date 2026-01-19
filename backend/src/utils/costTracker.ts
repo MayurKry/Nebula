@@ -17,7 +17,7 @@ class CostTracker {
     private sessionCost: number = 0;
 
     // Pricing as of 2026
-    private pricing = {
+    private pricing: Record<string, number> = {
         // Image generation
         'imagen-2.0-generate-001': 0.02,
         'imagen-3.0-fast-generate-001': 0.02,

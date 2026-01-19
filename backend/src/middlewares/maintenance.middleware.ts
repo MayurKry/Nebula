@@ -23,7 +23,8 @@ export const checkMaintenanceMode = (req: Request, res: Response, next: NextFunc
  * Check if Gemini API is specifically under maintenance
  */
 export const isGeminiMaintenance = (): boolean => {
-    return process.env.GEMINI_MAINTENANCE === "true" || process.env.MAINTENANCE_MODE === "true";
+    const isKeyMissing = !process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "api_key_missing";
+    return process.env.GEMINI_MAINTENANCE === "true" || process.env.MAINTENANCE_MODE === "true" || isKeyMissing;
 };
 
 /**

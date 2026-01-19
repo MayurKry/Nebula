@@ -34,7 +34,9 @@ class AIVideoService {
         this.replicateKey = process.env.REPLICATE_API_KEY;
         this.huggingfaceKey = process.env.HUGGINGFACE_API_KEY;
         this.runwaymlKey = process.env.RUNWAYML_API_KEY;
-        this.geminiKey = process.env.GEMINI_API_KEY;
+
+        const rawGeminiKey = process.env.GEMINI_API_KEY;
+        this.geminiKey = (rawGeminiKey && rawGeminiKey !== "api_key_missing") ? rawGeminiKey : undefined;
 
         // Determine output directory based on environment
         // Vercel (and other serverless) file systems are read-only except /tmp
