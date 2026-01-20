@@ -51,52 +51,54 @@ const BentoItem = ({ title, description, icon: Icon, className, iconClassName, b
 const BentoGrid = () => {
     return (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4 md:grid-rows-3 lg:gap-6">
-            {/* Gen-4 AI Engine (Large) */}
+            {/* Gen-4 AI Engine (Large) -> Nebula Cortex */}
             <BentoItem
-                title="Gen-4 AI Engine"
-                description="Our most advanced latent diffusion model yet. Experience unparalleled temporal consistency and hyper-realistic detail in every frame."
+                title="Nebula Cortex"
+                description="Powered by Gemini 2.0. Multimodal reasoning engine that acts as the creative director, managing script context, narrative flow, and intricate prompt engineering."
                 icon={Sparkles}
                 className="md:col-span-2 md:row-span-2"
                 iconClassName="h-16 w-16"
-                badge="Latest"
+                badge="Reasoning Core"
             />
 
-            {/* AI Video Generation (Wide) */}
+            {/* AI Video Generation (Wide) -> Nebula Motion */}
             <BentoItem
-                title="Cinematic Generation"
-                description="Transform text into breathtaking 4K videos. AI that understands cinematography, lighting, and physics."
+                title="Nebula Motion"
+                description="Powered by Runway Gen-3 Alpha. Cinematic video generation with advanced physics simulation, complex lighting, and high-fidelity temporal consistency."
                 icon={Video}
                 className="md:col-span-2 md:row-span-1"
+                badge="Cinematic Physics"
             />
 
-            {/* Real-time Rendering (Small) */}
+            {/* Real-time Rendering (Small) -> Nebula Vision */}
             <BentoItem
-                title="Instant Logic"
-                description="Proprietary cloud rendering for lightning-fast results."
+                title="Nebula Vision"
+                description="Powered by Imagen 3 Ultra & FLUX.1. Photorealistic asset synthesis."
                 icon={Zap}
                 className="md:col-span-1 md:row-span-1"
             />
 
-            {/* Storyboarding (Tall) */}
+            {/* Storyboarding (Tall) -> Nebula Orchestrator */}
             <BentoItem
-                title="AI Storyboards"
-                description="From script to screen in seconds. Automated shot composition, blocking, and narrative flow planning."
+                title="Nebula Orchestrator"
+                description="Our proprietary multi-agent swarm architecture. Scores of specialized AI agents collaborate to handle production tasks in parallel, from sound design to color grading."
                 icon={Wand2}
                 className="md:col-span-1 md:row-span-2"
+                badge="Agent Swarm"
             />
 
-            {/* VFX & Styles (Wide) */}
+            {/* VFX & Styles (Wide) -> Nebula Voice */}
             <BentoItem
-                title="Style Transfer & VFX"
-                description="Apply any artistic style or cinematic aesthetic instantly. Studio-grade visual effects powered by neural networks."
+                title="Nebula Voice"
+                description="Powered by ElevenLabs Turbo v2.5. Human-parity audio synthesis with emotive range, multi-speaker capabilities, and dynamic sound scaling."
                 icon={Wand}
                 className="md:col-span-2 md:row-span-1"
             />
 
-            {/* Global Scale (Small) */}
+            {/* Global Scale (Small) -> Infrastructure */}
             <BentoItem
-                title="Enterprise Scale"
-                description="Reliability at global scale. 99.9% uptime and low-latency nodes worldwide."
+                title="H100 Clusters"
+                description="Enterprise-grade compute on Tier-1 GPUs for sub-second inference."
                 icon={Globe}
                 className="md:col-span-1 md:row-span-1"
             />

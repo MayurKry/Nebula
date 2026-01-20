@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, ArrowRight, HelpCircle, X } from 'lucide-react';
 import BookDemoModal from '@/components/marketing/BookDemoModal';
+import PayAsYouGoCalculator from '@/components/marketing/PayAsYouGoCalculator';
 
 const Pricing = () => {
     const [isBookDemoOpen, setIsBookDemoOpen] = useState(false);
@@ -8,61 +9,77 @@ const Pricing = () => {
 
     const plans = [
         {
-            name: 'Free',
-            description: 'Perfect for trying out Nebula',
+            name: 'Starter',
+            description: 'Perfect for exploring AI content creation',
             price: { monthly: 0, yearly: 0 },
             features: [
-                '50 video generations/month',
-                '720p resolution',
-                '10 second max duration',
-                'Basic image generation',
+                '100 AI credits/month (~10 videos)',
+                'Nebula Vision (Imagen 3)',
+                'Nebula Chat (Gemini Flash)',
+                '720p video resolution',
+                '5-second video clips',
+                '50 image generations',
                 'Community support',
-                'Watermarked outputs',
+                'Nebula watermark on outputs',
             ],
             notIncluded: [
+                'HD/4K video quality',
+                'Nebula Motion (Runway)',
+                'Nebula Voice (Audio)',
                 'API access',
                 'Priority rendering',
-                'Custom models',
+                'Team collaboration',
+                'Custom fine-tuning',
             ],
-            cta: 'Get Started Free',
+            cta: 'Start Free',
             highlighted: false,
         },
         {
-            name: 'Pro',
-            description: 'For creators and small teams',
-            price: { monthly: 49, yearly: 39 },
+            name: 'Creator',
+            description: 'For professional creators and agencies',
+            price: { monthly: 79, yearly: 59 },
             features: [
-                '500 video generations/month',
-                '4K resolution',
-                '60 second max duration',
-                'Full image suite',
-                'Audio generation',
-                'Priority support',
+                '1,000 AI credits/month (~100 videos)',
+                'All Nebula engines (Cortex, Motion, Vision, Voice)',
+                'Up to 4K video resolution',
+                '30-second video clips',
+                '500 image generations',
+                'Unlimited text generation',
+                '100K characters audio/month',
+                'Priority rendering queue',
                 'No watermarks',
-                'API access',
-                'Priority rendering',
+                'Email support (24hr response)',
+                'API access (10K requests/month)',
+                'Campaign orchestration',
             ],
             notIncluded: [
-                'Custom models',
+                'Custom model fine-tuning',
+                'Dedicated account manager',
+                'SLA guarantees',
+                'Team workspaces (5+ seats)',
             ],
-            cta: 'Start Pro Trial',
+            cta: 'Start 14-Day Trial',
             highlighted: true,
         },
         {
             name: 'Enterprise',
-            description: 'For teams and organizations',
+            description: 'For teams and large-scale production',
             price: { monthly: null, yearly: null },
             features: [
-                'Unlimited generations',
-                '8K resolution',
-                'Unlimited duration',
-                'All features included',
-                'Dedicated support',
-                'Custom models',
-                'SLA guarantee',
-                'SSO & SAML',
-                'Custom integrations',
-                'On-premise option',
+                'Custom AI credit allocation',
+                'Volume discounts (up to 40% off)',
+                'All premium engines + early access',
+                'Unlimited resolution & duration',
+                'Custom model fine-tuning',
+                'Team workspaces (unlimited seats)',
+                'Dedicated account manager',
+                '99.9% uptime SLA',
+                'Priority support (1hr response)',
+                'Unlimited API access',
+                'SSO & SAML authentication',
+                'Custom integrations & webhooks',
+                'On-premise deployment option',
+                'White-label solutions',
             ],
             notIncluded: [],
             cta: 'Contact Sales',
@@ -72,28 +89,28 @@ const Pricing = () => {
 
     const faqs = [
         {
-            question: 'What counts as a video generation?',
-            answer: 'Each video generation request counts as one generation, regardless of the length or resolution. Failed generations are not counted against your quota.',
+            question: 'What are AI credits and how do they work?',
+            answer: 'AI credits are our unified currency for all content generation. Different assets consume different amounts: videos use ~10 credits per generation, images use ~1 credit, and text/audio are metered by usage. Credits reset monthly and don\'t roll over.',
+        },
+        {
+            question: 'Which AI engines are included in each plan?',
+            answer: 'Starter includes Nebula Vision (Imagen 3) and Nebula Chat (Gemini Flash). Creator unlocks all engines: Nebula Cortex (Gemini Pro), Nebula Motion (Runway), Nebula Voice (ElevenLabs), and more. Enterprise gets early access to new engines.',
+        },
+        {
+            question: 'Can I use Pay-As-You-Go instead of a subscription?',
+            answer: 'Yes! Our Custom Production Calculator below lets you estimate costs for pay-as-you-go usage. This is perfect for occasional users or those with variable needs. You only pay for what you use with no monthly commitment.',
         },
         {
             question: 'Can I upgrade or downgrade my plan?',
-            answer: 'Yes, you can change your plan at any time. Upgrades take effect immediately, and downgrades take effect at the start of your next billing cycle.',
+            answer: 'Yes, you can change your plan at any time. Upgrades take effect immediately with prorated billing. Downgrades take effect at the start of your next billing cycle, and you keep your current plan benefits until then.',
         },
         {
-            question: 'Is there a free trial for Pro?',
-            answer: 'Yes, we offer a 14-day free trial of Pro with full access to all features. No credit card required to start.',
+            question: 'Is there a free trial for Creator?',
+            answer: 'Yes! We offer a 14-day free trial of the Creator plan with full access to all features and 1,000 AI credits. No credit card required to start your trial.',
         },
         {
             question: 'What payment methods do you accept?',
-            answer: 'We accept all major credit cards (Visa, Mastercard, American Express), PayPal, and bank transfers for Enterprise customers.',
-        },
-        {
-            question: 'Do unused generations roll over?',
-            answer: 'No, unused generations do not roll over to the next month. We recommend upgrading if you consistently need more generations.',
-        },
-        {
-            question: 'What is your refund policy?',
-            answer: 'We offer a 30-day money-back guarantee for annual subscriptions. Monthly subscriptions can be cancelled at any time.',
+            answer: 'We accept all major credit cards (Visa, Mastercard, American Express, Discover), PayPal, and bank transfers for Enterprise customers. All payments are processed securely through Stripe.',
         },
     ];
 
@@ -261,6 +278,8 @@ const Pricing = () => {
                     </div>
                 </div>
             </section>
+
+            <PayAsYouGoCalculator />
 
             {/* FAQ Section */}
             <section className="section-padding">

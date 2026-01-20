@@ -69,81 +69,67 @@ const Home = () => {
     ];
 
     const stats = [
-        { value: '10M+', label: 'Videos Created' },
-        { value: '500K+', label: 'Active Creators' },
-        { value: '99.9%', label: 'Uptime' },
-        { value: '150+', label: 'Countries' },
+        { value: '4', label: 'Foundation Models' },
+        { value: '<400ms', label: 'Inference Latency' },
+        { value: '8K', label: 'Resolution Support' },
+        { value: '100%', label: 'Commercial Rights' },
     ];
 
-    const testimonials = [
-        {
-            quote: "Nebula has completely transformed our content production. What used to take weeks now takes hours.",
-            author: "Sarah Chen",
-            role: "Creative Director",
-            company: "MediaFlow Studios",
-        },
-        {
-            quote: "The AI understands exactly what I'm looking for. It's like having a whole production team at my fingertips.",
-            author: "Marcus Williams",
-            role: "Independent Filmmaker",
-            company: "",
-        },
-        {
-            quote: "We've cut our video production costs by 80% while actually improving quality. Game-changing.",
-            author: "Elena Rodriguez",
-            role: "VP of Marketing",
-            company: "TechScale Inc.",
-        },
-    ];
+    // Testimonials removed as per optimization request
 
 
     return (
         <div ref={container} className="overflow-x-hidden">
             {/* Hero Section */}
-            <section className="relative min-h-[90vh] flex items-center hero-gradient overflow-hidden">
-                <div className="container-marketing relative z-10">
-                    <div className="max-w-4xl mx-auto text-center">
-                        <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--marketing-border)] bg-[var(--marketing-card)] mb-6">
+            <section className="relative min-h-[90vh] flex items-center justify-center bg-black overflow-hidden perspective-1000">
+                <div className="container-marketing relative z-20">
+                    <div className="max-w-5xl mx-auto text-center">
+                        <div className="hero-badge inline-flex items-center gap-2 px-6 py-2 rounded-full border border-[var(--marketing-accent)]/30 bg-[var(--marketing-accent)]/10 backdrop-blur-3xl mb-8 animate-fade-in-up">
                             <Sparkles className="w-4 h-4 text-[var(--marketing-accent)]" />
-                            <span className="text-sm text-[var(--marketing-muted)]">
-                                Introducing Nebula 2.0 — Now with Gen-4 AI
+                            <span className="text-sm font-bold text-[var(--marketing-accent)] tracking-wider uppercase">
+                                Nebula Studio v1.0 — Public Beta
                             </span>
-                            <ChevronRight className="w-4 h-4 text-[var(--marketing-muted)]" />
                         </div>
 
-                        <h1 className="hero-title text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
-                            Create stunning videos with{' '}
-                            <span className="gradient-text">AI power</span>
+                        <h1 className="hero-title text-5xl md:text-7xl lg:text-8xl font-black text-white mb-8 leading-[0.9] tracking-tighter mix-blend-screen">
+                            The Multi-Model <br />
+                            <span className="gradient-text">AI Foundry</span>
                         </h1>
 
-                        <p className="hero-description text-lg md:text-xl text-[var(--marketing-muted)] mb-8 max-w-2xl mx-auto">
-                            Transform your ideas into professional video content in minutes.
-                            Nebula's AI understands your vision and brings it to life.
+                        <p className="hero-description text-xl md:text-2xl text-[var(--marketing-muted)] mb-12 max-w-3xl mx-auto font-medium leading-relaxed">
+                            Orchestrate <span className="text-white">Gemini 2.0</span>, <span className="text-white">Runway Gen-3</span>, and <span className="text-white">ElevenLabs</span> into a single, unified cinematic workflow.
                         </p>
 
-                        <div className="hero-cta flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <div className="hero-cta flex flex-col sm:flex-row items-center justify-center gap-6">
                             <button
                                 onClick={() => setIsBookDemoOpen(true)}
-                                className="btn-primary text-base px-8 py-4 flex items-center gap-2 animate-pulse-glow"
+                                className="group relative px-8 py-4 bg-white text-black font-bold rounded-full text-lg hover:scale-105 transition-all shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-15px_rgba(255,255,255,0.5)]"
                             >
-                                Book a Demo
-                                <ArrowRight className="w-5 h-5" />
+                                Start Creating
+                                <ArrowRight className="w-5 h-5 inline-block ml-2 group-hover:translate-x-1 transition-transform" />
                             </button>
                             <Link
-                                to="/products"
-                                className="btn-secondary text-base px-8 py-4 flex items-center gap-2"
+                                to="/pricing"
+                                className="px-8 py-4 rounded-full border border-white/20 text-white font-bold hover:bg-white/10 transition-all flex items-center gap-2 backdrop-blur-sm"
                             >
-                                <Play className="w-5 h-5" />
-                                Watch Video
+                                <Globe className="w-5 h-5" />
+                                View Pricing
                             </Link>
                         </div>
                     </div>
                 </div>
 
-                {/* Background Elements */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="bg-blob-1 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-[var(--marketing-accent)]/5 blur-3xl" />
-                    <div className="bg-blob-2 absolute top-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-purple-500/5 blur-3xl" />
+                {/* Tech Visuals - Neural Orb & Grid */}
+                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[var(--marketing-accent)]/20 rounded-full blur-[120px] animate-pulse-slow" />
+
+                    {/* Rotating Rings */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-white/5 rounded-full animate-[spin_20s_linear_infinite]" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-dashed border-[var(--marketing-accent)]/20 rounded-full animate-[spin_30s_linear_infinite_reverse]" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-white/10 rounded-full animate-[spin_15s_linear_infinite]" />
+
+                    <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black to-transparent" />
                 </div>
             </section>
 
@@ -156,11 +142,11 @@ const Home = () => {
             <section className="section-padding">
                 <div className="container-marketing">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
-                            Platform <span className="gradient-text">Powerhouse</span>
+                        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6">
+                            Nebula Engine <span className="gradient-text">Architecture</span>
                         </h2>
-                        <p className="text-[var(--marketing-muted)] text-lg max-w-2xl mx-auto">
-                            The technological foundation that makes Nebula the world's most capable AI video platform.
+                        <p className="text-[var(--marketing-muted)] text-xl max-w-3xl mx-auto">
+                            A unified inference layer wrapping the world's most powerful foundation models.
                         </p>
                     </div>
 
@@ -233,40 +219,7 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* Testimonials Section */}
-            <section className="section-padding bg-[var(--marketing-card)]/30">
-                <div className="container-marketing">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
-                            Loved by creators worldwide
-                        </h2>
-                        <p className="text-[var(--marketing-muted)] text-lg max-w-2xl mx-auto">
-                            Join thousands of creators, studios, and brands who trust Nebula.
-                        </p>
-                    </div>
 
-                    <GSAPScrollSection animation="fade-in-up" stagger={0.2} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {testimonials.map((testimonial, index) => (
-                            <div key={index} className="glass-card p-6">
-                                <div className="flex items-center gap-1 mb-4">
-                                    {[...Array(5)].map((_, i) => (
-                                        <svg key={i} className="w-5 h-5 text-[var(--marketing-accent)]" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                        </svg>
-                                    ))}
-                                </div>
-                                <p className="text-white mb-4 text-lg">"{testimonial.quote}"</p>
-                                <div>
-                                    <div className="font-semibold text-white">{testimonial.author}</div>
-                                    <div className="text-[var(--marketing-muted)] text-sm">
-                                        {testimonial.role}{testimonial.company && `, ${testimonial.company}`}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </GSAPScrollSection>
-                </div>
-            </section>
 
             {/* Compliance Section */}
             <ComplianceSection />
