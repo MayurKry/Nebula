@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Play, Sparkles, Users, Globe, ChevronRight } from 'lucide-react';
+import { ArrowRight, Sparkles, Users, Globe } from 'lucide-react';
 import BookDemoModal from '@/components/marketing/BookDemoModal';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 import GSAPScrollSection from '@/components/ui/GSAPScrollSection';
