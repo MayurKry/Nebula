@@ -16,11 +16,13 @@ import PrivacyPolicy from '@/pages/Marketing/Legal/PrivacyPolicy';
 import TermsOfService from '@/pages/Marketing/Legal/TermsOfService';
 import CookiePolicy from '@/pages/Marketing/Legal/CookiePolicy';
 import Security from '@/pages/Marketing/Legal/Security';
+import ThemeExplorer from '@/pages/Marketing/ThemeExplorer';
 
 const MarketingRoutes = () => {
     return (
         <Route element={<MarketingLayout />}>
             <Route path="/" element={<Home />} />
+            <Route path="/theme-explorer" element={<ThemeExplorer />} />
             <Route path="/products" element={<Products />} />
             <Route path="/use-cases" element={<UseCases />} />
             <Route path="/use-cases/:id" element={<CaseStudyDetail />} />
