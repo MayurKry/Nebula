@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import Header from '@/components/marketing/Header';
 import Footer from '@/components/marketing/Footer';
 import CookieConsent from '@/components/ui/CookieConsent';
+import ThemeSwitcher from '@/components/ui/ThemeSwitcher';
 
 const MarketingLayout = () => {
     return (
@@ -12,6 +13,7 @@ const MarketingLayout = () => {
             </main>
             <Footer />
             <CookieConsent />
+            <ThemeSwitcher />
         </div>
     );
 };

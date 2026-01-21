@@ -21,6 +21,17 @@ const LoginPage = () => {
     try {
       await login({ email, password });
       toast.success('Login successful!');
+
+      // Check if user is super admin and redirect accordingly
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        if (userData.role === 'super_admin') {
+          navigate('/admin/dashboard');
+          return;
+        }
+      }
+
       navigate('/app/dashboard');
     } catch (err: any) {
       console.error("Login Failed:", err);

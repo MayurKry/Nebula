@@ -8,13 +8,20 @@ const initialUserCreation = async () => {
     const superAdminPassword = "Password@1";
     const superAdminFirstName = "Super";
     const superAdminLastName = "Admin";
-    const superAdminRole = "superAdmin";
+    const superAdminRole = "super_admin"; // Fixed: Use snake_case to match schema
 
     // Check if super admin already exists
     const existingAdmin = await UserModel.findOne({ email: superAdminEmail });
 
     if (existingAdmin) {
-      logger.info("Super Admin already exists. Skipping creation.");
+      // Update existing user to ensure they have super_admin role
+      if (existingAdmin.role !== "super_admin") {
+        existingAdmin.role = "super_admin";
+        await existingAdmin.save();
+        logger.info("Updated existing user to Super Admin role.");
+      } else {
+        logger.info("Super Admin already exists with correct role.");
+      }
     } else {
       // Hash password
       const hashedPassword = await bcrypt.hash(superAdminPassword, 10);

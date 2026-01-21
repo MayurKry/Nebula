@@ -592,3 +592,31 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Theme: Lagoon Nebula */
+.theme-lagoon {
+  --marketing-bg: #010B19;
+  --marketing-fg: #E0F7FA;
+  --marketing-accent: #B5FFF6;
+  --marketing-accent-hover: #80DEEA;
+  --marketing-muted: #546E7A;
+  --marketing-card: rgba(3, 33, 74, 0.6);
+  --marketing-card-hover: rgba(3, 33, 74, 0.9);
+  --marketing-border: rgba(61, 148, 174, 0.2);
+  --marketing-gradient-start: #3D94AE;
+  --marketing-gradient-end: #B5FFF6;
+}
+
+/* Theme: Carina Nebula */
+.theme-carina {
+  --marketing-bg: #120806;
+  --marketing-fg: #FFF3E0;
+  --marketing-accent: #F2A766;
+  --marketing-accent-hover: #FFCC80;
+  --marketing-muted: #8D6E63;
+  --marketing-card: rgba(38, 17, 14, 0.6);
+  --marketing-card-hover: rgba(38, 17, 14, 0.9);
+  --marketing-border: rgba(196, 109, 66, 0.2);
+  --marketing-gradient-start: #C46D42;
+  --marketing-gradient-end: #F2A766;
+}

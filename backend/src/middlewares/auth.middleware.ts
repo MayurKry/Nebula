@@ -3,33 +3,36 @@ import jwt from "jsonwebtoken";
 import config from "../config/db/index";
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  // Development mode bypass - allows testing without authentication
-  // Force bypass to enable MVP testing without environment variable issues
-  const isDevBypass = process.env.NODE_ENV === "development" || true;
+  const authHeader = req.headers.authorization;
+
+  // If Authorization header is provided, use real JWT verification
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+    try {
+      const decoded = jwt.verify(token, config.ACCESS_SECRET!);
+      (req as any).user = decoded;
+      return next();
+    } catch (error: any) {
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: "jwt expired" });
+      }
+      return res.status(401).json({ message: "Invalid token" });
+    }
+  }
+
+  // Development mode fallback - only if explicitly enabled or in dev env
+  const isDevBypass = process.env.NODE_ENV === "development" || process.env.AUTH_BYPASS === "true";
 
   if (isDevBypass) {
     (req as any).user = {
       _id: "507f1f77bcf86cd799439011",
-      userId: "507f1f77bcf86cd799439011", // CRITICAL: Added userId to match controller expectation
+      userId: "507f1f77bcf86cd799439011",
       email: "dev@nebula.com",
-      name: "Development User"
+      name: "Development User",
+      role: "super_admin" // Allow super admin access in dev bypass mode
     };
     return next();
   }
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer "))
-    return res.status(401).json({ message: "No token provided" });
-
-  const token = authHeader.split(" ")[1];
-  try {
-    const decoded = jwt.verify(token, config.ACCESS_SECRET!);
-    (req as any).user = decoded;
-    next();
-  } catch (error: any) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: "jwt expired" });
-    }
-    return res.status(401).json({ message: "Invalid token" });
-  }
+  return res.status(401).json({ message: "No token provided" });
 };

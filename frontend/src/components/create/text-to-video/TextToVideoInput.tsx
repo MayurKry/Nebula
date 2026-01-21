@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Sparkles, Ratio, Zap } from 'lucide-react';
 import PromptBar from '@/components/ui/PromptBar';
 import PromptGuide from './PromptGuide';
+import PromptBuilder from './PromptBuilder';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 import { toast } from 'sonner';
 
@@ -14,6 +15,7 @@ interface TextToVideoInputProps {
 const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGenerating }) => {
     const [prompt, setPrompt] = useState('');
     const [isEnhancing, setIsEnhancing] = useState(false);
+    const [showBuilder, setShowBuilder] = useState(false);
 
     // Default Settings
     const [settings, setSettings] = useState({
@@ -27,9 +29,6 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
         if (!prompt.trim()) return;
         setIsEnhancing(true);
         try {
-            // Simulate enhancement or call actual service
-            // const enhanced = await aiService.enhancePrompt(prompt); 
-            // Mocking for now as I can't guarantee the service implementation details
             await new Promise(r => setTimeout(r, 1000));
             const enhancements = [
                 "cinematic lighting, 8k resolution, highly detailed",
@@ -38,7 +37,6 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
             ];
             const randomEnhancement = enhancements[Math.floor(Math.random() * enhancements.length)];
 
-            // Append if not already present
             if (!prompt.includes(randomEnhancement)) {
                 setPrompt(prev => `${prev}, ${randomEnhancement}`);
                 toast.success("Prompt Enhanced with cinematic keywords!");
@@ -144,16 +142,33 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
                         placeholder="Describe your scene (e.g., 'A cyberpunk street in rain, 4k')..."
                         settings={settings}
                         onSettingsChange={(newSettings) => setSettings(prev => ({ ...prev, ...newSettings }))}
-                    // Hide internal settings cog since we exposed them? 
-                    // Actually keep it as partial sync or just let internal ones be "Advanced"
                     />
                 </div>
 
                 {/* Footer Tools */}
                 <div className="flex items-center justify-center gap-6 text-sm text-gray-500">
                     <PromptGuide />
-                    {/* Add more helpers here if needed */}
+
+                    <button
+                        onClick={() => setShowBuilder(true)}
+                        className="flex items-center gap-2 text-xs font-semibold text-[#00FF88] hover:text-emerald-400 transition-colors uppercase tracking-wider"
+                    >
+                        <Zap className="w-4 h-4" />
+                        Smart Prompt Builder
+                    </button>
                 </div>
+
+                {showBuilder && (
+                    <PromptBuilder
+                        isOpen={showBuilder}
+                        onClose={() => setShowBuilder(false)}
+                        onApply={(newPrompt) => {
+                            setPrompt(newPrompt);
+                            toast.success("Structure Applied to Prompt Input");
+                        }}
+                        currentPrompt={prompt}
+                    />
+                )}
 
             </GSAPTransition>
         </div>

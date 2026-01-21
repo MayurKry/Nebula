@@ -1,15 +1,19 @@
-import Layout from '@/Layout'
-import Setting from '@/pages/Setting/Setting'
-import SuperAdminHome from '@/pages/SuperAdmin/SuperAdminHome'
-import SuperAdminSetting from '@/pages/SuperAdmin/SuperAdminSetting'
-import { Route } from 'react-router-dom'
+import { Route } from 'react-router-dom';
+import SuperAdminLayout from '@/layouts/SuperAdminLayout';
+import SuperAdminDashboard from '@/pages/SuperAdmin/SuperAdminDashboard';
+import TenantListPage from '@/pages/SuperAdmin/TenantListPage';
+import TenantDetailPage from '@/pages/SuperAdmin/TenantDetailPage';
+import FeatureManagementPage from '@/pages/SuperAdmin/FeatureManagementPage';
+import FinancialsPage from '@/pages/SuperAdmin/FinancialsPage';
 
 const SuperAdminRoutes = () => (
-    <Route element={<Layout/>}>
-        <Route path='/superAdminDashboard' element={<SuperAdminHome/>}/>
-        <Route path='/setting' element={<Setting/>}/>
-        <Route path='/superAdminSetting' element={<SuperAdminSetting/>}/>
+    <Route element={<SuperAdminLayout />}>
+        <Route path='/admin/dashboard' element={<SuperAdminDashboard />} />
+        <Route path='/admin/tenants' element={<TenantListPage />} />
+        <Route path='/admin/tenants/:id' element={<TenantDetailPage />} />
+        <Route path='/admin/features' element={<FeatureManagementPage />} />
+        <Route path='/admin/financials' element={<FinancialsPage />} />
     </Route>
-)
+);
 
-export default SuperAdminRoutes
+export default SuperAdminRoutes;

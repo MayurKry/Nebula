@@ -29,8 +29,8 @@ export const AuthService = {
       password: hashedPassword,
     });
 
-    const accessToken = generateAccessToken({ id: user._id, email });
-    const refreshToken = generateRefreshToken({ id: user._id, email });
+    const accessToken = generateAccessToken({ id: user._id, email, role: user.role });
+    const refreshToken = generateRefreshToken({ id: user._id, email, role: user.role });
 
     user.refreshToken = refreshToken;
     await user.save();
@@ -69,8 +69,8 @@ export const AuthService = {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) throw new ApiError(401, "Invalid email or password");
 
-    const accessToken = generateAccessToken({ id: user._id, email });
-    const refreshToken = generateRefreshToken({ id: user._id, email });
+    const accessToken = generateAccessToken({ id: user._id, email, role: user.role });
+    const refreshToken = generateRefreshToken({ id: user._id, email, role: user.role });
 
     user.refreshToken = refreshToken;
     await user.save();
@@ -113,10 +113,12 @@ export const AuthService = {
       const newAccessToken = generateAccessToken({
         id: decoded.id,
         email: decoded.email,
+        role: user.role,
       });
       const newRefreshToken = generateRefreshToken({
         id: decoded.id,
         email: decoded.email,
+        role: user.role,
       });
 
       user.refreshToken = newRefreshToken;

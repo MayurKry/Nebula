@@ -14,7 +14,7 @@ const router = Router();
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
-router.use("/admins", adminRoutes);
+router.use("/admin", adminRoutes);
 router.use("/projects", projectRoutes);
 router.use("/assets", assetRoutes);
 router.use("/folders", folderRoutes);

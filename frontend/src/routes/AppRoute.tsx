@@ -19,12 +19,14 @@ import AssetsNotFoundPage from "@/pages/App/AssetsNotFoundPage";
 import VideoEditorPreviewPage from "@/pages/App/VideoEditorPreviewPage";
 import MarketingRoutes from "./MarketingRoute";
 import PublicRoutes from "./PublicRoute";
+import SuperAdminRoutes from "./SuperAdminRoute";
 
 function AppRoutes() {
   return (
     <Routes>
       {MarketingRoutes()}
       {PublicRoutes()}
+      {SuperAdminRoutes()}
 
       <Route path="/app" element={<AppLayout />}>
         <Route path="dashboard" element={<DashboardPage />} />

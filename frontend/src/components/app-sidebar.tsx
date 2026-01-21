@@ -19,7 +19,22 @@ interface NavGroup {
   title: string;
   items: NavItem[];
   defaultOpen?: boolean;
+  role?: string;
 }
+
+const adminGroups: NavGroup[] = [
+  {
+    title: 'Platform',
+    defaultOpen: true,
+    role: 'super_admin',
+    items: [
+      { label: 'Dashboard', path: '/admin/dashboard', icon: <LayoutGrid className="w-4 h-4" /> },
+      { label: 'Tenants', path: '/admin/tenants', icon: <Users className="w-4 h-4" /> },
+      { label: 'Features', path: '/admin/features', icon: <Zap className="w-4 h-4" /> },
+      { label: 'Financials', path: '/admin/financials', icon: <Target className="w-4 h-4" /> },
+    ],
+  },
+];
 
 const navGroups: NavGroup[] = [
   {
@@ -83,11 +98,16 @@ const AppSidebar = ({ isOpen: isOpenProp, onClose: onCloseProp }: AppSidebarProp
   const onClose = onCloseProp ?? (() => setOpenMobile(false));
 
   const location = useLocation();
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
-    navGroups.reduce((acc, group) => ({ ...acc, [group.title]: group.defaultOpen ?? false }), {})
-  );
-
   const { user } = useAuth();
+  const isAdminPath = location.pathname.startsWith('/admin');
+
+  // If we are on an admin path, show ONLY admin groups.
+  // If we are on an app path, show ONLY user groups (even for admins).
+  const currentNavGroups = isAdminPath ? adminGroups : navGroups;
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    currentNavGroups.reduce((acc, group) => ({ ...acc, [group.title]: group.defaultOpen ?? false }), {})
+  );
 
   const toggleGroup = (title: string) => {
     setOpenGroups(prev => ({ ...prev, [title]: !prev[title] }));
@@ -112,7 +132,7 @@ const AppSidebar = ({ isOpen: isOpenProp, onClose: onCloseProp }: AppSidebarProp
 
       {/* Navigation - Enable scrolling on mobile */}
       <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2">
-        {navGroups.map((group) => (
+        {currentNavGroups.map((group) => (
           <div key={group.title}>
             <button
               onClick={() => toggleGroup(group.title)}
@@ -156,41 +176,41 @@ const AppSidebar = ({ isOpen: isOpenProp, onClose: onCloseProp }: AppSidebarProp
             )}
           </div>
         ))}
-
-
       </nav>
 
-      {/* Bottom Section */}
-      <div className="p-3 border-t border-white/10 space-y-2">
-        {/* Credits */}
-        <div className="p-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-medium text-white">{user?.credits || 0} Credits</span>
+      {/* Bottom Section - Hide strictly for admin view */}
+      {!isAdminPath && (
+        <div className="p-3 border-t border-white/10 space-y-2">
+          {/* Credits */}
+          <div className="p-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-yellow-400" />
+                <span className="text-sm font-medium text-white">{user?.credits || 0} Credits</span>
+              </div>
+            </div>
+            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[#00FF88] to-[#00CC6A] transition-all duration-1000"
+                style={{ width: `${Math.min(((user?.credits || 0) / 1000) * 100, 100)}%` }}
+              />
             </div>
           </div>
-          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-[#00FF88] to-[#00CC6A] transition-all duration-1000"
-              style={{ width: `${Math.min(((user?.credits || 0) / 1000) * 100, 100)}%` }}
-            />
-          </div>
-        </div>
 
-        {/* Upgrade Banner */}
-        <Link
-          to="/pricing"
-          onClick={onClose}
-          className="flex items-center gap-3 px-3 py-2.5 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] rounded-lg hover:opacity-90 transition-opacity"
-        >
-          <Crown className="w-4 h-4 text-[#0A0A0A]" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-[#0A0A0A]">Upgrade to Pro</p>
-            <p className="text-[10px] text-[#0A0A0A]/70">Unlimited generations</p>
-          </div>
-        </Link>
-      </div>
+          {/* Upgrade Banner */}
+          <Link
+            to="/pricing"
+            onClick={onClose}
+            className="flex items-center gap-3 px-3 py-2.5 bg-gradient-to-r from-[#00FF88] to-[#00CC6A] rounded-lg hover:opacity-90 transition-opacity"
+          >
+            <Crown className="w-4 h-4 text-[#0A0A0A]" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-[#0A0A0A]">Upgrade to Pro</p>
+              <p className="text-[10px] text-[#0A0A0A]/70">Unlimited generations</p>
+            </div>
+          </Link>
+        </div>
+      )}
     </aside>
   );
 };

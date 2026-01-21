@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { User, LogOut, HelpCircle, BookOpen, ChevronDown, Menu } from 'lucide-react';
+import { User, LogOut, HelpCircle, BookOpen, ChevronDown, Menu, Crown } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import FeedbackModal from './FeedbackModal';
 import NotificationDropdown from './NotificationDropdown';
@@ -56,7 +56,7 @@ const Topbar = ({ onMenuClick }: TopbarProps) => {
 
                 {/* Website Link */}
                 <a
-                    href="https://nebula-marketing.vercel.app" // Replace with actual marketing site URL if known, or use a placeholder
+                    href="https://nebula-fe.vercel.app" // Updated marketing site URL
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5"
@@ -102,6 +102,16 @@ const Topbar = ({ onMenuClick }: TopbarProps) => {
                                     <User className="w-4 h-4" />
                                     Profile
                                 </Link>
+                                {user?.role === 'super_admin' && (
+                                    <Link
+                                        to={window.location.pathname.startsWith('/admin') ? '/app/dashboard' : '/admin/dashboard'}
+                                        onClick={() => setIsProfileOpen(false)}
+                                        className="flex items-center gap-2 px-3 py-2 text-sm text-[#00FF88] hover:bg-[#00FF88]/10 rounded-lg transition-colors font-bold"
+                                    >
+                                        <Crown className="w-4 h-4" />
+                                        {window.location.pathname.startsWith('/admin') ? 'Return to App' : 'Administration'}
+                                    </Link>
+                                )}
                                 <Link
                                     to="/resources"
                                     onClick={() => setIsProfileOpen(false)}
