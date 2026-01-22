@@ -48,12 +48,17 @@ export const getTenantById = controllerHandler(
  */
 export const createTenant = controllerHandler(
     async (req) => {
-        const { name, type, ownerUserId, planId, initialCredits } = req.body;
+        const { name, type, ownerUserId, ownerEmail, firstName, lastName, planId, initialCredits } = req.body;
 
         const tenant = await TenantService.createTenant({
             name,
             type,
             ownerUserId,
+            ownerUserData: ownerEmail ? {
+                email: ownerEmail,
+                firstName: firstName || 'Tenant',
+                lastName: lastName || 'Owner'
+            } : undefined,
             planId,
             initialCredits
         });

@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   Home, FolderOpen, ChevronDown, ChevronRight,
   Video, Image as ImageIcon, Film, Palette, Music2, Layers,
-  LayoutGrid, Users, Box, Mic, Crown, Zap, Target, X, Clock
+  LayoutGrid, Users, Box, Mic, Crown, Zap, Target, X, Clock,
+  Activity, FileText, AlertTriangle, Flag, LifeBuoy
 } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/context/AuthContext';
@@ -34,9 +35,29 @@ const adminGroups: NavGroup[] = [
       { label: 'Financials', path: '/admin/financials', icon: <Target className="w-4 h-4" /> },
     ],
   },
+  {
+    title: 'Observability',
+    defaultOpen: true,
+    role: 'super_admin',
+    items: [
+      { label: 'Analytics', path: '/admin/observability/analytics', icon: <Activity className="w-4 h-4" /> },
+      { label: 'Generation Logs', path: '/admin/observability/logs', icon: <FileText className="w-4 h-4" /> },
+      { label: 'Error Monitor', path: '/admin/observability/errors', icon: <AlertTriangle className="w-4 h-4" /> },
+      { label: 'Campaigns', path: '/admin/observability/campaigns', icon: <Flag className="w-4 h-4" /> },
+      { label: 'Support Tools', path: '/admin/observability/support', icon: <LifeBuoy className="w-4 h-4" /> },
+    ],
+  },
 ];
 
 const navGroups: NavGroup[] = [
+  {
+    title: 'Platform',
+    defaultOpen: true,
+    role: 'super_admin',
+    items: [
+      { label: 'Admin Panel', path: '/admin/dashboard', icon: <Crown className="w-4 h-4 text-yellow-400" /> },
+    ],
+  },
   {
     title: 'Create',
     defaultOpen: true,
@@ -102,8 +123,11 @@ const AppSidebar = ({ isOpen: isOpenProp, onClose: onCloseProp }: AppSidebarProp
   const isAdminPath = location.pathname.startsWith('/admin');
 
   // If we are on an admin path, show ONLY admin groups.
-  // If we are on an app path, show ONLY user groups (even for admins).
-  const currentNavGroups = isAdminPath ? adminGroups : navGroups;
+  // If we are on an app path, show ONLY user groups (even for admins), PLUS the link to admin if applicable.
+  let currentNavGroups = isAdminPath ? adminGroups : navGroups;
+
+  // Filter groups by role if specified
+  currentNavGroups = currentNavGroups.filter(group => !group.role || group.role === user?.role);
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
     currentNavGroups.reduce((acc, group) => ({ ...acc, [group.title]: group.defaultOpen ?? false }), {})

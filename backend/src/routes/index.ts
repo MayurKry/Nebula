@@ -10,11 +10,14 @@ import supportRoutes from "./support.routes";
 import jobRoutes from "./job.routes";
 import campaignRoutes from "./campaign.routes";
 
+import observabilityRoutes from "./admin-observability.routes";
+
 const router = Router();
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/admin", adminRoutes);
+router.use("/admin/observability", observabilityRoutes);
 router.use("/projects", projectRoutes);
 router.use("/assets", assetRoutes);
 router.use("/folders", folderRoutes);
@@ -23,5 +26,8 @@ router.use("/support", supportRoutes);
 router.use("/jobs", jobRoutes);
 router.use("/campaigns", campaignRoutes);
 
-export default router;
+router.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok" });
+});
 
+export default router;

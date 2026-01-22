@@ -1,12 +1,15 @@
 import { Router } from "express";
-import { getUser, createUser } from "../controllers/user.controller";
+import { getProfile, updateProfile, changePassword } from "../controllers/user.controller";
 import { getActivityLog } from "../controllers/activity.controller";
 import { authenticate } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-router.get("/getUser", authenticate, getUser);
-router.post("/create", createUser);
-router.get("/activity-log", authenticate, getActivityLog);
+router.use(authenticate);
+
+router.get("/profile", getProfile);
+router.put("/profile", updateProfile);
+router.post("/change-password", changePassword);
+router.get("/activity-log", getActivityLog);
 
 export default router;

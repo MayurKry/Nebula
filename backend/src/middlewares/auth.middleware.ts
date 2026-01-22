@@ -34,5 +34,36 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     return next();
   }
 
-  return res.status(401).json({ message: "No token provided" });
+  // Attach Tenant Context
+  if ((req as any).user) {
+    const user = (req as any).user;
+    if (user.tenantId) {
+      // Lazy load model to avoid circular deps if any
+      import("../models/tenant.model").then(({ TenantModel }) => {
+        TenantModel.findById(user.tenantId).lean().then(tenant => {
+          (req as any).tenant = tenant;
+          next();
+        }).catch(err => {
+          console.error("Failed to load tenant context", err);
+          next();
+        });
+      });
+      return;
+    }
+  }
+
+  return next();
+};
+
+export const requireSuperAdmin = (req: Request, res: Response, next: NextFunction) => {
+  const user = (req as any).user;
+  if (!user) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+
+  if (user.role !== 'super_admin') {
+    return res.status(403).json({ message: "Access denied. Super Admin privileges required." });
+  }
+
+  return next();
 };

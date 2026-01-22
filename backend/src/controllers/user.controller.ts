@@ -1,24 +1,22 @@
-import { RequestHandler } from "express";
 import { controllerHandler } from "../utils/controllerHandler";
+import { UserService } from "../services/user.service";
 
-export const getUser = controllerHandler(
-  async (req) => {
-    
-    return {  };
-  },
-  {
-    statusCode: 201,
-    message: "User registered successfully ",
-  }
-);
+export const getProfile = controllerHandler(async (req) => {
+  const userId = (req as any).user.userId || (req as any).user._id;
+  const user = await UserService.updateProfile(userId, {});
+  const stats = await UserService.getUsageStats(userId);
 
-export const createUser = controllerHandler(
-  async (req) => {
-    
-    return {  };
-  },
-  {
-    statusCode: 201,
-    message: "User registered successfully ",
-  }
-);
+  return { user, stats };
+});
+
+export const updateProfile = controllerHandler(async (req) => {
+  const userId = (req as any).user.userId || (req as any).user._id;
+  const user = await UserService.updateProfile(userId, req.body);
+  return { user, message: "Profile updated successfully" };
+});
+
+export const changePassword = controllerHandler(async (req) => {
+  const userId = (req as any).user.userId || (req as any).user._id;
+  await UserService.changePassword(userId, req.body);
+  return { message: "Password updated successfully" };
+});

@@ -41,6 +41,32 @@ const initialUserCreation = async () => {
 
     // --- Dev User Creation (Always Check) ---
     const devUserId = "507f1f77bcf86cd799439011";
+
+    // Ensure Dev Tenant Exists
+    const devTenantId = "507f1f77bcf86cd799439012";
+    const existingDevTenant = await import("../models/tenant.model").then(m => m.TenantModel.findById(devTenantId));
+
+    if (!existingDevTenant) {
+      const TenantModel = (await import("../models/tenant.model")).TenantModel;
+      await TenantModel.create({
+        _id: devTenantId,
+        name: "Dev Team",
+        type: "ORGANIZATION",
+        ownerUserId: devUserId,
+        plan: {
+          id: "TEAM",
+          isCustom: false
+        },
+        credits: {
+          balance: 5000,
+          lifetimeIssued: 5000,
+          lifetimeConsumed: 0
+        },
+        status: "ACTIVE"
+      });
+      logger.info("Dev Tenant created.");
+    }
+
     const existingDevUser = await UserModel.findById(devUserId);
 
     if (!existingDevUser) {
@@ -50,17 +76,24 @@ const initialUserCreation = async () => {
         lastName: "User",
         email: "dev@nebula.com",
         password: await bcrypt.hash("password", 10),
-        role: "user",
-        credits: 1000,
+        role: "tenant_owner", // Dev user is an owner
+        tenantId: devTenantId,
         onboardingCompleted: true
       });
       await devUser.save();
       logger.info("Dev User created successfully for bypass mode!");
     } else {
-      // Reset credits for dev user on restart
+      // Allow re-linking if missing
+      if (!existingDevUser.tenantId) {
+        existingDevUser.tenantId = (devTenantId as any);
+        existingDevUser.role = "tenant_owner";
+        await existingDevUser.save();
+        logger.info("fixed dev user tenant linkage");
+      }
+      // Reset credits for dev user on restart (Legacy support) but mainly rely on Tenant Credits now
       existingDevUser.credits = 1000;
       await existingDevUser.save();
-      logger.info("Dev User credits reset to 1000.");
+      logger.info("Dev User verification complete.");
     }
 
   } catch (err) {

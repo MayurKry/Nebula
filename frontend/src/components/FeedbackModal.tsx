@@ -78,49 +78,49 @@ const FeedbackModal = () => {
             </button>
 
             {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl">
                     <div
                         ref={modalRef}
-                        className="relative w-full max-w-lg bg-[#141414] border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-400"
+                        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[#141414] border border-white/10 rounded-3xl shadow-2xl mx-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-400"
                     >
                         {isSuccess ? (
-                            <div className="py-20 px-10 text-center space-y-6">
-                                <div className="w-20 h-20 bg-[#00FF88]/10 border border-[#00FF88]/20 rounded-full flex items-center justify-center mx-auto scale-110 animate-bounce">
-                                    <CheckCircle2 className="w-10 h-10 text-[#00FF88]" />
+                            <div className="py-16 sm:py-20 px-6 sm:px-10 text-center space-y-6">
+                                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#00FF88]/10 border border-[#00FF88]/20 rounded-full flex items-center justify-center mx-auto animate-bounce">
+                                    <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10 text-[#00FF88]" />
                                 </div>
                                 <div className="space-y-2">
-                                    <h2 className="text-2xl font-black text-white">Feedback Received!</h2>
-                                    <p className="text-gray-400 font-medium">Your input helps us build the future of Nebula.</p>
+                                    <h2 className="text-xl sm:text-2xl font-black text-white">Feedback Received!</h2>
+                                    <p className="text-sm sm:text-base text-gray-400 font-medium">Your input helps us build the future of Nebula.</p>
                                 </div>
                                 <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest pt-4">Closing in a few seconds...</p>
                             </div>
                         ) : (
                             <>
                                 {/* Header */}
-                                <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between">
+                                <div className="px-6 sm:px-8 py-5 sm:py-6 border-b border-white/5 flex items-center justify-between sticky top-0 bg-[#141414] z-10">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-2xl bg-[#00FF88]/10 flex items-center justify-center border border-[#00FF88]/20">
                                             <Sparkles className="w-5 h-5 text-[#00FF88]" />
                                         </div>
                                         <div>
-                                            <h2 className="text-xl font-black text-white tracking-tight">Send Feedback</h2>
-                                            <p className="text-xs text-gray-500 font-medium">Help us improve your experience</p>
+                                            <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">Send Feedback</h2>
+                                            <p className="text-xs text-gray-500 font-medium hidden sm:block">Help us improve your experience</p>
                                         </div>
                                     </div>
                                     <button
                                         onClick={() => setIsOpen(false)}
-                                        className="p-2 text-gray-500 hover:text-white transition-colors"
+                                        className="p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-xl transition-all"
                                     >
-                                        <X className="w-6 h-6" />
+                                        <X className="w-5 h-5 sm:w-6 sm:h-6" />
                                     </button>
                                 </div>
 
                                 {/* Body */}
-                                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                                <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
                                     {/* Categories */}
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">What's on your mind?</label>
-                                        <div className="grid grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-3 gap-2 sm:gap-3">
                                             {[
                                                 { id: 'general', label: 'General', icon: MessageCircle },
                                                 { id: 'bug', label: 'Bug Report', icon: Bug },
@@ -130,10 +130,10 @@ const FeedbackModal = () => {
                                                     key={cat.id}
                                                     type="button"
                                                     onClick={() => setCategory(cat.id as any)}
-                                                    className={`py-3 px-2 rounded-2xl border transition-all flex flex-col items-center gap-2 group ${category === cat.id ? 'bg-[#00FF88]/10 border-[#00FF88]/30' : 'bg-[#1A1A1A] border-white/5 hover:border-white/20'}`}
+                                                    className={`py-3 px-2 rounded-2xl border transition-all flex flex-col items-center gap-2 group ${category === cat.id ? 'bg-[#00FF88]/10 border-[#00FF88]/30 scale-105' : 'bg-[#1A1A1A] border-white/5 hover:border-white/20'}`}
                                                 >
                                                     <cat.icon className={`w-4 h-4 transition-transform group-hover:scale-110 ${category === cat.id ? 'text-[#00FF88]' : 'text-gray-500'}`} />
-                                                    <span className={`text-[10px] font-bold uppercase tracking-tighter ${category === cat.id ? 'text-white' : 'text-gray-500'}`}>{cat.label}</span>
+                                                    <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-tighter ${category === cat.id ? 'text-white' : 'text-gray-500'}`}>{cat.label}</span>
                                                 </button>
                                             ))}
                                         </div>
@@ -142,16 +142,16 @@ const FeedbackModal = () => {
                                     {/* Rating */}
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">How's your experience so far?</label>
-                                        <div className="flex gap-2">
+                                        <div className="flex gap-1 sm:gap-2 justify-center sm:justify-start">
                                             {[1, 2, 3, 4, 5].map((star) => (
                                                 <button
                                                     key={star}
                                                     type="button"
-                                                    onMouseEnter={() => setRating(star)}
+                                                    onClick={() => setRating(star)}
                                                     className="p-1 transition-all hover:scale-125 hover:-rotate-12"
                                                 >
                                                     <Star
-                                                        className={`w-6 h-6 transition-colors ${rating >= star ? 'fill-[#00FF88] text-[#00FF88]' : 'text-gray-800'}`}
+                                                        className={`w-6 h-6 sm:w-7 sm:h-7 transition-colors ${rating >= star ? 'fill-[#00FF88] text-[#00FF88]' : 'text-gray-800'}`}
                                                     />
                                                 </button>
                                             ))}
@@ -166,7 +166,7 @@ const FeedbackModal = () => {
                                             onChange={(e) => setMessage(e.target.value)}
                                             placeholder="Tell us what you think..."
                                             required
-                                            className="w-full h-32 px-5 py-4 bg-[#1A1A1A] border border-white/5 rounded-2xl text-white placeholder-gray-700 focus:outline-none focus:border-[#00FF88]/30 focus:ring-1 focus:ring-[#00FF88]/30 transition-all text-sm resize-none"
+                                            className="w-full h-32 px-4 sm:px-5 py-3 sm:py-4 bg-[#1A1A1A] border border-white/5 rounded-2xl text-white placeholder-gray-700 focus:outline-none focus:border-[#00FF88]/30 focus:ring-1 focus:ring-[#00FF88]/30 transition-all text-sm resize-none"
                                         />
                                     </div>
 
@@ -175,7 +175,7 @@ const FeedbackModal = () => {
                                         <button
                                             type="submit"
                                             disabled={isSubmitting || !message.trim()}
-                                            className="w-full py-4 bg-[#00FF88] text-[#0A0A0A] font-black rounded-2xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-[#00FF88]/10 flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
+                                            className="w-full py-3 sm:py-4 bg-[#00FF88] text-[#0A0A0A] font-black rounded-2xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-[#00FF88]/10 flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
                                         >
                                             {isSubmitting ? (
                                                 <div className="flex items-center gap-2">

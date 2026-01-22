@@ -69,7 +69,7 @@ export const adminApi = {
     getTenantById: (id: string) =>
         axiosInstance.get<{ data: { tenant: Tenant } }>(`${API_BASE}/tenants/${id}`),
 
-    createTenant: (data: { name: string; type: string; ownerUserId: string; planId?: string; initialCredits?: number }) =>
+    createTenant: (data: { name: string; type: string; ownerUserId?: string; ownerEmail?: string; firstName?: string; lastName?: string; planId?: string; initialCredits?: number }) =>
         axiosInstance.post<{ data: { tenant: Tenant } }>(`${API_BASE}/tenants`, data),
 
     updateTenant: (id: string, data: { name?: string; status?: string }) =>
@@ -106,4 +106,30 @@ export const adminApi = {
 
     removeFeatureOverride: (tenantId: string, featureId: string) =>
         axiosInstance.post<{ data: { tenant: Tenant } }>(`${API_BASE}/tenants/${tenantId}/features/remove`, { featureId }),
+
+    // Observability - Analytics
+    getUsageAnalytics: (period: '24h' | '7d' | 'cycle') =>
+        axiosInstance.get<{ data: { metrics: any } }>(`${API_BASE}/observability/analytics/usage`, { params: { period } }),
+
+    // Observability - Logs
+    getGenerationLogs: (params: { page?: number; limit?: number; tenantId?: string; status?: string }) =>
+        axiosInstance.get<{ data: { logs: any[]; total: number } }>(`${API_BASE}/observability/logs/generations`, { params }),
+
+    getErrorLogs: (params: { page?: number; limit?: number; category?: string }) =>
+        axiosInstance.get<{ data: { logs: any[]; total: number } }>(`${API_BASE}/observability/logs/errors`, { params }),
+
+    // Observability - Campaigns
+    listCampaigns: (params: { page?: number; limit?: number; status?: string }) =>
+        axiosInstance.get<{ data: { campaigns: any[]; total: number } }>(`${API_BASE}/observability/campaigns`, { params }),
+
+    stopCampaign: (id: string, reason: string) =>
+        axiosInstance.post<{ message: string }>(`${API_BASE}/observability/campaigns/${id}/stop`, { reason }),
+
+    // Observability - Support
+    getSupportTimeline: (tenantId: string) =>
+        axiosInstance.get<{ data: { timeline: any[] } }>(`${API_BASE}/observability/support/timeline`, { params: { tenantId } }),
+
+    // System Health
+    getSystemHealth: () =>
+        axiosInstance.get<{ data: { health: string; nodes: string; alerts: number } }>(`${API_BASE}/observability/system-health`),
 };

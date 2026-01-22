@@ -1,16 +1,18 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Shield, Box, MoreVertical } from 'lucide-react';
+import { Search, Filter, Shield, Box, MoreVertical, Plus } from 'lucide-react';
 import { adminApi, type Tenant } from '@/api/admin.api';
 import { toast } from 'sonner';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import CreateTenantModal from '@/components/admin/CreateTenantModal';
 
 const TenantListPage = () => {
     const navigate = useNavigate();
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showCreateModal, setShowCreateModal] = useState(false);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [planFilter, setPlanFilter] = useState<string>('');
@@ -85,29 +87,42 @@ const TenantListPage = () => {
                             <button className="px-4 py-2 text-xs font-bold bg-[#00FF88] text-[#0A0A0A] rounded-lg shadow-lg shadow-[#00FF88]/10">Listings</button>
                             <button className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-white transition-colors">Analytics</button>
                         </div>
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            className="px-4 py-3 bg-[#00FF88] hover:bg-[#00CC6A] text-[#0A0A0A] rounded-xl flex items-center gap-2 font-black text-xs uppercase tracking-widest transition-all"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span>Create Tenant</span>
+                        </button>
                     </div>
                 </div>
             </GSAPTransition>
+
+            <CreateTenantModal
+                isOpen={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+                onSuccess={() => fetchTenants()}
+            />
 
             {/* Filters Bar */}
             <GSAPTransition animation="fade-in-up" duration={1} delay={0.2}>
                 <div className="flex flex-col lg:flex-row gap-4 p-2 bg-[#141414]/50 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl">
                     <div className="flex-1 relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-[#00FF88] transition-colors" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8E8E93] group-focus-within:text-[#00FF88] transition-colors" />
                         <input
                             type="text"
                             placeholder="Search by name, email, or ID..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            className="w-full pl-12 pr-4 py-4 bg-transparent text-white placeholder-gray-600 focus:outline-none transition-all font-medium text-sm"
+                            className="w-full pl-12 pr-4 py-4 bg-transparent text-white placeholder-[#8E8E93] focus:outline-none transition-all font-medium text-sm"
                         />
                     </div>
 
                     <div className="h-10 w-px bg-white/5 hidden lg:block self-center" />
 
                     <div className="flex flex-wrap items-center gap-3 px-2 py-2 lg:py-0">
-                        <div className="flex items-center gap-2 px-3 py-2 text-xs font-black text-gray-600 uppercase tracking-widest">
+                        <div className="flex items-center gap-2 px-3 py-2 text-xs font-black text-[#8E8E93] uppercase tracking-widest">
                             <Filter className="w-3 h-3" /> Filters:
                         </div>
                         <select
@@ -137,24 +152,24 @@ const TenantListPage = () => {
 
             {/* Table */}
             <GSAPTransition animation="fade-in-up" duration={1} delay={0.4}>
-                <div className="bg-[#141414] border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+                <div className="bg-[#141414] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
                     <div className="overflow-x-auto">
                         <table className="w-full border-collapse">
                             <thead>
-                                <tr className="border-b border-white/5 bg-white/[0.02]">
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] w-[40%]">Tenant Entity</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Package</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Balance</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Scale</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Security</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] w-[50px]"></th>
+                                <tr className="border-b border-white/10 bg-white/[0.02]">
+                                    <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em] w-[40%]">Tenant Entity</th>
+                                    <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em]">Package</th>
+                                    <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em]">Balance</th>
+                                    <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em]">Scale</th>
+                                    <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em]">Security</th>
+                                    <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em] w-[50px]"></th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/[0.03]">
+                            <tbody className="divide-y divide-white/5">
                                 {loading ? (
                                     <tr>
                                         <td colSpan={6} className="px-6 py-20 text-center">
-                                            <div className="inline-flex items-center gap-3 text-gray-500 font-medium animate-pulse">
+                                            <div className="inline-flex items-center gap-3 text-[#8E8E93] font-medium animate-pulse">
                                                 <div className="w-2 h-2 bg-[#00FF88] rounded-full animate-ping" />
                                                 Synchronizing tenant data...
                                             </div>
@@ -162,7 +177,7 @@ const TenantListPage = () => {
                                     </tr>
                                 ) : tenants.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-20 text-center text-gray-500 font-medium bg-white/[0.01]">
+                                        <td colSpan={6} className="px-6 py-20 text-center text-[#8E8E93] font-medium bg-white/[0.01]">
                                             No platform entities found matching your criteria.
                                         </td>
                                     </tr>
@@ -171,16 +186,16 @@ const TenantListPage = () => {
                                         <tr
                                             key={tenant._id}
                                             onClick={() => navigate(`/admin/tenants/${tenant._id}`)}
-                                            className="tenant-row group hover:bg-white/[0.03] cursor-pointer transition-all duration-300"
+                                            className="tenant-row group hover:bg-white/5 cursor-pointer transition-all duration-300"
                                         >
                                             <td className="px-6 py-5">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] border border-white/5 flex items-center justify-center group-hover:border-[#00FF88]/30 group-hover:shadow-[0_0_15px_rgba(0,255,136,0.1)] transition-all">
-                                                        <Shield className="w-5 h-5 text-gray-600 group-hover:text-[#00FF88] transition-colors" />
+                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] border border-white/10 flex items-center justify-center group-hover:border-[#00FF88]/30 group-hover:shadow-[0_0_15px_rgba(0,255,136,0.1)] transition-all">
+                                                        <Shield className="w-5 h-5 text-[#8E8E93] group-hover:text-[#00FF88] transition-colors" />
                                                     </div>
                                                     <div>
                                                         <div className="text-white font-black text-lg group-hover:text-[#00FF88] transition-colors tracking-tight">{tenant.name}</div>
-                                                        <div className="text-gray-600 text-[10px] font-black font-mono tracking-tighter uppercase mt-0.5">{tenant._id}</div>
+                                                        <div className="text-[#8E8E93] text-[10px] font-black font-mono tracking-tighter uppercase mt-0.5">{tenant._id}</div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -190,12 +205,12 @@ const TenantListPage = () => {
                                             <td className="px-6 py-5">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-white font-black text-lg tabular-nums tracking-tight">{tenant.credits.balance.toLocaleString()}</span>
-                                                    <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest mt-1">CP</span>
+                                                    <span className="text-[10px] font-black text-[#8E8E93] uppercase tracking-widest mt-1">CP</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-5">
-                                                <div className="flex items-center gap-2 text-gray-400 font-bold">
-                                                    <Box className="w-4 h-4 text-gray-600" />
+                                                <div className="flex items-center gap-2 text-[#8E8E93] font-bold">
+                                                    <Box className="w-4 h-4 text-[#8E8E93]" />
                                                     <span>{tenant.userCount} users</span>
                                                 </div>
                                             </td>
@@ -205,7 +220,7 @@ const TenantListPage = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-5">
-                                                <button className="p-2 text-gray-600 hover:text-white transition-colors">
+                                                <button className="p-2 text-[#8E8E93] hover:text-white transition-colors">
                                                     <MoreVertical className="w-5 h-5" />
                                                 </button>
                                             </td>

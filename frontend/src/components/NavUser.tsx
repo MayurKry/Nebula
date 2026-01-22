@@ -1,6 +1,8 @@
 import {
   ChevronsUpDown,
   LogOut,
+  User,
+  Settings
 } from "lucide-react";
 
 import {
@@ -76,9 +78,22 @@ export function NavUser() {
                 </div>
               </div>
             </DropdownMenuLabel>
-            {/* <DropdownMenuSeparator />          */}
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut />
+
+            <div className="p-1 border-b border-border/50 mb-1">
+              <DropdownMenuItem onClick={() => navigate(user?.role === 'super_admin' ? '/admin/profile' : '/app/profile')}>
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </DropdownMenuItem>
+              {user?.role !== 'super_admin' && (
+                <DropdownMenuItem onClick={() => navigate('/app/settings')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+              )}
+            </div>
+
+            <DropdownMenuItem onClick={handleLogout} className="text-red-400 focus:text-red-400 focus:bg-red-400/10">
+              <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

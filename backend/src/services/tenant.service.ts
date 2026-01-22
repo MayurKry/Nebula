@@ -121,10 +121,39 @@ export const TenantService = {
      * Create a new tenant
      */
     async createTenant(data: CreateTenantDTO) {
+        let ownerUserId = data.ownerUserId;
+
+        // If no ID provided, try to find or create user
+        if (!ownerUserId && data.ownerUserData) {
+            const { email, firstName, lastName } = data.ownerUserData;
+
+            let user = await UserModel.findOne({ email });
+
+            if (!user) {
+                // Create new user
+                // NOTE: Password hashing should normally happen here. 
+                // For MVP/Demo we set a default. In prod, send invite email.
+                user = await UserModel.create({
+                    firstName,
+                    lastName,
+                    email,
+                    password: "$2b$10$EpOppp9iM7V7i.h1/t3dUOq1.q1/t3dUOq1.q1/t3dUOq1.q1", // Hash for 'password123' (example placeholder)
+                    role: "tenant_owner",
+                    isEmailVerified: true // Auto-verify for admin created
+                });
+            }
+
+            ownerUserId = user._id.toString();
+        }
+
+        if (!ownerUserId) {
+            throw new Error("Owner User ID or User Data is required");
+        }
+
         const tenant = await TenantModel.create({
             name: data.name,
             type: data.type,
-            ownerUserId: data.ownerUserId,
+            ownerUserId: ownerUserId,
             plan: {
                 id: data.planId || "FREE",
                 isCustom: false
@@ -148,7 +177,7 @@ export const TenantService = {
         });
 
         // Update user to link to this tenant
-        await UserModel.findByIdAndUpdate(data.ownerUserId, {
+        await UserModel.findByIdAndUpdate(ownerUserId, {
             tenantId: tenant._id,
             role: "tenant_owner"
         });

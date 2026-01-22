@@ -55,9 +55,9 @@ const tenantSchema = new Schema<ITenant>(
             customLimits: {
                 maxUsers: { type: Number },
                 monthlyCredits: { type: Number },
-                features: [{ type: String }],
-                expiresAt: { type: Date }
-            }
+                features: [{ type: String }], // Whitelisted features for this custom plan
+            },
+            expiresAt: { type: Date }
         },
 
         credits: {

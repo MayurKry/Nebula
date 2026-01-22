@@ -14,16 +14,19 @@ import {
     enhancePrompt, // Import enhancePrompt
 } from "../controllers/ai.controller";
 import { authenticate } from "../middlewares/auth.middleware";
+import { requireTenant } from "../middlewares/tenant.middleware";
+import { requireFeature } from "../middlewares/feature-guard.middleware";
 
 const router = Router();
 
-// All routes require authentication
+// All routes require authentication and tenant context
 router.use(authenticate);
+router.use(requireTenant);
 
 // AI Generation endpoints
-router.post("/generate-image", generateImage);
-router.post("/generate-video", generateVideo);
-router.post("/generate-video-project", generateVideoProject);
+router.post("/generate-image", requireFeature("TEXT_TO_IMAGE"), generateImage);
+router.post("/generate-video", requireFeature("TEXT_TO_VIDEO"), generateVideo);
+router.post("/generate-video-project", requireFeature("TEXT_TO_VIDEO"), generateVideoProject);
 router.post("/regenerate-scene", regenerateScene);
 router.post("/animate-scene", animateScene);
 router.get("/video-status/:jobId", checkVideoStatus);

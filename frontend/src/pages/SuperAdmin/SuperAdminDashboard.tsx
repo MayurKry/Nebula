@@ -157,7 +157,8 @@ const SuperAdminDashboard = () => {
                             {metrics.highVelocityTenants.map((item, index) => (
                                 <div
                                     key={index}
-                                    className="flex items-center justify-between p-6 hover:bg-white/5 transition-all group"
+                                    onClick={() => item.tenant?._id && window.location.assign(`/admin/tenants/${item.tenant._id}`)} // Using simple nav for now as useNavigate needs import
+                                    className="flex items-center justify-between p-6 hover:bg-white/5 transition-all group cursor-pointer"
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center">
