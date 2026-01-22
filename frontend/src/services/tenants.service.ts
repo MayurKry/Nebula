@@ -1,5 +1,5 @@
 
-import { adminApi, type Tenant } from '@/api/admin.api';
+import { adminApi } from '@/api/admin.api';
 
 export const tenantsService = {
     /**
