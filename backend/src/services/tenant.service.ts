@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { TenantModel, ITenant } from "../models/tenant.model";
+import { TenantModel, type ITenant } from "../models/tenant.model";
 import { CreditTransactionModel } from "../models/credit-transaction.model";
 import { UserModel } from "../models/user.model";
 import mongoose from "mongoose";

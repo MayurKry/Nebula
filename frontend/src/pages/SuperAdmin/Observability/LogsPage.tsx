@@ -9,7 +9,7 @@ const LogsPage = () => {
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState('');
-    const [tenantId, setTenantId] = useState('');
+    const [tenantId] = useState('');
 
     useEffect(() => {
         fetchLogs();
