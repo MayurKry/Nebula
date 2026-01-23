@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, AlertTriangle, ShieldAlert, CheckCircle, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, ShieldAlert, CheckCircle, ShieldCheck } from 'lucide-react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 

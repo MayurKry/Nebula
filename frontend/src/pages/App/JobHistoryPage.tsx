@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import GSAPTransition from '@/components/ui/GSAPTransition';
+
 import {
-    RefreshCw, Filter, AlertCircle, Loader2, CheckCircle2,
+    RefreshCw, AlertCircle, Loader2, CheckCircle2,
     Clock, XCircle, Play, FileText, Image, Mic, ExternalLink,
     Zap, Clock4, Gauge, History, Trash2, Search, RotateCcw
 } from 'lucide-react';
