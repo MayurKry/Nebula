@@ -32,27 +32,29 @@ const onTokenRefreshed = (token: string): void => {
 axiosInstance.interceptors.request.use(
   (config): any => {
     const accessToken = TokenStorage.getAccessToken();
-    const user = TokenStorage.getUser();
+    const url = config.url || "";
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/refresh');
 
-    // Ensure headers always exist and are mutable
+    // Ensure headers always exist
     config.headers = config.headers || {};
 
-    if (accessToken && !config.headers["Authorization"]) {
-      (config.headers as any)["Authorization"] = `Bearer ${accessToken}`;
+    // Standard way to add authorization header if not present
+    // Skip for login/register
+    if (accessToken && !config.headers.Authorization && !isAuthEndpoint) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    //  Safely add userId to request
-    if (user && user["id"]) {
-      const userId = user["id"];
+    // Add userId to POST/PUT/PATCH data if available
+    // Skip for auth endpoints
+    const user = TokenStorage.getUser();
+    if (user && user.id && !isAuthEndpoint) {
       const method = config.method?.toLowerCase();
-
       if (["post", "put", "patch"].includes(method || "")) {
-        config.data = { ...(config.data || {}), userId };
-      } else if (method === "get") {
-        config.params = { ...(config.params || {}), userId };
+        if (typeof config.data === 'object' && config.data !== null) {
+          config.data = { ...config.data, userId: user.id };
+        }
       }
     }
-
 
     return config;
   },
@@ -64,10 +66,15 @@ axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError<ApiError>) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+    const url = originalRequest.url || "";
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register');
 
+    // Handle 401 Unauthorized or expired JWT
+    // DO NOT attempt refresh for auth endpoints (login/register)
     if (
       (error.response?.status === 401 || error.response?.data?.message === "jwt expired") &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      !isAuthEndpoint
     ) {
       if (isRefreshing) {
         return new Promise((resolve) => {
@@ -106,7 +113,7 @@ axiosInstance.interceptors.response.use(
 
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        toast.error("Session expired. Please log in again.");
+        // Only clear and redirect if it's NOT a login request (which it shouldn't be here anyway due to isAuthEndpoint check)
         TokenStorage.clearTokens();
         refreshSubscribers = [];
         window.location.href = "/";
@@ -116,21 +123,18 @@ axiosInstance.interceptors.response.use(
       }
     }
 
-    // Only redirect on 401 for non-auth endpoints
-    // Auth endpoints should let the error propagate so the UI can show the error
-    if (error.response?.status === 401) {
-      const isAuthEndpoint = originalRequest.url?.includes('/auth/login') ||
-        originalRequest.url?.includes('/auth/register');
-
-      if (!isAuthEndpoint) {
-        TokenStorage.clearTokens();
-        window.location.href = "/";
-      }
+    // Only redirect on 401 for non-auth endpoints if not already handled by refresh logic
+    if (error.response?.status === 401 && !isAuthEndpoint) {
+      TokenStorage.clearTokens();
+      window.location.href = "/";
     }
 
     if (error.response) {
       const message = error.response.data?.message || "Something went wrong!";
-      toast.error(message);
+      // Don't show toast for 401s on non-auth endpoints as they redirect
+      if (error.response.status !== 401 || isAuthEndpoint) {
+        toast.error(message);
+      }
     } else {
       toast.error("Network error. Please try again.");
     }

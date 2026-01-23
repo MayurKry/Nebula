@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 import {
     RefreshCw, Filter, AlertCircle, Loader2, CheckCircle2,
-    Clock, XCircle, Play, FileText, Image, Mic, ExternalLink
+    Clock, XCircle, Play, FileText, Image, Mic, ExternalLink,
+    Zap, Clock4, Gauge, History, Trash2, Search, RotateCcw
 } from 'lucide-react';
 import { jobService, type Job, type JobModule, type JobStatus } from '@/services/job.service';
 import { toast } from 'sonner';
+import { TokenStorage } from '@/api/tokenStorage';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
 
 const getModuleIcon = (module: JobModule) => {
     switch (module) {
@@ -18,13 +22,43 @@ const getModuleIcon = (module: JobModule) => {
     }
 };
 
-const getStatusBadge = (status: JobStatus) => {
+const getStatusStyles = (status: JobStatus) => {
     switch (status) {
-        case 'completed': return <span className="flex items-center gap-1 text-[10px] font-bold text-green-400 bg-green-500/10 px-2 py-1 rounded-full"><CheckCircle2 className="w-3 h-3" /> COMPLETED</span>;
-        case 'processing': return <span className="flex items-center gap-1 text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-1 rounded-full"><Loader2 className="w-3 h-3 animate-spin" /> PROCESSING</span>;
-        case 'failed': return <span className="flex items-center gap-1 text-[10px] font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded-full"><XCircle className="w-3 h-3" /> FAILED</span>;
-        case 'queued': return <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-full"><Clock className="w-3 h-3" /> QUEUED</span>;
-        default: return <span className="text-[10px] font-bold text-gray-400 bg-gray-500/10 px-2 py-1 rounded-full">{status}</span>;
+        case 'completed': return {
+            color: 'text-emerald-400',
+            bg: 'bg-emerald-500/10',
+            border: 'border-emerald-500/20',
+            icon: <CheckCircle2 className="w-3.5 h-3.5" />,
+            shadow: 'shadow-[0_0_15px_rgba(52,211,153,0.1)]'
+        };
+        case 'processing': return {
+            color: 'text-sky-400',
+            bg: 'bg-sky-500/10',
+            border: 'border-sky-500/20',
+            icon: <Loader2 className="w-3.5 h-3.5 animate-spin" />,
+            shadow: 'shadow-[0_0_15px_rgba(56,189,248,0.1)]'
+        };
+        case 'failed': return {
+            color: 'text-rose-400',
+            bg: 'bg-rose-500/10',
+            border: 'border-rose-500/20',
+            icon: <XCircle className="w-3.5 h-3.5" />,
+            shadow: 'shadow-[0_0_15px_rgba(251,113,133,0.1)]'
+        };
+        case 'queued': return {
+            color: 'text-amber-400',
+            bg: 'bg-amber-500/10',
+            border: 'border-amber-500/20',
+            icon: <Clock className="w-3.5 h-3.5" />,
+            shadow: 'shadow-[0_0_15px_rgba(251,191,36,0.1)]'
+        };
+        default: return {
+            color: 'text-gray-400',
+            bg: 'bg-gray-500/10',
+            border: 'border-gray-500/20',
+            icon: <History className="w-3.5 h-3.5" />,
+            shadow: ''
+        };
     }
 };
 
@@ -33,59 +67,69 @@ const JobHistoryPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [filterModule, setFilterModule] = useState<JobModule | 'all'>('all');
     const [filterStatus, setFilterStatus] = useState<JobStatus | 'all'>('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isLive, setIsLive] = useState(false);
+    const [pollInterval, setPollInterval] = useState(30000);
 
-    const fetchJobs = async () => {
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const fetchJobs = async (silent = false) => {
+        // Don't fetch if no token is available
+        const token = TokenStorage.getAccessToken();
+        if (!token) {
+            console.warn('No access token found, skipping fetch');
+            setIsLoading(false);
+            return;
+        }
+
         try {
-            setIsLoading(true);
+            if (!silent) setIsLoading(true);
             const data = await jobService.getUserJobs({
                 module: filterModule === 'all' ? undefined : filterModule,
                 status: filterStatus === 'all' ? undefined : filterStatus,
                 limit: 50
             });
             setJobs(data.jobs);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to fetch jobs:', error);
-            toast.error('Failed to load job history');
+            // Don't show toast for polling failures or expected 401s that interceptors handle
+            if (!silent && error.response?.status !== 401) {
+                toast.error('Failed to load job history');
+            }
         } finally {
-            setIsLoading(false);
+            if (!silent) setIsLoading(false);
         }
     };
 
-    const [pollInterval, setPollInterval] = useState(30000); // Default 30s
-    const [isLive, setIsLive] = useState(false);
-
-    // Calculate active jobs to adjust polling
     const activeJobCount = jobs.filter(j => ['processing', 'queued', 'retrying'].includes(j.status)).length;
+    const completedCount = jobs.filter(j => j.status === 'completed').length;
+    const failedCount = jobs.filter(j => j.status === 'failed').length;
 
     useEffect(() => {
-        // If there are active jobs, poll faster (10s), otherwise slow (60s)
         setPollInterval(activeJobCount > 0 ? 10000 : 60000);
     }, [activeJobCount]);
 
+    // Initial fetch and fetch on filter change
     useEffect(() => {
-        const fetchIfAuth = () => {
-            const token = localStorage.getItem('accessToken');
-            if (token) fetchJobs();
-        };
+        fetchJobs();
+    }, [filterModule, filterStatus]);
 
-        // Initial fetch only
-        fetchIfAuth();
-
+    // Polling effect - separate from filter changes to avoid redundant calls
+    useEffect(() => {
         let interval: NodeJS.Timeout;
 
         if (isLive) {
+            // Only create interval if live mode is enabled
             interval = setInterval(() => {
-                const token = localStorage.getItem('accessToken');
-                if (token && document.hasFocus()) {
-                    fetchJobs();
-                }
+                // Fetch silently (no loading spinner) when polling
+                if (document.hasFocus()) fetchJobs(true);
             }, pollInterval);
         }
 
         return () => {
             if (interval) clearInterval(interval);
         };
-    }, [isLive, pollInterval, filterModule, filterStatus]);
+    }, [isLive, pollInterval]); // Don't depend on filters here, they are handled above
 
     const handleRetry = async (jobId: string) => {
         try {
@@ -97,157 +141,205 @@ const JobHistoryPage = () => {
         }
     };
 
+    const filteredJobs = jobs.filter(job =>
+        job.input?.prompt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job._id.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    useGSAP(() => {
+        if (!isLoading && filteredJobs.length > 0) {
+            gsap.from('.job-card', {
+                y: 20,
+                opacity: 0,
+                duration: 0.5,
+                stagger: 0.05,
+                ease: 'power2.out'
+            });
+        }
+    }, [isLoading, filteredJobs.length]);
+
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8">
-            <GSAPTransition animation="fade-in-up">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">Job Queue & History</h1>
-                        <p className="text-gray-400">Monitor your generation tasks across all modules.</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => setIsLive(!isLive)}
-                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border ${isLive
-                                    ? 'bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/20 shadow-[0_0_15px_rgba(0,255,136,0.1)]'
-                                    : 'bg-white/5 text-gray-500 border-white/10 hover:text-white'
-                                }`}
-                        >
-                            <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-[#00FF88] animate-pulse' : 'bg-gray-600'}`} />
-                            {isLive ? 'LIVE MONITORING' : 'ENABLE LIVE MONITORING'}
-                        </button>
-                        <button
-                            onClick={fetchJobs}
-                            className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors flex items-center gap-2 text-xs font-bold"
-                        >
-                            <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
-                            REFRESH
-                        </button>
-                    </div>
-                </div>
-            </GSAPTransition>
-
-            {/* Filters */}
-            <div className="flex flex-wrap gap-4 items-center bg-[#1A1A1A] p-4 rounded-xl border border-white/5">
-                <div className="flex items-center gap-2 text-gray-400">
-                    <Filter className="w-4 h-4" />
-                    <span className="text-sm font-medium">Filters:</span>
+        <div ref={containerRef} className="p-4 sm:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
+            {/* Header Section */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="space-y-1">
+                    <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                        Generation <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00FF88] to-[#00CC6A]">Archive</span>
+                    </h1>
+                    <p className="text-gray-500 font-medium">Monitor and manage your creative pipeline from a single portal.</p>
                 </div>
 
-                <select
-                    value={filterModule}
-                    onChange={(e) => setFilterModule(e.target.value as any)}
-                    className="bg-black/40 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-white/20"
-                >
-                    <option value="all">All Modules</option>
-                    <option value="campaign_wizard">Campaign Wizard</option>
-                    <option value="text_to_image">Text to Image</option>
-                    <option value="text_to_video">Text to Video</option>
-                    <option value="image_to_video">Image to Video</option>
-                    <option value="text_to_audio">Text to Audio</option>
-                </select>
-
-                <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value as any)}
-                    className="bg-black/40 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-white/20"
-                >
-                    <option value="all">All Statuses</option>
-                    <option value="queued">Queued</option>
-                    <option value="processing">Processing</option>
-                    <option value="completed">Completed</option>
-                    <option value="failed">Failed</option>
-                </select>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setIsLive(!isLive)}
+                        className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 border ${isLive
+                            ? 'bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/20 shadow-[0_0_20px_rgba(0,255,136,0.1)]'
+                            : 'bg-white/5 text-gray-500 border-white/10 hover:text-white hover:bg-white/10'
+                            }`}
+                    >
+                        <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-[#00FF88] animate-pulse' : 'bg-gray-600'}`} />
+                        {isLive ? 'LIVE RADAR ACTIVE' : 'ENABLE LIVE RADAR'}
+                    </button>
+                    <button
+                        onClick={() => fetchJobs()}
+                        className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition-all group"
+                        title="Refresh History"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                    </button>
+                </div>
             </div>
 
-            {/* Job List */}
-            <div className="bg-[#1A1A1A] rounded-xl border border-white/5 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="bg-black/40 border-b border-white/5 text-gray-400 text-xs uppercase tracking-wider">
-                                <th className="px-6 py-4 font-medium">Job ID / Time</th>
-                                <th className="px-6 py-4 font-medium">Module</th>
-                                <th className="px-6 py-4 font-medium">Input/Prompt</th>
-                                <th className="px-6 py-4 font-medium">Status</th>
-                                <th className="px-6 py-4 font-medium text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                            {isLoading && jobs.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-                                        Loading jobs...
-                                    </td>
-                                </tr>
-                            ) : jobs.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                        No jobs found matching your filters.
-                                    </td>
-                                </tr>
-                            ) : (
-                                jobs.map((job) => (
-                                    <tr key={job._id} className="hover:bg-white/5 transition-colors group">
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-white font-mono text-xs opacity-70 mb-1">#{job._id.slice(-6)}</span>
-                                                <span className="text-gray-400 text-xs">
-                                                    {new Date(job.createdAt).toLocaleString()}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2 text-white/80">
-                                                {getModuleIcon(job.module)}
-                                                <span className="text-sm capitalize">{job.module.replace(/_/g, ' ')}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 max-w-xs">
-                                            <p className="text-sm text-gray-300 line-clamp-2" title={job.input?.prompt || JSON.stringify(job.input)}>
-                                                {job.input?.prompt || 'No prompt provided'}
-                                            </p>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {getStatusBadge(job.status)}
-                                            {job.error && (
-                                                <div className="mt-1 text-xs text-red-400 flex items-center gap-1">
-                                                    <AlertCircle className="w-3 h-3" />
-                                                    <span className="truncate max-w-[150px]" title={job.error.message}>{job.error.message}</span>
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {job.status === 'failed' && (
-                                                    <button
-                                                        onClick={() => handleRetry(job._id)}
-                                                        className="p-2 hover:bg-white/10 rounded-lg text-white transition-colors"
-                                                        title="Retry Job"
-                                                    >
-                                                        <RefreshCw className="w-4 h-4" />
-                                                    </button>
-                                                )}
-                                                {job.status === 'completed' && job.output?.[0]?.url && (
-                                                    <a
-                                                        href={job.output[0].url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="p-2 hover:bg-white/10 rounded-lg text-green-400 transition-colors"
-                                                        title="View Result"
-                                                    >
-                                                        <ExternalLink className="w-4 h-4" />
-                                                    </a>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                    { label: 'Total Operations', value: jobs.length, icon: Gauge, color: 'text-white' },
+                    { label: 'Successful', value: completedCount, icon: Zap, color: 'text-[#00FF88]' },
+                    { label: 'Active Pipeline', value: activeJobCount, icon: Clock4, color: 'text-sky-400' },
+                    { label: 'Failed Tasks', value: failedCount, icon: AlertCircle, color: 'text-rose-400' },
+                ].map((stat, i) => (
+                    <div key={i} className="bg-[#141414] border border-white/5 p-4 rounded-2xl shadow-lg group hover:border-white/10 transition-colors">
+                        <div className="flex items-center gap-3 mb-2">
+                            <stat.icon className={`w-4 h-4 ${stat.color} opacity-60`} />
+                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{stat.label}</span>
+                        </div>
+                        <div className="text-2xl font-black text-white">{stat.value}</div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Filter & Search Bar */}
+            <div className="flex flex-col md:flex-row gap-4 items-center bg-[#141414] p-4 rounded-2xl border border-white/5 shadow-xl">
+                <div className="relative flex-1 group w-full">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-[#00FF88] transition-colors" />
+                    <input
+                        type="text"
+                        placeholder="Search by prompt or job ID..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="bg-black/40 border border-white/10 text-white pl-10 pr-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-[#00FF88]/40 transition-all w-full placeholder:text-gray-600"
+                    />
                 </div>
+
+                <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+                    <select
+                        value={filterModule}
+                        onChange={(e) => setFilterModule(e.target.value as any)}
+                        className="bg-black/40 border border-white/10 text-white text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#00FF88]/40 min-w-[140px]"
+                    >
+                        <option value="all">All Modules</option>
+                        <option value="campaign_wizard">Campaign Wizard</option>
+                        <option value="text_to_image">Text to Image</option>
+                        <option value="text_to_video">Text to Video</option>
+                        <option value="image_to_video">Image to Video</option>
+                        <option value="text_to_audio">Text to Audio</option>
+                    </select>
+
+                    <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value as any)}
+                        className="bg-black/40 border border-white/10 text-white text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#00FF88]/40"
+                    >
+                        <option value="all">Every Status</option>
+                        <option value="queued">Queued</option>
+                        <option value="processing">Processing</option>
+                        <option value="completed">Completed</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                </div>
+            </div>
+
+            {/* Job Grid/List */}
+            <div className="grid grid-cols-1 gap-4">
+                {isLoading && filteredJobs.length === 0 ? (
+                    <div className="py-24 flex flex-col items-center justify-center space-y-4 bg-[#141414] rounded-3xl border border-dashed border-white/5">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-[#00FF88] blur-xl opacity-20 animate-pulse" />
+                            <Loader2 className="w-12 h-12 text-[#00FF88] animate-spin relative" />
+                        </div>
+                        <p className="text-gray-400 font-medium animate-pulse">Scanning Archive...</p>
+                    </div>
+                ) : filteredJobs.length === 0 ? (
+                    <div className="py-24 text-center bg-[#141414] rounded-3xl border border-dashed border-white/5">
+                        <AlertCircle className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                        <h3 className="text-white font-bold text-lg">No Results Found</h3>
+                        <p className="text-gray-500 max-w-xs mx-auto">We couldn't find any generation tasks matching your current filters.</p>
+                        <button
+                            onClick={() => { setFilterModule('all'); setFilterStatus('all'); setSearchQuery(''); }}
+                            className="mt-6 text-[#00FF88] text-sm font-bold flex items-center gap-2 mx-auto hover:underline"
+                        >
+                            <RotateCcw className="w-3.5 h-3.5" /> Reset Filters
+                        </button>
+                    </div>
+                ) : (
+                    filteredJobs.map((job) => {
+                        const style = getStatusStyles(job.status);
+                        return (
+                            <div
+                                key={job._id}
+                                className="job-card group bg-[#141414] border border-white/5 p-5 rounded-2xl flex flex-col md:flex-row md:items-center gap-6 hover:bg-[#1A1A1A] hover:border-white/10 transition-all shadow-xl"
+                            >
+                                {/* Module Icon */}
+                                <div className="flex-shrink-0">
+                                    <div className={`w-14 h-14 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-center text-gray-400 group-hover:text-white group-hover:border-white/20 transition-all ${style.shadow}`}>
+                                        {getModuleIcon(job.module)}
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="flex-grow min-w-0 space-y-1">
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <span className="text-[10px] font-black text-gray-600 uppercase tracking-[2px]">#{job._id.slice(-8)}</span>
+                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${style.bg} ${style.color} ${style.border}`}>
+                                            {style.icon}
+                                            {job.status.toUpperCase()}
+                                        </div>
+                                    </div>
+                                    <h3 className="text-gray-200 font-medium line-clamp-1 group-hover:text-white transition-colors" title={job.input?.prompt || 'No prompt'}>
+                                        {job.input?.prompt || <span className="text-gray-600 italic">Advanced Generation Task</span>}
+                                    </h3>
+                                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                                        <span className="flex items-center gap-1.5 capitalize"><FileText className="w-3 h-3" /> {job.module.replace(/_/g, ' ')}</span>
+                                        <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> {new Date(job.createdAt).toLocaleString()}</span>
+                                        {job.creditsUsed > 0 && <span className="flex items-center gap-1.5 text-amber-500/80"><Zap className="w-3 h-3" /> {job.creditsUsed} Fuel</span>}
+                                    </div>
+
+                                    {job.error && (
+                                        <div className="mt-2 text-[11px] text-rose-400 font-medium flex items-center gap-1.5 border-l-2 border-rose-500/30 pl-3">
+                                            <AlertCircle className="w-3 h-3" />
+                                            {job.error.message}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center justify-end gap-2 md:pl-6 border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0">
+                                    {job.status === 'failed' && (
+                                        <button
+                                            onClick={() => handleRetry(job._id)}
+                                            className="px-4 py-2 bg-white/5 hover:bg-rose-500/20 text-white rounded-xl text-xs font-bold transition-all border border-white/5 hover:border-rose-500/20 flex items-center gap-2"
+                                        >
+                                            <RotateCcw className="w-3 h-3" /> RETRY
+                                        </button>
+                                    )}
+                                    {job.status === 'completed' && job.output?.[0]?.url && (
+                                        <a
+                                            href={job.output[0].url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="px-4 py-2 bg-[#00FF88] text-black rounded-xl text-xs font-bold transition-all hover:bg-[#00CC6A] hover:scale-105 flex items-center gap-2"
+                                        >
+                                            <ExternalLink className="w-3 h-3" /> VIEW RESULT
+                                        </a>
+                                    )}
+                                    <button className="p-2.5 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
             </div>
         </div>
     );

@@ -1,12 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/v1';
-
-// Get auth token
-const getAuthToken = () => {
-    const token = localStorage.getItem('accessToken');
-    return token;
-};
+import axiosInstance from '@/api/axiosInstance';
 
 export interface CampaignAsset {
     type: "image" | "video";
@@ -75,22 +67,11 @@ export interface CampaignProgress {
 }
 
 class CampaignService {
-    private getHeaders() {
-        return {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getAuthToken()}`
-        };
-    }
-
     /**
      * Create a new campaign
      */
     async createCampaign(data: Partial<Campaign>): Promise<Campaign> {
-        const response = await axios.post(
-            `${API_BASE_URL}/campaigns`,
-            data,
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.post('/campaigns', data);
         return response.data.data;
     }
 
@@ -98,11 +79,7 @@ class CampaignService {
      * Update campaign
      */
     async updateCampaign(campaignId: string, updates: Partial<Campaign>): Promise<Campaign> {
-        const response = await axios.put(
-            `${API_BASE_URL}/campaigns/${campaignId}`,
-            updates,
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.put(`/campaigns/${campaignId}`, updates);
         return response.data.data;
     }
 
@@ -110,10 +87,7 @@ class CampaignService {
      * Get campaign by ID
      */
     async getCampaign(campaignId: string): Promise<Campaign> {
-        const response = await axios.get(
-            `${API_BASE_URL}/campaigns/${campaignId}`,
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.get(`/campaigns/${campaignId}`);
         return response.data.data;
     }
 
@@ -125,15 +99,12 @@ class CampaignService {
         limit?: number;
         skip?: number;
     }): Promise<{ campaigns: Campaign[]; total: number }> {
-        const params = new URLSearchParams();
-        if (filters?.status) params.append('status', filters.status);
-        if (filters?.limit) params.append('limit', filters.limit.toString());
-        if (filters?.skip) params.append('skip', filters.skip.toString());
+        const params: any = {};
+        if (filters?.status) params.status = filters.status;
+        if (filters?.limit) params.limit = filters.limit;
+        if (filters?.skip) params.skip = filters.skip;
 
-        const response = await axios.get(
-            `${API_BASE_URL}/campaigns?${params.toString()}`,
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.get('/campaigns', { params });
         return response.data.data;
     }
 
@@ -144,11 +115,7 @@ class CampaignService {
         script: string;
         sceneOutline: string[];
     }> {
-        const response = await axios.post(
-            `${API_BASE_URL}/campaigns/${campaignId}/generate-script`,
-            {},
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.post(`/campaigns/${campaignId}/generate-script`, {});
         return response.data.data;
     }
 
@@ -159,11 +126,7 @@ class CampaignService {
         campaign: Campaign;
         jobs: any[];
     }> {
-        const response = await axios.post(
-            `${API_BASE_URL}/campaigns/${campaignId}/start-generation`,
-            {},
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.post(`/campaigns/${campaignId}/start-generation`, {});
         return response.data.data;
     }
 
@@ -175,10 +138,7 @@ class CampaignService {
         jobs: any[];
         progress: CampaignProgress;
     }> {
-        const response = await axios.get(
-            `${API_BASE_URL}/campaigns/${campaignId}/status`,
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.get(`/campaigns/${campaignId}/status`);
         return response.data.data;
     }
 
@@ -186,11 +146,7 @@ class CampaignService {
      * Export campaign
      */
     async exportCampaign(campaignId: string): Promise<any> {
-        const response = await axios.post(
-            `${API_BASE_URL}/campaigns/${campaignId}/export`,
-            {},
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.post(`/campaigns/${campaignId}/export`, {});
         return response.data.data;
     }
 
@@ -198,21 +154,14 @@ class CampaignService {
      * Delete campaign
      */
     async deleteCampaign(campaignId: string): Promise<void> {
-        await axios.delete(
-            `${API_BASE_URL}/campaigns/${campaignId}`,
-            { headers: this.getHeaders() }
-        );
+        await axiosInstance.delete(`/campaigns/${campaignId}`);
     }
 
     /**
      * Cancel campaign generation
      */
     async cancelGeneration(campaignId: string): Promise<void> {
-        await axios.post(
-            `${API_BASE_URL}/campaigns/${campaignId}/cancel`,
-            {},
-            { headers: this.getHeaders() }
-        );
+        await axiosInstance.post(`/campaigns/${campaignId}/cancel`, {});
     }
 }
 

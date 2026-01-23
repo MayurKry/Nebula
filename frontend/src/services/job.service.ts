@@ -1,12 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/v1';
-
-// Get auth token
-const getAuthToken = () => {
-    const token = localStorage.getItem('accessToken');
-    return token;
-};
+import axiosInstance from '@/api/axiosInstance';
 
 // Job types
 export type JobModule =
@@ -68,13 +60,6 @@ export interface JobStats {
 }
 
 class JobService {
-    private getHeaders() {
-        return {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getAuthToken()}`
-        };
-    }
-
     /**
      * Create a new job
      */
@@ -83,11 +68,7 @@ class JobService {
         input: Job['input'];
         metadata?: Record<string, any>;
     }): Promise<Job> {
-        const response = await axios.post(
-            `${API_BASE_URL}/jobs`,
-            data,
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.post('/jobs', data);
         return response.data.data;
     }
 
@@ -95,10 +76,7 @@ class JobService {
      * Get job by ID
      */
     async getJob(jobId: string): Promise<Job> {
-        const response = await axios.get(
-            `${API_BASE_URL}/jobs/${jobId}`,
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.get(`/jobs/${jobId}`);
         return response.data.data;
     }
 
@@ -111,16 +89,13 @@ class JobService {
         limit?: number;
         skip?: number;
     }): Promise<{ jobs: Job[]; total: number }> {
-        const params = new URLSearchParams();
-        if (filters?.module) params.append('module', filters.module);
-        if (filters?.status) params.append('status', filters.status);
-        if (filters?.limit) params.append('limit', filters.limit.toString());
-        if (filters?.skip) params.append('skip', filters.skip.toString());
+        const params: any = {};
+        if (filters?.module) params.module = filters.module;
+        if (filters?.status) params.status = filters.status;
+        if (filters?.limit) params.limit = filters.limit;
+        if (filters?.skip) params.skip = filters.skip;
 
-        const response = await axios.get(
-            `${API_BASE_URL}/jobs?${params.toString()}`,
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.get('/jobs', { params });
         return response.data.data;
     }
 
@@ -128,11 +103,7 @@ class JobService {
      * Retry a failed job
      */
     async retryJob(jobId: string): Promise<Job> {
-        const response = await axios.post(
-            `${API_BASE_URL}/jobs/${jobId}/retry`,
-            {},
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.post(`/jobs/${jobId}/retry`, {});
         return response.data.data;
     }
 
@@ -140,11 +111,7 @@ class JobService {
      * Cancel a job
      */
     async cancelJob(jobId: string): Promise<Job> {
-        const response = await axios.post(
-            `${API_BASE_URL}/jobs/${jobId}/cancel`,
-            {},
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.post(`/jobs/${jobId}/cancel`, {});
         return response.data.data;
     }
 
@@ -152,10 +119,7 @@ class JobService {
      * Get job statistics
      */
     async getJobStats(): Promise<JobStats> {
-        const response = await axios.get(
-            `${API_BASE_URL}/jobs/stats`,
-            { headers: this.getHeaders() }
-        );
+        const response = await axiosInstance.get('/jobs/stats');
         return response.data.data;
     }
 }
