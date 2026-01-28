@@ -38,6 +38,7 @@ export interface GenerateImagesResponse {
 
 export interface GenerateVideoRequest {
     prompt: string;
+    model?: string;
     style?: string;
     duration?: number;
 }

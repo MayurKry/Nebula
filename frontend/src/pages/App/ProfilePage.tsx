@@ -46,7 +46,7 @@ const ProfilePage = () => {
 
     const handleLogout = async () => {
         await logout();
-        navigate('/');
+        navigate('/login');
     };
 
     const handleUpdateProfile = async (e: React.FormEvent) => {

@@ -325,7 +325,7 @@ const HistoryPage = () => {
                                         )}
                                         {selectedItem.settings.aspectRatio && <p>Aspect Ratio: {selectedItem.settings.aspectRatio}</p>}
                                         {selectedItem.settings.duration && <p>Duration: {selectedItem.settings.duration}s</p>}
-                                        {selectedItem.provider && <p>Provider: {selectedItem.provider}</p>}
+                                        {selectedItem.provider && <p>Provider: {selectedItem.provider.toLowerCase() === 'runway' ? 'Nebula' : selectedItem.provider}</p>}
                                     </div>
                                 </div>
                                 <div>

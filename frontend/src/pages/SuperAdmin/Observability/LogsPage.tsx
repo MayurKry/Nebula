@@ -104,7 +104,7 @@ const LogsPage = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-xs font-medium text-[#8E8E93]">
-                                                {log.latencyMs}ms • {log.provider}
+                                                {log.latencyMs}ms • {log.provider?.toLowerCase() === 'runway' ? 'Nebula' : log.provider}
                                                 {log.creditsConsumed > 0 && <span className="ml-2 text-[#00FF88]">{log.creditsConsumed} CP</span>}
                                             </td>
                                         </tr>

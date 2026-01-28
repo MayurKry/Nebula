@@ -35,7 +35,7 @@ export function NavUser() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/');
+    navigate('/login');
   };
 
   return (

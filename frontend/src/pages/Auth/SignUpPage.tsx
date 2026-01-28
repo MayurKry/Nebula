@@ -404,9 +404,9 @@ const SignUpPage = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/20" />
 
         <div className="absolute inset-0 p-12 flex flex-col justify-between z-10">
-          <Link to="/">
+          <div>
             <img src="/nebula-logo.png" alt="Nebula" className="h-8 brightness-0 invert" />
-          </Link>
+          </div>
 
           <div className="max-w-md space-y-4">
             <div className="px-3 py-1 bg-[#00FF88]/20 border border-[#00FF88]/30 rounded-full inline-block">

@@ -9,11 +9,12 @@ import logger from "../utils/logger";
 
 /**
  * STRICTLY USES RUNWAY ML ONLY - NO FALLBACK PROVIDERS
- * Model: veo3.1_fast (5 credits per second)
+ * Model: gen3a_turbo (Standard Production Model)
  */
 
 export interface VideoGenerationParams {
     prompt: string;
+    model?: string;
     style?: string;
     duration?: number;
     width?: number;
@@ -61,20 +62,22 @@ class AIVideoService {
         }
 
         logger.info("[AI Video Service] 🔒 STRICTLY USING RUNWAY ML ONLY");
-        logger.info("[AI Video Service] Model: veo3.1_fast (5 credits/second)");
+        logger.info("[AI Video Service] Model: gen3a_turbo (Standard Production Model)");
         logger.info("[AI Video Service] ✅ Prompt enhancement enabled");
     }
 
     /**
      * Generate video using STRICTLY RUNWAY ML ONLY
-     * Model: veo3.1_fast (5 credits per second)
+     * Model: gen3a_turbo (Standard Production Model)
      * NO FALLBACK PROVIDERS
      */
     async generateVideo(params: VideoGenerationParams): Promise<VideoGenerationResult> {
-        const originalPrompt = params.prompt;
+        // Clean prompt: remove newlines and extra spaces
+        const originalPrompt = (params.prompt || "").replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim();
+        const model = params.model || "gen3a_turbo";
         const duration = params.duration || 5; // Default 5 seconds
 
-        logger.info(`[AI Video Service] 🔒 Using RUNWAY ML ONLY (veo3.1_fast)`);
+        logger.info(`[AI Video Service] 🔒 Using ${model}`);
         logger.info(`[AI Video Service] Original prompt: "${originalPrompt}"`);
         logger.info(`[AI Video Service] Duration: ${duration}s`);
 
@@ -96,6 +99,7 @@ class AIVideoService {
             // Step 3: Generate with Runway ML
             const result = await runwayService.textToVideo({
                 prompt: enhancedPrompt,
+                model: model,
                 duration: duration,
                 ratio: ratio
             });

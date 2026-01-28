@@ -31,7 +31,7 @@ const Topbar = ({ onMenuClick }: TopbarProps) => {
 
     const handleLogout = () => {
         logout();
-        navigate('/');
+        navigate('/login');
     };
 
     return (

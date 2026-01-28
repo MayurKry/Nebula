@@ -491,7 +491,7 @@ const JobHistoryPage = () => {
                                             {Object.entries(selectedJob.input.config).map(([key, value]) => (
                                                 <div key={key} className="flex flex-col">
                                                     <span className="text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                                                    <span className="text-gray-300 font-medium">{String(value)}</span>
+                                                    <span className="text-gray-300 font-medium">{String(value).toLowerCase() === 'runway' ? 'Nebula' : String(value)}</span>
                                                 </div>
                                             ))}
                                         </div>

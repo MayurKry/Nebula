@@ -22,12 +22,12 @@ const TimelineBlock = ({ scene, isActive, onSelect, onResize }: {
 
     return (
         <div
-            style={{ width: `${width} px` }}
+            style={{ width: `${width}px` }}
             onClick={onSelect}
-            className={`relative h - 20 rounded - lg border flex - shrink - 0 transition - all cursor - pointer group select - none ${isActive
+            className={`relative h-20 rounded-lg border flex-shrink-0 transition-all cursor-pointer group select-none ${isActive
                 ? 'bg-[#1A1A1A] border-[#00FF88] shadow-[0_0_10px_-2px_rgba(0,255,136,0.3)]'
                 : 'bg-[#141414] border-white/10 hover:border-white/20'
-                } `}
+                }`}
         >
             <div className="absolute inset-0 flex items-center px-3 gap-2 overflow-hidden">
                 {scene.thumbnail && (
@@ -38,7 +38,7 @@ const TimelineBlock = ({ scene, isActive, onSelect, onResize }: {
                         draggable={false}
                     />
                 )}
-                <span className={`text - xs font - medium truncate ${isActive ? 'text-white' : 'text-gray-400'} `}>
+                <span className={`text-xs font-medium truncate ${isActive ? 'text-white' : 'text-gray-400'}`}>
                     {scene.prompt || 'Untitled Scene'}
                 </span>
             </div>
@@ -107,7 +107,7 @@ const Timeline = () => {
                     {/* Time Ruler */}
                     <div className="h-6 border-b border-white/5 flex items-end relative min-w-max px-4">
                         {rulerMarks.map((t) => (
-                            <div key={t} className="absolute bottom-0 text-[10px] text-gray-600 border-l border-white/5 pl-1 h-3" style={{ left: `${t * 40 + 16} px` }}>
+                            <div key={t} className="absolute bottom-0 text-[10px] text-gray-600 border-l border-white/5 pl-1 h-3" style={{ left: `${t * 40 + 16}px` }}>
                                 {t}s
                             </div>
                         ))}
@@ -129,7 +129,7 @@ const Timeline = () => {
                     {/* Playhead */}
                     <div
                         className="absolute top-0 bottom-0 w-px bg-red-500 z-20 pointer-events-none"
-                        style={{ left: `${playheadPos + 16} px` }}
+                        style={{ left: `${playheadPos + 16}px` }}
                     >
                         <div className="absolute -top-1 -translate-x-1/2 text-red-500">
                             <svg width="11" height="12" viewBox="0 0 11 12" fill="currentColor">

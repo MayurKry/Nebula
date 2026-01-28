@@ -33,6 +33,7 @@ const TextToVideoPage = () => {
             // Real API Call
             const response = await aiService.generateVideo({
                 prompt: data.prompt,
+                model: data.settings.model,
                 style: data.settings.style || 'Cinematic', // Use settings style
                 duration: data.settings.duration
             });

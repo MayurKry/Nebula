@@ -116,7 +116,7 @@ axiosInstance.interceptors.response.use(
         // Only clear and redirect if it's NOT a login request (which it shouldn't be here anyway due to isAuthEndpoint check)
         TokenStorage.clearTokens();
         refreshSubscribers = [];
-        window.location.href = "/";
+        window.location.href = "/#/login";
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -126,7 +126,7 @@ axiosInstance.interceptors.response.use(
     // Only redirect on 401 for non-auth endpoints if not already handled by refresh logic
     if (error.response?.status === 401 && !isAuthEndpoint) {
       TokenStorage.clearTokens();
-      window.location.href = "/";
+      window.location.href = "/#/login";
     }
 
     if (error.response) {

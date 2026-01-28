@@ -19,6 +19,10 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        premium: "bg-primary text-primary-foreground nebula-glow hover:scale-[1.02] hover:nebula-glow active:scale-[0.98] btn-premium-action",
+        glass: "glass-morphism text-white hover:bg-white/10 active:scale-[0.98] border-white/20",
+        nebula: "bg-transparent text-white border-2 border-[#00FF88] hover:bg-[#00FF88]/10 nebula-glow active:scale-[0.98]",
+        purple: "bg-nebula-purple text-white nebula-glow-purple hover:scale-[1.02] active:scale-[0.98]",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

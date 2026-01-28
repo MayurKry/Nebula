@@ -17,6 +17,7 @@ import PaymentPage from "@/pages/App/PaymentPage";
 import NotFoundPage from "@/pages/Shared/NotFoundPage";
 import AssetLibraryPage from "@/pages/App/AssetLibraryPage";
 import VideoEditorPreviewPage from "@/pages/App/VideoEditorPreviewPage";
+import DesignSystemPage from "@/pages/DesignSystemPage";
 import MarketingRoutes from "./MarketingRoute";
 import PublicRoutes from "./PublicRoute";
 import SuperAdminRoutes from "./SuperAdminRoute";
@@ -24,6 +25,7 @@ import SuperAdminRoutes from "./SuperAdminRoute";
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/design-system" element={<DesignSystemPage />} />
       {MarketingRoutes()}
       {PublicRoutes()}
       {SuperAdminRoutes()}

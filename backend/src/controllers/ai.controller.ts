@@ -271,6 +271,7 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
     try {
         const body = req.body;
         prompt = body.prompt;
+        const model = body.model || "gen3a_turbo";
         style = body.style || "Cinematic";
         duration = body.duration || 6;
 
@@ -283,6 +284,7 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
         // Optimized flow: Directly call AI Video Service
         const result = await aiVideoService.generateVideo({
             prompt: prompt,
+            model: model,
             style: style,
             duration: duration
         });

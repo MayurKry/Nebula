@@ -41,6 +41,7 @@ class CostTracker {
         // RunwayML Models (Locked Basic/Cheap)
         'runway-image_generation': 0.01,
         'runway-gen3a_turbo': 0.25,
+        'runway-veo3.1_fast': 0.50,
     };
 
     logCall(call: APICallLog): void {

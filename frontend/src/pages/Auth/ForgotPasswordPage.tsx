@@ -36,9 +36,9 @@ const ForgotPasswordPage = () => {
 
                 {/* Logo and Content Overlay */}
                 <div className="absolute inset-0 p-8 md:p-16 flex flex-col justify-between z-10">
-                    <Link to="/" className="inline-flex items-center gap-2">
+                    <div className="inline-flex items-center gap-2">
                         <img src="/nebula-logo.png" alt="Nebula" className="h-10 object-contain brightness-0 invert" />
-                    </Link>
+                    </div>
 
                     <div className="max-w-md space-y-4">
                         <h2 className="text-4xl lg:text-5xl font-black text-white leading-tight tracking-tighter">

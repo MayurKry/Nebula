@@ -29,7 +29,7 @@ const ProfilePage = () => {
 
     const handleLogout = async () => {
         await logout();
-        navigate('/');
+        navigate('/login');
     };
 
     const handleEnable2FA = () => {

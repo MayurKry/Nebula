@@ -21,7 +21,7 @@ export interface RunwayResult {
 
 class RunwayService {
     private readonly apiKey: string;
-    private readonly baseUrl = "https://api.dev.runwayml.com/v1";
+    private readonly baseUrl = "https://api.runwayml.com/v1";
 
     constructor() {
         this.apiKey = (process.env.RUNWAYML_API_KEY || "").trim();
@@ -127,13 +127,12 @@ class RunwayService {
      * NO OTHER MODELS ALLOWED
      */
     async textToVideo(params: RunwayGenerationParams): Promise<RunwayResult> {
-        const model = "veo3.1_fast"; // Gen-3 Alpha Turbo is Forbidden, using Veo
+        const model = params.model || "gen3a_turbo"; // Dynamic model selection
 
-        // Enforce supported durations for Veo: 4, 6, 8 seconds
-        let duration = params.duration || 6;
-        if (duration < 5) duration = 4;
-        else if (duration < 7) duration = 6;
-        else duration = 8;
+        // Enforce supported durations for Gen-3 Alpha Turbo: 5, 10 seconds
+        let duration = params.duration || 5;
+        if (duration <= 7) duration = 5;
+        else duration = 10;
 
         const creditsPerSecond = 5; // Assumption for Veo
         const totalCredits = duration * creditsPerSecond;
@@ -268,7 +267,8 @@ class RunwayService {
 
         if (status === 400) {
             logger.error("[RunwayService] ❌ Bad request:", errorData);
-            throw new Error(`Invalid request parameters: ${errorData?.message || error.message}`);
+            const detail = errorData?.message || errorData?.error || JSON.stringify(errorData);
+            throw new Error(`Invalid request parameters: ${detail}`);
         }
 
         if (status === 404) {

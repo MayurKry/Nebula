@@ -179,7 +179,7 @@ const ActivityLogPage = () => {
                                         <div className="flex flex-wrap gap-2">
                                             {Object.entries(activity.metadata).slice(0, 3).map(([key, value]) => (
                                                 <span key={key} className="px-2 py-0.5 bg-white/5 border border-white/5 rounded text-[10px] text-gray-400 lowercase italic">
-                                                    {key}: <span className="text-gray-300 not-italic">{String(value)}</span>
+                                                    {key}: <span className="text-gray-300 not-italic">{String(value).toLowerCase() === 'runway' ? 'nebula' : String(value)}</span>
                                                 </span>
                                             ))}
                                         </div>

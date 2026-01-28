@@ -12,20 +12,20 @@ const Inspector = () => {
             <div className="flex p-1 m-4 mb-2 bg-[#141414] rounded-xl border border-white/10">
                 <button
                     onClick={() => setActiveTab('settings')}
-                    className={`flex - 1 flex items - center justify - center gap - 2 py - 2 text - xs font - medium rounded - lg transition - all ${activeTab === 'settings'
-                            ? 'bg-[#1A1A1A] text-white shadow-sm border border-white/10'
-                            : 'text-gray-500 hover:text-gray-300'
-                        } `}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-medium rounded-lg transition-all ${activeTab === 'settings'
+                        ? 'bg-white/5 text-white shadow-sm border border-white/10'
+                        : 'text-gray-500 hover:text-gray-300'
+                        }`}
                 >
                     <Settings2 className="w-3.5 h-3.5" />
                     Settings
                 </button>
                 <button
                     onClick={() => setActiveTab('character')}
-                    className={`flex - 1 flex items - center justify - center gap - 2 py - 2 text - xs font - medium rounded - lg transition - all ${activeTab === 'character'
-                            ? 'bg-[#1A1A1A] text-white shadow-sm border border-white/10'
-                            : 'text-gray-500 hover:text-gray-300'
-                        } `}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-medium rounded-lg transition-all ${activeTab === 'character'
+                        ? 'bg-white/5 text-white shadow-sm border border-white/10'
+                        : 'text-gray-500 hover:text-gray-300'
+                        }`}
                 >
                     <User className="w-3.5 h-3.5" />
                     Character
