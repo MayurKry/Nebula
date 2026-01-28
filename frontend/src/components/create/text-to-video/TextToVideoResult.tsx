@@ -95,16 +95,6 @@ const TextToVideoResult: React.FC<TextToVideoResultProps> = ({ project, onBack, 
         );
     }
 
-    const handleAddSceneMock = () => {
-        if (project.scenes.length >= 5) {
-            toast.error("Max 5 scenes allowed for now.");
-            return;
-        }
-        // In real app, this would bubble up to parent to change 'step' back to input
-        // For now we will rely on the parent prop
-        onBack(); // Re-use back for now as "Add new prompt", ideally differentiation is good
-    };
-
     // ... existing trim logic ...
 
     if (!isMultiScene) {

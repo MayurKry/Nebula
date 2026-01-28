@@ -8,8 +8,7 @@ import {
 } from 'lucide-react';
 import { assetService } from '@/services/asset.service';
 
-// (keep sampleAssets if needed for fallback or type ref, but mostly unused now)
-const sampleAssets: any[] = [];
+// (keep folders if needed for fallback or type ref, but mostly unused now)
 
 const folders = [
     { id: 'f1', name: 'Marketing', count: 12 },
@@ -128,7 +127,7 @@ const AssetLibraryPage = () => {
         }
     };
 
-    const handleFolderClick = (folderId: string | null, folderName: string) => {
+    const handleFolderClick = (folderId: string | null) => {
         setSelectedFolder(folderId);
     };
 
@@ -151,7 +150,7 @@ const AssetLibraryPage = () => {
                     <ul className="space-y-1">
                         <li>
                             <button
-                                onClick={() => handleFolderClick(null, 'All Assets')}
+                                onClick={() => handleFolderClick(null)}
                                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${!selectedFolder ? 'text-white bg-white/5' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
                             >
                                 <Folder className={`w-4 h-4 ${!selectedFolder ? 'text-[#00FF88]' : ''}`} />
@@ -162,7 +161,7 @@ const AssetLibraryPage = () => {
                         {folders.map((folder) => (
                             <li key={folder.id}>
                                 <button
-                                    onClick={() => handleFolderClick(folder.id, folder.name)}
+                                    onClick={() => handleFolderClick(folder.id)}
                                     className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${selectedFolder === folder.id ? 'text-white bg-white/5' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
                                 >
                                     <Folder className={`w-4 h-4 ${selectedFolder === folder.id ? 'text-[#00FF88]' : ''}`} />
