@@ -89,7 +89,7 @@ const CampaignWizardPage = () => {
         if (currentStep === 7 && campaignId && progress.processing > 0) {
             const interval = setInterval(async () => {
                 await updateCampaignStatus();
-            }, 3000);
+            }, 10000); // Poll every 10 seconds
             return () => clearInterval(interval);
         }
     }, [currentStep, campaignId, progress.processing]);

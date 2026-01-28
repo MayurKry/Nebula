@@ -37,6 +37,10 @@ class CostTracker {
         'veo-2.0-6s': 0.30,
         'veo-2.0-12s': 0.50,
         'veo-2.0-24s': 0.80,
+
+        // RunwayML Models (Locked Basic/Cheap)
+        'runway-image_generation': 0.01,
+        'runway-gen3a_turbo': 0.25,
     };
 
     logCall(call: APICallLog): void {

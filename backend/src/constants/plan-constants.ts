@@ -4,7 +4,7 @@ export const SYSTEM_PLANS = {
         id: 'FREE' as const,
         name: 'Free',
         monthlyCredits: 100,
-        features: ['TEXT_TO_IMAGE'],
+        features: ['TEXT_TO_IMAGE', 'TEXT_TO_VIDEO', 'TEXT_TO_AUDIO', 'FRAME_TO_VIDEO'],
         maxUsers: 1,
         description: 'Basic plan for individuals getting started'
     },

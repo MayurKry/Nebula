@@ -7,6 +7,7 @@ export type AssetType = "image" | "video" | "text" | "campaign";
 export interface IntentAnalysis {
     intent: GenerationIntent;
     suggestedProvider: string;
+    model: string;
     complexity: "low" | "medium" | "high";
     recommendations: string[];
     enhancedPrompt?: string;
@@ -23,15 +24,20 @@ class IntentService {
                 return this.fallbackAnalysis(prompt, type);
             }
 
-            const analysisPrompt = `Analyze the intent of this AI generation prompt. 
+            const analysisPrompt = `Analyze the intent of this AI generation prompt for Nebula Enterprise (RunwayML Architecture). 
 Prompt: "${prompt}"
 Type: ${type}
+
+Nebula strictly uses RunwayML:
+- Text-to-Image: Model "image_generation" (Locked Basic)
+- Text-to-Video: Model "gen3a_turbo" (Locked Cheap)
 
 Output valid JSON ONLY. Structure:
 {
   "intent": "cinematic" | "realistic" | "abstract" | "informational" | "social_media" | "professional",
   "complexity": "low" | "medium" | "high",
-  "suggestedProvider": "string",
+  "suggestedProvider": "runwayml",
+  "model": "image_generation" | "gen3a_turbo",
   "recommendations": ["string"]
 }`;
 
@@ -42,7 +48,9 @@ Output valid JSON ONLY. Structure:
                 const results = JSON.parse(cleaned);
                 return {
                     ...results,
-                    intent: results.intent || "cinematic"
+                    intent: results.intent || "cinematic",
+                    suggestedProvider: "runwayml",
+                    model: type === "video" ? "gen3a_turbo" : "image_generation"
                 };
             } catch (e) {
                 logger.warn("[Intent Service] JSON parse failed, using fallback");
@@ -66,7 +74,8 @@ Output valid JSON ONLY. Structure:
         return {
             intent,
             complexity: "medium",
-            suggestedProvider: type === "video" ? "replicate" : "pollinations",
+            suggestedProvider: "runwayml",
+            model: type === "video" ? "gen3a_turbo" : "image_generation",
             recommendations: ["Ensure high resolution", "Maintain consistent style"]
         };
     }

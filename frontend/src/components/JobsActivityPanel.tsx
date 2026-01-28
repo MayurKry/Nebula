@@ -20,8 +20,8 @@ const JobsActivityPanel = () => {
     const activeJobCount = jobs.filter(j => ['processing', 'queued', 'retrying'].includes(j.status)).length;
 
     useEffect(() => {
-        // If there are active jobs, poll faster (5s), otherwise slow (30s)
-        setPollInterval(activeJobCount > 0 ? 5000 : 30000);
+        // If there are active jobs, poll moderately (15s), otherwise slow (60s)
+        setPollInterval(activeJobCount > 0 ? 15000 : 60000);
     }, [activeJobCount]);
 
     useEffect(() => {
@@ -196,11 +196,7 @@ const JobsActivityPanel = () => {
                                         </span>
                                     </div>
 
-                                    {job.metadata?.platform && (
-                                        <p className="text-[10px] text-gray-500 mb-1">
-                                            Platform: {job.metadata.platform}
-                                        </p>
-                                    )}
+                                    {/* Removed platform/provider display */}
 
                                     {job.error && (
                                         <p className="text-[10px] text-red-400 mb-1 truncate">

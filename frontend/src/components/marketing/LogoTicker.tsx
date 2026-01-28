@@ -1,7 +1,5 @@
 const partners = [
-    { name: 'Google DeepMind', slug: 'google', domain: 'deepmind.google' },
-    { name: 'Runway', slug: 'runway', domain: 'runwayml.com' },
-    { name: 'ElevenLabs', slug: 'elevenlabs', domain: 'elevenlabs.io' },
+    { name: 'Google', slug: 'google', domain: 'google.com' },
     { name: 'Stability AI', slug: 'stabilityai', domain: 'stability.ai' },
     { name: 'Black Forest Labs', slug: 'flux', domain: 'blackforestlabs.ai' },
     { name: 'Nvidia', slug: 'nvidia', domain: 'nvidia.com' },

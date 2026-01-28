@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { aiService } from '@/services/ai.service';
+import { assetService } from '@/services/asset.service';
 import TextToVideoInput from '@/components/create/text-to-video/TextToVideoInput';
 import TextToVideoResult from '@/components/create/text-to-video/TextToVideoResult';
 import { useGeneration } from '@/components/generation/GenerationContext';
@@ -27,55 +29,97 @@ const TextToVideoPage = () => {
     const handleGenerate = async (data: { prompt: string; settings: any }) => {
         setIsGenerating(true);
 
-        // Mock Generation Delay
-        // In real app: call aiService.generateVideoProject(data)
         try {
-            // Using a timeout to simulate the "Flow AI" processing time
-            await new Promise(resolve => setTimeout(resolve, 3000));
-
-            const sceneCount = data.settings.duration > 10 ? Math.ceil(data.settings.duration / 5) : 1;
-
-            // Mock Response Structure
-            const mockScenes = Array.from({ length: sceneCount }).map((_, i) => ({
-                id: `scene-${Date.now()}-${i}`,
-                description: i === 0 ? data.prompt : `${data.prompt} - continued sequence part ${i + 1}`,
-                imageUrl: `https://image.pollinations.ai/prompt/${encodeURIComponent(data.prompt + " " + i)}?width=1280&height=720&nologo=true`,
-                duration: 5,
-            }));
-
-            const result = {
+            // Real API Call
+            const response = await aiService.generateVideo({
                 prompt: data.prompt,
-                settings: data.settings,
-                scenes: mockScenes
-            };
-
-            setGenerationData(result);
-            setStep('result');
-            toast.success("Video Generated Successfully!");
-
-            // Add to background jobs strictly for tracking if needed
-            addJob({
-                type: 'text-to-video',
-                prompt: data.prompt,
-                settings: data.settings,
+                style: data.settings.style || 'Cinematic', // Use settings style
+                duration: data.settings.duration
             });
 
+            // If immediate error
+            if (!response || !response.jobId) {
+                throw new Error("Failed to start video generation");
+            }
+
+            const jobId = response.jobId;
+            toast.success("Generation started! Rendering video...");
+
+            // Poll for completion
+            let attempts = 0;
+            const maxAttempts = 30; // 30 * 10s = 5 minutes (Veo is fast but let's be safe)
+
+            const pollInterval = setInterval(async () => {
+                attempts++;
+                try {
+                    const statusRes = await aiService.checkVideoStatus(jobId);
+                    const status = statusRes.status as string;
+
+                    if (status === 'completed' || status === 'succeeded') { // Handle both statii
+                        clearInterval(pollInterval);
+
+                        // Construct success result
+                        const result = {
+                            prompt: data.prompt,
+                            settings: data.settings,
+                            scenes: [{
+                                id: jobId,
+                                description: data.prompt,
+                                imageUrl: statusRes.thumbnailUrl || statusRes.videoUrl, // Use video thumbnail or url
+                                videoUrl: statusRes.videoUrl,
+                                duration: data.settings.duration
+                            }]
+                        };
+
+                        setGenerationData(result);
+                        setStep('result');
+                        setIsGenerating(false);
+                        toast.success("Video Generated Successfully!");
+
+                        // Add to context for history tracking
+                        addJob({
+                            type: 'text-to-video',
+                            prompt: data.prompt,
+                            settings: data.settings,
+                        });
+                    } else if (statusRes.status === 'failed') {
+                        clearInterval(pollInterval);
+                        setIsGenerating(false);
+                        toast.error("Video generation failed via API.");
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(pollInterval);
+                        setIsGenerating(false);
+                        toast.error("Generation timed out. Please check History later.");
+                    }
+                    // If processing, continue polling
+                } catch (e) {
+                    console.error("Polling error:", e);
+                    // Don't stop polling on transient network error, but maybe limit errors?
+                }
+            }, 10000); // Poll every 10 seconds
+
         } catch (error) {
-            toast.error("Generation failed. Please try again.");
-        } finally {
+            console.error("Generation error:", error);
+            toast.error("Failed to start generation.");
             setIsGenerating(false);
         }
+        // Note: moved setIsGenerating(false) into polling completion to keep loader active
     };
 
-    const handleSaveToAssets = (scene: any) => {
-        toast.promise(
-            new Promise(resolve => setTimeout(resolve, 1000)),
-            {
-                loading: 'Saving to My Assets...',
-                success: `Saved scene "${scene.id}" to Library!`,
-                error: 'Failed to save.'
-            }
-        );
+    const handleSaveToAssets = async (scene: any) => {
+        try {
+            await assetService.createAsset({
+                name: scene.description.slice(0, 50) || 'Generated Video',
+                type: 'video',
+                url: scene.videoUrl,
+                thumbnailUrl: scene.imageUrl,
+                duration: scene.duration
+            });
+            toast.success("Saved to Asset Library!");
+        } catch (error) {
+            console.error("Failed to save asset:", error);
+            toast.error("Failed to save to assets.");
+        }
     };
 
     const handleRegenerate = async (sceneId: string, newPrompt: string) => {

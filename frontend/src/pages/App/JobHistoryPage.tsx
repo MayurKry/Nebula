@@ -3,8 +3,9 @@ import { useState, useEffect, useRef } from 'react';
 import {
     RefreshCw, AlertCircle, Loader2, CheckCircle2,
     Clock, XCircle, Play, FileText, Image, Mic, ExternalLink,
-    Zap, Clock4, Gauge, History, Trash2, Search, RotateCcw
+    Zap, Clock4, Gauge, History, Trash2, Search, RotateCcw, Download
 } from 'lucide-react';
+import GSAPTransition from '@/components/ui/GSAPTransition';
 import { jobService, type Job, type JobModule, type JobStatus } from '@/services/job.service';
 import { toast } from 'sonner';
 import { TokenStorage } from '@/api/tokenStorage';
@@ -29,28 +30,28 @@ const getStatusStyles = (status: JobStatus) => {
             bg: 'bg-emerald-500/10',
             border: 'border-emerald-500/20',
             icon: <CheckCircle2 className="w-3.5 h-3.5" />,
-            shadow: 'shadow-[0_0_15px_rgba(52,211,153,0.1)]'
+            shadow: ''
         };
         case 'processing': return {
             color: 'text-sky-400',
             bg: 'bg-sky-500/10',
             border: 'border-sky-500/20',
             icon: <Loader2 className="w-3.5 h-3.5 animate-spin" />,
-            shadow: 'shadow-[0_0_15px_rgba(56,189,248,0.1)]'
+            shadow: ''
         };
         case 'failed': return {
             color: 'text-rose-400',
             bg: 'bg-rose-500/10',
             border: 'border-rose-500/20',
             icon: <XCircle className="w-3.5 h-3.5" />,
-            shadow: 'shadow-[0_0_15px_rgba(251,113,133,0.1)]'
+            shadow: ''
         };
         case 'queued': return {
             color: 'text-amber-400',
             bg: 'bg-amber-500/10',
             border: 'border-amber-500/20',
             icon: <Clock className="w-3.5 h-3.5" />,
-            shadow: 'shadow-[0_0_15px_rgba(251,191,36,0.1)]'
+            shadow: ''
         };
         default: return {
             color: 'text-gray-400',
@@ -68,10 +69,14 @@ const JobHistoryPage = () => {
     const [filterModule, setFilterModule] = useState<JobModule | 'all'>('all');
     const [filterStatus, setFilterStatus] = useState<JobStatus | 'all'>('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedJob, setSelectedJob] = useState<Job | null>(null);
     const [isLive, setIsLive] = useState(false);
     const [pollInterval, setPollInterval] = useState(30000);
 
     const containerRef = useRef<HTMLDivElement>(null);
+
+    const openModal = (job: Job) => setSelectedJob(job);
+    const closeModal = () => setSelectedJob(null);
 
     const fetchJobs = async (silent = false) => {
         // Don't fetch if no token is available
@@ -138,6 +143,29 @@ const JobHistoryPage = () => {
             fetchJobs();
         } catch (error) {
             toast.error('Failed to retry job');
+        }
+    };
+
+    const handleDownload = async (url: string, filename: string) => {
+        try {
+            toast.info('Preparing file for download...');
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+
+            toast.success('Download completed');
+        } catch (error) {
+            console.error('Download failed:', error);
+            window.open(url, '_blank');
+            toast.error('Direct download failed, opening in new tab');
         }
     };
 
@@ -277,26 +305,65 @@ const JobHistoryPage = () => {
                         return (
                             <div
                                 key={job._id}
-                                className="job-card group bg-[#141414] border border-white/5 p-5 rounded-2xl flex flex-col md:flex-row md:items-center gap-6 hover:bg-[#1A1A1A] hover:border-white/10 transition-all shadow-xl"
+                                onClick={() => openModal(job)}
+                                className="job-card group bg-[#141414] border border-white/5 p-5 rounded-2xl flex flex-col md:flex-row md:items-center gap-6 hover:bg-[#1A1A1A] hover:border-white/10 transition-all cursor-pointer"
                             >
-                                {/* Module Icon */}
+                                {/* Module Icon / Thumbnail */}
+                                {/* Module Icon / Thumbnail */}
                                 <div className="flex-shrink-0">
-                                    <div className={`w-14 h-14 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-center text-gray-400 group-hover:text-white group-hover:border-white/20 transition-all ${style.shadow}`}>
-                                        {getModuleIcon(job.module)}
-                                    </div>
+                                    {(job.output && job.output.length > 0 && job.output[0].url) ? (
+                                        <div className="relative w-24 h-16 md:w-32 md:h-20 rounded-xl overflow-hidden border border-white/10 group-hover:border-[#00FF88]/50 transition-all bg-black">
+                                            {['text_to_video', 'image_to_video'].includes(job.module) ? (
+                                                <>
+                                                    <video
+                                                        src={job.output[0].url}
+                                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                                        muted
+                                                        loop
+                                                        playsInline
+                                                        onMouseOver={(e) => e.currentTarget.play().catch(() => { })}
+                                                        onMouseOut={(e) => {
+                                                            e.currentTarget.pause();
+                                                            e.currentTarget.currentTime = 0;
+                                                        }}
+                                                    />
+                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                        <div className="w-8 h-8 rounded-full bg-black/50 backdrop-blur flex items-center justify-center">
+                                                            <Play className="w-3 h-3 text-white fill-current" />
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <img
+                                                    src={job.output[0].url}
+                                                    alt="Result"
+                                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                                    onError={(e) => {
+                                                        // Fallback if image fails to load
+                                                        e.currentTarget.style.display = 'none';
+                                                        e.currentTarget.parentElement?.classList.add('fallback-icon-mode');
+                                                    }}
+                                                />
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-center text-gray-400 group-hover:text-white group-hover:border-white/20 transition-all ${style.shadow}`}>
+                                            {getModuleIcon(job.module)}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Content */}
                                 <div className="flex-grow min-w-0 space-y-1">
                                     <div className="flex items-center gap-3 mb-1">
-                                        <span className="text-[10px] font-black text-gray-600 uppercase tracking-[2px]">#{job._id.slice(-8)}</span>
+                                        <span className="text-[10px] font-black text-gray-600 uppercase tracking-wider">#{job._id.slice(-8)}</span>
                                         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${style.bg} ${style.color} ${style.border}`}>
                                             {style.icon}
                                             {job.status.toUpperCase()}
                                         </div>
                                     </div>
                                     <h3 className="text-gray-200 font-medium line-clamp-1 group-hover:text-white transition-colors" title={job.input?.prompt || 'No prompt'}>
-                                        {job.input?.prompt || <span className="text-gray-600 italic">Advanced Generation Task</span>}
+                                        {job.input?.prompt || <span className="text-gray-600">Advanced Generation Task</span>}
                                     </h3>
                                     <div className="flex items-center gap-4 text-xs text-gray-500">
                                         <span className="flex items-center gap-1.5 capitalize"><FileText className="w-3 h-3" /> {job.module.replace(/_/g, ' ')}</span>
@@ -341,6 +408,117 @@ const JobHistoryPage = () => {
                     })
                 )}
             </div>
+            {/* Detail Modal */}
+            {selectedJob && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={closeModal} />
+
+                    <GSAPTransition animation="scale-in" className="relative w-full max-w-4xl bg-[#0A0A0A] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-black/40">
+                            <div>
+                                <h2 className="text-xl font-bold text-white flex items-center gap-3">
+                                    <div className={`p-2 rounded-lg bg-white/5 ${getStatusStyles(selectedJob.status).color}`}>
+                                        {getModuleIcon(selectedJob.module)}
+                                    </div>
+                                    Job Details
+                                </h2>
+                                <p className="text-[10px] text-gray-500 mt-1 font-mono uppercase tracking-widest">#{selectedJob._id}</p>
+                            </div>
+                            <button onClick={closeModal} className="p-2 hover:bg-white/5 rounded-full text-gray-400 transition-colors">
+                                <XCircle className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="p-8 grid md:grid-cols-2 gap-8">
+                            {/* Asset Preview */}
+                            <div className="space-y-4">
+                                <div className="aspect-video rounded-2xl overflow-hidden bg-black border border-white/5 group relative">
+                                    {selectedJob.status === 'completed' && selectedJob.output?.[0]?.url ? (
+                                        selectedJob.output[0].type === 'video' ? (
+                                            <video
+                                                src={selectedJob.output[0].url}
+                                                controls
+                                                autoPlay
+                                                className="w-full h-full object-contain"
+                                            />
+                                        ) : (
+                                            <img
+                                                src={selectedJob.output[0].url}
+                                                className="w-full h-full object-contain"
+                                                alt="Result"
+                                            />
+                                        )
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center space-y-3">
+                                            <Loader2 className="w-8 h-8 text-[#00FF88] animate-spin" />
+                                            <p className="text-xs text-gray-500 font-bold uppercase tracking-tighter">Processing Asset...</p>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                    <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Prompt</h4>
+                                    <p className="text-sm text-gray-200 leading-relaxed">
+                                        "{selectedJob.input?.prompt || 'No prompt provided'}"
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Details & Info */}
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Status</div>
+                                        <div className={`text-sm font-bold capitalize ${getStatusStyles(selectedJob.status).color}`}>{selectedJob.status}</div>
+                                    </div>
+                                    <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Credits</div>
+                                        <div className="text-sm font-bold text-amber-500">{selectedJob.creditsUsed} Fuel</div>
+                                    </div>
+                                    <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Module</div>
+                                        <div className="text-sm font-bold text-gray-300 capitalize">{selectedJob.module.replace(/_/g, ' ')}</div>
+                                    </div>
+                                    <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Created At</div>
+                                        <div className="text-sm font-bold text-gray-300">{new Date(selectedJob.createdAt).toLocaleDateString()}</div>
+                                    </div>
+                                </div>
+
+                                {selectedJob.input?.config && (
+                                    <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                                        <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Technical Configuration</h4>
+                                        <div className="grid grid-cols-2 gap-y-2 text-xs">
+                                            {Object.entries(selectedJob.input.config).map(([key, value]) => (
+                                                <div key={key} className="flex flex-col">
+                                                    <span className="text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
+                                                    <span className="text-gray-300 font-medium">{String(value)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedJob.status === 'completed' && selectedJob.output?.[0]?.url && (
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => handleDownload(selectedJob.output![0].url!, `nebula-${selectedJob._id.slice(-8)}`)}
+                                            className="flex-1 bg-[#00FF88] text-black h-12 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#00CC6A] transition-all"
+                                        >
+                                            <Download className="w-4 h-4" /> Download Result
+                                        </button>
+                                        <button
+                                            onClick={() => window.open(selectedJob.output![0].url, '_blank')}
+                                            className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/10 transition-all"
+                                        >
+                                            <ExternalLink className="w-5 h-5 text-white" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </GSAPTransition>
+                </div>
+            )}
         </div>
     );
 };

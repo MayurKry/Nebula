@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Check, Download, Sparkles, RefreshCw, Play, Scissors, Layers } from 'lucide-react';
+import { ArrowLeft, Check, Download, Sparkles, RefreshCw, Play, Scissors, Layers, Plus } from 'lucide-react';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 import { toast } from 'sonner';
 import TrimmerModal from './TrimmerModal';
@@ -39,6 +39,25 @@ const TextToVideoResult: React.FC<TextToVideoResultProps> = ({ project, onBack, 
         setIsTrimmerOpen(false);
     };
 
+    const handleDownload = async (url: string, filename: string) => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename || 'generated-video.mp4';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+            toast.success("Download started");
+        } catch (e) {
+            console.error("Download failed:", e);
+            toast.error("Failed to download video");
+        }
+    };
+
     if (showEditorPreview) {
         return (
             <div className="fixed inset-0 z-[100] bg-[#0A0A0A] flex flex-col animate-in fade-in duration-300">
@@ -76,114 +95,153 @@ const TextToVideoResult: React.FC<TextToVideoResultProps> = ({ project, onBack, 
         );
     }
 
+    const handleAddSceneMock = () => {
+        if (project.scenes.length >= 5) {
+            toast.error("Max 5 scenes allowed for now.");
+            return;
+        }
+        // In real app, this would bubble up to parent to change 'step' back to input
+        // For now we will rely on the parent prop
+        onBack(); // Re-use back for now as "Add new prompt", ideally differentiation is good
+    };
+
+    // ... existing trim logic ...
+
     if (!isMultiScene) {
+        // Single scene view - but now FULL SCREEN
         const scene = project.scenes[0];
         return (
-            <div className="min-h-screen bg-[#0A0A0A] p-4 flex items-center justify-center">
-                <GSAPTransition animation="scale-in" className="w-full max-w-5xl">
-                    <div className="mb-6 flex items-center justify-between">
+            <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
+                {/* Header */}
+                <div className="w-full h-16 border-b border-white/5 bg-[#0A0A0A]/80 backdrop-blur flex items-center justify-between px-6 z-10 sticky top-0">
+                    <div className="flex items-center gap-4">
                         <button
                             onClick={onBack}
-                            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors px-4 py-2 hover:bg-white/5 rounded-full"
+                            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors px-3 py-1.5 hover:bg-white/5 rounded-full"
                         >
                             <ArrowLeft className="w-4 h-4" />
-                            Back to Prompt
+                            <span>Back</span>
                         </button>
-                        <div className="flex items-center gap-4">
+                        <div className="h-6 w-px bg-white/10" />
+                        <h2 className="text-white font-bold text-sm">Generated Result</h2>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setShowEditorPreview(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 rounded-lg text-xs font-bold uppercase tracking-widest transition-all"
+                        >
+                            <Layers className="w-3 h-3" />
+                            Open Editor
+                        </button>
+                    </div>
+                </div>
+
+                {/* Main Content - Split View */}
+                <div className="flex-1 flex flex-col lg:flex-row h-[calc(100vh-64px)] overflow-hidden">
+                    {/* Left: Video Player (Dominant) */}
+                    <div className="flex-1 bg-black relative flex items-center justify-center p-8 group">
+                        {scene.videoUrl ? (
+                            <div className="relative w-full h-full max-h-[80vh] aspect-video rounded-2xl overflow-hidden shadow-2xl border border-white/5">
+                                <video
+                                    src={scene.videoUrl}
+                                    className="w-full h-full object-contain"
+                                    controls
+                                    autoPlay
+                                    loop
+                                    poster={scene.imageUrl}
+                                />
+                            </div>
+                        ) : (
+                            <div className="relative w-full h-full max-h-[80vh] aspect-video rounded-2xl overflow-hidden shadow-2xl border border-white/5">
+                                <img
+                                    src={scene.imageUrl}
+                                    alt="Generated Scene"
+                                    className="w-full h-full object-cover opacity-80"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20">
+                                        <Play className="w-8 h-8 ml-1 text-white/50" />
+                                    </div>
+                                </div>
+                                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-red-500/20 border border-red-500/30 px-6 py-2 rounded-full text-red-200 text-sm backdrop-blur-md">
+                                    Video URL missing
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right: Controls & Details */}
+                    <div className="w-full lg:w-96 bg-[#141414] border-l border-white/5 p-6 overflow-y-auto space-y-8">
+                        {/* Prompt Section */}
+                        <div className="space-y-3">
+                            <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest">Prompt</h3>
+                            <div className="p-4 bg-black/40 rounded-xl border border-white/5">
+                                <p className="text-gray-200 text-sm leading-relaxed italic">
+                                    "{scene.description}"
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="space-y-3">
+                            <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest">Actions</h3>
+
                             <button
-                                onClick={() => setShowEditorPreview(true)}
-                                className="flex items-center gap-2 px-4 py-1.5 bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all"
+                                onClick={() => handleTrimClick(scene)}
+                                className="w-full py-3 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all border border-white/5"
                             >
-                                <Layers className="w-3 h-3" />
-                                Preview Pro Editor
+                                <Scissors className="w-4 h-4" />
+                                Trim Segment
                             </button>
-                            <span className="px-3 py-1 bg-[#00FF88]/10 text-[#00FF88] text-[10px] font-bold uppercase tracking-widest rounded-full border border-[#00FF88]/20">
-                                Generated Result
-                            </span>
+
+                            <button
+                                onClick={() => onSaveToAssets(scene)}
+                                className="w-full py-4 bg-[#00FF88] hover:bg-[#00ff88]/90 text-black font-bold rounded-xl flex items-center justify-center gap-3 transition-all shadow-[0_0_20px_rgba(0,255,136,0.1)] hover:shadow-[0_0_25px_rgba(0,255,136,0.3)]"
+                            >
+                                <Check className="w-5 h-5" />
+                                Save to Assets
+                            </button>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={onBack}
+                                    className="py-3 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-all border border-white/5"
+                                >
+                                    <RefreshCw className="w-4 h-4" />
+                                    Regenerate
+                                </button>
+                                <button
+                                    onClick={() => handleDownload(scene.videoUrl || scene.imageUrl, `nebula-video-${scene.id}.mp4`)}
+                                    className="py-3 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-all border border-white/5"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    Download
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Context / Continuation */}
+                        <div className="pt-8 border-t border-white/5">
+                            <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-4">Continuity</h3>
+                            <button
+                                onClick={onBack} // Ideally this opens a "Generate Next Scene" mode
+                                className="w-full py-4 bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 font-bold rounded-xl flex items-center justify-center gap-2 border border-purple-500/30 transition-all dashed"
+                            >
+                                <Plus className="w-5 h-5" />
+                                Add Next Scene
+                            </button>
                         </div>
                     </div>
+                </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 bg-[#141414] p-2 rounded-[2rem] border border-white/5 shadow-2xl overflow-hidden">
-                        <div className="lg:col-span-3 relative bg-black rounded-[1.5rem] overflow-hidden aspect-video group">
-                            <img
-                                src={scene.imageUrl}
-                                alt="Generated Scene"
-                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <button className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 hover:scale-110 hover:bg-[#00FF88] hover:text-black hover:border-[#00FF88] transition-all">
-                                    <Play className="w-6 h-6 ml-1" />
-                                </button>
-                            </div>
-                            <div className="absolute top-4 right-4 px-3 py-1 bg-black/60 backdrop-blur rounded-lg text-xs font-mono text-white border border-white/10">
-                                {scene.duration}s
-                            </div>
-                        </div>
-
-                        <div className="lg:col-span-2 p-6 flex flex-col h-full">
-                            <div className="flex-1 space-y-6">
-                                <div>
-                                    <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-2">Scene Description</h3>
-                                    <p className="text-white text-lg font-medium leading-relaxed italic">
-                                        "{scene.description}"
-                                    </p>
-                                </div>
-                                <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-                                    <h4 className="text-[#00FF88] text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
-                                        <Sparkles className="w-3 h-3" />
-                                        AI Explanation
-                                    </h4>
-                                    <p className="text-gray-400 text-sm">
-                                        The AI prioritized a cinematic composition with dramatic lighting to match your request. Motion was kept stable to ensure clarity.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="pt-8 space-y-3">
-                                <button
-                                    onClick={() => handleTrimClick(scene)}
-                                    className="w-full py-4 bg-white text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-gray-200"
-                                >
-                                    <Scissors className="w-5 h-5" />
-                                    Trim Video
-                                </button>
-
-                                <button
-                                    onClick={() => onSaveToAssets(scene)}
-                                    className="w-full py-4 bg-[#00FF88] hover:bg-[#00ff88]/90 text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(0,255,136,0.2)] hover:shadow-[0_0_30px_rgba(0,255,136,0.4)]"
-                                >
-                                    <Check className="w-5 h-5" />
-                                    Verify & Save to Assets
-                                </button>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button
-                                        onClick={onBack}
-                                        className="py-3 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-all border border-white/5"
-                                    >
-                                        <RefreshCw className="w-4 h-4" />
-                                        Refine Prompt
-                                    </button>
-                                    <button
-                                        onClick={() => toast.success("Downloading...")}
-                                        className="py-3 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-all border border-white/5"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        Download
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <TrimmerModal
-                        isOpen={isTrimmerOpen}
-                        onClose={() => setIsTrimmerOpen(false)}
-                        videoUrl={currentSceneForTrim?.videoUrl}
-                        duration={currentSceneForTrim?.duration || 5}
-                        onTrimConfirm={handleTrimConfirm}
-                    />
-                </GSAPTransition>
+                <TrimmerModal
+                    isOpen={isTrimmerOpen}
+                    onClose={() => setIsTrimmerOpen(false)}
+                    videoUrl={currentSceneForTrim?.videoUrl}
+                    duration={currentSceneForTrim?.duration || 5}
+                    onTrimConfirm={handleTrimConfirm}
+                />
             </div>
         );
     }

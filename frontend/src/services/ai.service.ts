@@ -178,11 +178,11 @@ class AIService {
 
         if (aspectRatio) {
             const ratioMap: Record<string, { width: number; height: number }> = {
-                '16:9': { width: 1024, height: 576 },
-                '9:16': { width: 576, height: 1024 },
+                '16:9': { width: 1360, height: 768 },
+                '9:16': { width: 720, height: 1280 },
                 '1:1': { width: 1024, height: 1024 },
-                '4:3': { width: 1024, height: 768 },
-                '3:4': { width: 768, height: 1024 },
+                '4:3': { width: 1440, height: 1080 },
+                '3:4': { width: 1080, height: 1440 },
             };
 
             if (ratioMap[aspectRatio]) {
@@ -209,7 +209,7 @@ class AIService {
      */
     async generateImages(
         data: GenerateImageRequest,
-        count: number = 2
+        count: number = 1
     ): Promise<GenerateImageResponse[]> {
         const { aspectRatio, ...requestData } = data;
 
@@ -219,11 +219,11 @@ class AIService {
 
         if (aspectRatio) {
             const ratioMap: Record<string, { width: number; height: number }> = {
-                '16:9': { width: 1024, height: 576 },
-                '9:16': { width: 576, height: 1024 },
+                '16:9': { width: 1360, height: 768 },
+                '9:16': { width: 720, height: 1280 },
                 '1:1': { width: 1024, height: 1024 },
-                '4:3': { width: 1024, height: 768 },
-                '3:4': { width: 768, height: 1024 },
+                '4:3': { width: 1440, height: 1080 },
+                '3:4': { width: 1080, height: 1440 },
             };
 
             if (ratioMap[aspectRatio]) {

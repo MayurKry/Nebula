@@ -23,7 +23,7 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
         height = 1024,
         seed,
         negativePrompt,
-        count = 2,
+        count = 1,
         aspectRatio,
         cameraAngle
     } = req.body;
@@ -40,11 +40,12 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
     const systematicPrompt = await intentService.getSystematicPrompt(prompt, intentAnalysis);
     console.log(`[Systematic Flow] Intent: ${intentAnalysis.intent}, Complexity: ${intentAnalysis.complexity}`);
 
-    const userId = (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
+    const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
 
     try {
         // Systematic Flow Step 3: Optimized Execution
         const imageCount = Math.min(Math.max(1, count), 4);
+        const startTime = Date.now();
 
         const promises = Array.from({ length: imageCount }, (_, index) => {
             const imageSeed = seed ? (Number(seed) + index) : Math.floor(Math.random() * 1000000) + index;
@@ -55,29 +56,56 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
                 width: Number(width),
                 height: Number(height),
                 seed: imageSeed,
-                negativePrompt,
+                negativePrompt
             });
         });
 
         const results = await Promise.all(promises);
+        const latencyMs = Date.now() - startTime;
 
         // Save generated assets to database
         const savedAssets: any[] = [];
 
         if (userId) {
+            // Synchronize with Job system for History/Activity visibility
+            try {
+                const { JobModel } = await import("../models/job.model");
+                await JobModel.create({
+                    userId: new mongoose.Types.ObjectId(userId),
+                    module: "text_to_image",
+                    status: "completed",
+                    input: {
+                        prompt,
+                        config: { style, width, height, seed, aspectRatio }
+                    },
+                    output: results.map(r => ({
+                        type: "image",
+                        url: r.url,
+                        metadata: { width: r.width, height: r.height, provider: "nebula-locked" }
+                    })),
+                    queuedAt: new Date(startTime),
+                    startedAt: new Date(startTime),
+                    completedAt: new Date(),
+                    creditsUsed: results.length
+                });
+            } catch (err) {
+                console.warn("[Image Generation] Job sync failed:", err);
+            }
             const assetPromises = results.map(result => {
                 return AssetModel.create({
-                    name: prompt, // Using prompt as the name/title
+                    name: prompt,
                     type: "image",
                     url: result.url,
-                    thumbnailUrl: result.url, // For images, thumb is the same
+                    thumbnailUrl: result.url,
                     userId: new mongoose.Types.ObjectId(userId),
                     metadata: {
                         width: result.width,
                         height: result.height,
-                        format: "png" // Assuming png for now, or extract from url
+                        format: "png",
+                        provider: result.provider,
+                        model: intentAnalysis.model
                     },
-                    tags: ["ai-generated", style || "default"]
+                    tags: ["ai-generated", style || "default", "nebular-locked"]
                 });
             });
             const assets = await Promise.all(assetPromises);
@@ -93,10 +121,11 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
                     width: Number(width),
                     height: Number(height),
                     aspectRatio: aspectRatio || '1:1',
-                    seed: seed || 'random',
+                    seed: seed ? Number(seed) : undefined,
                     cameraAngle: cameraAngle || 'eye-level',
                     negativePrompt: negativePrompt || '',
-                    count: imageCount
+                    count: imageCount,
+                    model: intentAnalysis.model
                 },
                 results: results.map((result, index) => ({
                     assetId: savedAssets[index]?._id,
@@ -113,9 +142,10 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
                 userId: userId as any,
                 type: "generation",
                 action: "Image Generation",
-                description: `Generated ${imageCount} image(s) with prompt: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}"`,
+                description: `Generated ${imageCount} image(s) via ${results[0].provider} using locked enterprise model.`,
                 metadata: {
                     provider: results[0]?.provider,
+                    model: intentAnalysis.model,
                     count: imageCount,
                     style
                 },
@@ -123,6 +153,9 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
                 ip: req.ip,
                 userAgent: req.get('user-agent')
             });
+
+            // Calculate exact cost for observability
+            const unitCost = results[0].provider === 'runway' ? 0.01 : 0.002;
 
             // Log for Super Admin Observability
             await LoggingService.createGenerationLog({
@@ -133,10 +166,10 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
                 inputType: 'text',
                 status: 'COMPLETED',
                 creditsConsumed: 2 * imageCount,
-                costIncurred: 0.004 * imageCount,
-                provider: results[0]?.provider || 'flux-pro',
-                aiModel: style || intentAnalysis.intent || 'default',
-                latencyMs: Math.floor(1500 + Math.random() * 2000)
+                costIncurred: unitCost * imageCount,
+                provider: results[0]?.provider,
+                aiModel: intentAnalysis.model || 'runway-basic',
+                latencyMs: latencyMs
             });
         }
 
@@ -195,7 +228,7 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
                     width: Number(width),
                     height: Number(height),
                     aspectRatio: aspectRatio || '1:1',
-                    seed: seed || 'random',
+                    seed: seed ? Number(seed) : undefined,
                     negativePrompt: negativePrompt || '',
                     count
                 },
@@ -230,61 +263,73 @@ export const getAIProviders = asyncHandler(async (req: Request, res: Response) =
 
 // Real AI Video Generation (Text-to-Video)
 export const generateVideo = asyncHandler(async (req: Request, res: Response) => {
-    const { prompt, style, duration = 3 } = req.body;
-
-    if (!prompt) {
-        return responseHandler(res, 400, "Prompt is required");
-    }
-
-    // Systematic Flow Step 1: Analyze Intent
-    const intentAnalysis = await intentService.analyzeIntent(prompt, "video");
-
-    // Systematic Flow Step 2: Intent-based Enhancement
-    const systematicPrompt = await intentService.getSystematicPrompt(prompt, intentAnalysis);
-
-    const userId = (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
+    let userId: any;
+    let prompt: string = "";
+    let style: string = "Cinematic";
+    let duration: number = 6;
 
     try {
-        // Systematic Flow Step 3: Optimized Execution
+        const body = req.body;
+        prompt = body.prompt;
+        style = body.style || "Cinematic";
+        duration = body.duration || 6;
+
+        if (!prompt) {
+            return responseHandler(res, 400, "Prompt is required");
+        }
+
+        userId = (req as AuthenticatedRequest).user?.userId || (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
+
+        // Optimized flow: Directly call AI Video Service
         const result = await aiVideoService.generateVideo({
-            prompt: systematicPrompt,
-            style: style || intentAnalysis.intent,
-            duration
+            prompt: prompt,
+            style: style,
+            duration: duration
         });
 
-        // Save to generation history with pending status
-        if (userId) {
-            await GenerationHistoryModel.create({
-                userId: new mongoose.Types.ObjectId(userId),
-                type: "video",
-                prompt,
-                settings: {
-                    style,
-                    duration
-                },
-                results: [{
-                    jobId: result.jobId,
-                    url: "",
-                    thumbnailUrl: result.thumbnailUrl,
-                    status: result.status
-                }],
-                status: "processing"
-            });
+        // Synchronize with Job system for History and Activity visibility
+        if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+            try {
+                const { JobModel } = await import("../models/job.model");
+                await JobModel.create({
+                    userId: new mongoose.Types.ObjectId(userId),
+                    module: "text_to_video",
+                    status: "processing",
+                    input: {
+                        prompt,
+                        config: { style, duration }
+                    },
+                    metadata: {
+                        jobId: result.jobId,
+                        provider: "runwayml_proxy"
+                    },
+                    queuedAt: new Date(),
+                    startedAt: new Date(),
+                    creditsUsed: result.creditsUsed || 5
+                });
 
-            // Log activity
-            await ActivityService.logActivity({
-                userId,
-                type: "generation",
-                action: "Video Generation Started",
-                description: `Started video generation with prompt: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}"`,
-                metadata: {
-                    jobId: result.jobId,
-                    duration
-                },
-                status: "success",
-                ip: req.ip,
-                userAgent: req.get('user-agent')
-            });
+                // Also save to generation history for legacy support if needed
+                await GenerationHistoryModel.create({
+                    userId: new mongoose.Types.ObjectId(userId),
+                    type: "video",
+                    prompt,
+                    settings: {
+                        style,
+                        duration,
+                        model: "Nebula Video Base",
+                        provider: "runwayml"
+                    },
+                    results: [{
+                        jobId: result.jobId,
+                        url: "",
+                        thumbnailUrl: result.thumbnailUrl,
+                        status: result.status
+                    }],
+                    status: "processing"
+                });
+            } catch (dbErr: any) {
+                console.warn("[Video Generation] Sync failed:", dbErr.message);
+            }
         }
 
         return responseHandler(res, 200, "Video generation started", {
@@ -293,24 +338,19 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
             style,
             duration,
             status: result.status,
-            estimatedTime: 30, // Estimating ~30s for Replicate
+            estimatedTime: 30,
             thumbnailUrl: result.thumbnailUrl,
         });
-    } catch (error: any) {
-        console.error("Video generation failed:", error);
 
-        // Save failed generation to history
-        if (userId) {
-            await GenerationHistoryModel.create({
-                userId: new mongoose.Types.ObjectId(userId),
-                type: "video",
-                prompt,
-                settings: { style, duration },
-                results: [],
-                status: "failed",
-                error: error.message
-            });
-        }
+    } catch (error: any) {
+        console.error("Video generation failed:", error.message, error.stack);
+
+        // Log to file for visibility
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            fs.appendFileSync(path.join(process.cwd(), 'debug_error.log'), `[${new Date().toISOString()}] 500 ERROR: ${error.message}\n${error.stack}\n\n`);
+        } catch (e) { }
 
         return responseHandler(res, 500, "Failed to start video generation", { error: error.message });
     }
@@ -318,47 +358,70 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
 
 // Check video generation status
 export const checkVideoStatus = asyncHandler(async (req: Request, res: Response) => {
-    // Maintenance Mode
-    return responseHandler(res, 503, "System is under maintenance. AI generation is temporarily disabled.");
-
     const { jobId } = req.params;
-    const userId = (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
+    const userId = (req as AuthenticatedRequest).user?.userId || (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
 
     try {
         const result = await aiVideoService.checkStatus(jobId);
 
-        // If video is successful, save to Assets if it doesn't already exist
-        if (result.status === 'succeeded' && result.videoUrl && userId) {
-            // Check if already saved (deduplication)
-            const existingAsset = await AssetModel.findOne({ url: result.videoUrl });
+        // If video is successful, save to Assets and update Jobs/History
+        if (userId && (result.status === 'succeeded' || result.status === 'failed')) {
+            const { JobModel } = await import("../models/job.model");
 
-            if (!existingAsset) {
-                const asset = await AssetModel.create({
-                    name: `Video Generation ${jobId}`, // We might want to pass the prompt here, but checkStatus doesn't natively return it unless we mock/store it. Using generic name for now.
-                    type: "video",
-                    url: result.videoUrl,
-                    thumbnailUrl: result.thumbnailUrl || result.videoUrl,
-                    userId: new mongoose.Types.ObjectId(userId),
-                    metadata: {
-                        format: "mp4"
-                    },
-                    tags: ["ai-video", "generated"]
-                });
+            if (result.status === 'succeeded' && result.videoUrl) {
+                // Check if already saved to assets (deduplication)
+                const existingAsset = await AssetModel.findOne({ url: result.videoUrl });
+                let assetId;
+
+                if (!existingAsset) {
+                    const asset = await AssetModel.create({
+                        name: `Video Generation ${jobId}`,
+                        type: "video",
+                        url: result.videoUrl,
+                        thumbnailUrl: result.thumbnailUrl || result.videoUrl,
+                        userId: new mongoose.Types.ObjectId(userId),
+                        metadata: { format: "mp4" },
+                        tags: ["ai-video", "generated"]
+                    });
+                    assetId = asset._id;
+                } else {
+                    assetId = existingAsset._id;
+                }
+
+                // Update the JobModel so it shows in History/Activity
+                await JobModel.findOneAndUpdate(
+                    { "metadata.jobId": jobId },
+                    {
+                        status: "completed",
+                        completedAt: new Date(),
+                        output: [{
+                            type: "video",
+                            url: result.videoUrl,
+                            metadata: { provider: "runwayml", assetId }
+                        }]
+                    }
+                );
 
                 // Update generation history with completed video
                 await GenerationHistoryModel.findOneAndUpdate(
-                    {
-                        userId: new mongoose.Types.ObjectId(userId),
-                        "results.jobId": jobId
-                    },
+                    { userId: new mongoose.Types.ObjectId(userId), "results.jobId": jobId },
                     {
                         $set: {
                             status: "completed",
                             "results.$.url": result.videoUrl,
                             "results.$.thumbnailUrl": result.thumbnailUrl,
-                            "results.$.assetId": asset._id,
+                            "results.$.assetId": assetId,
                             "results.$.status": "succeeded"
                         }
+                    }
+                );
+            } else if (result.status === 'failed') {
+                // Update Job as failed
+                await JobModel.findOneAndUpdate(
+                    { "metadata.jobId": jobId },
+                    {
+                        status: "failed",
+                        error: { message: result.error || "Generation failed", timestamp: new Date() }
                     }
                 );
             }

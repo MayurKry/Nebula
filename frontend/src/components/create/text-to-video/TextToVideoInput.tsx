@@ -20,7 +20,7 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
     // Default Settings
     const [settings, setSettings] = useState({
         model: 'nebula-fast', // 'nebula-fast' | 'nebula-pro'
-        duration: 5,
+        duration: 6,
         aspectRatio: '16:9',
         quality: 'Pro' // Kept for compatibility with PromptBar types if needed
     });
@@ -94,7 +94,7 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
 
                     {/* Duration Selector */}
                     <div className="flex items-center gap-2">
-                        {[5, 10, 15].map(d => (
+                        {[4, 6, 8].map(d => (
                             <button
                                 key={d}
                                 onClick={() => setSettings(prev => ({ ...prev, duration: d }))}
@@ -112,7 +112,7 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
 
                     {/* Aspect Ratio Selector */}
                     <div className="flex items-center gap-1">
-                        {['16:9', '9:16', '1:1'].map(r => (
+                        {['16:9', '9:16'].map(r => (
                             <button
                                 key={r}
                                 onClick={() => setSettings(prev => ({ ...prev, aspectRatio: r }))}

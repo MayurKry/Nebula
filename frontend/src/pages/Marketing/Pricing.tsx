@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Check, ArrowRight, HelpCircle, X } from 'lucide-react';
 import BookDemoModal from '@/components/marketing/BookDemoModal';
 import PayAsYouGoCalculator from '@/components/marketing/PayAsYouGoCalculator';
 
 const Pricing = () => {
+    const navigate = useNavigate();
     const [isBookDemoOpen, setIsBookDemoOpen] = useState(false);
     const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
 
@@ -187,7 +189,13 @@ const Pricing = () => {
                                 </div>
 
                                 <button
-                                    onClick={() => plan.name === 'Enterprise' ? setIsBookDemoOpen(true) : null}
+                                    onClick={() => {
+                                        if (plan.name === 'Enterprise') {
+                                            setIsBookDemoOpen(true);
+                                        } else {
+                                            navigate(`/signup?plan=${plan.name.toLowerCase()}`);
+                                        }
+                                    }}
                                     className={`w-full mb-6 ${plan.highlighted ? 'btn-primary' : 'btn-secondary'
                                         }`}
                                 >

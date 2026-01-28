@@ -5,13 +5,15 @@ import { responseHandler } from "../utils/responseHandler";
 
 // Get all assets for current user
 export const getAssets = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?._id;
+    const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
     const { type, folderId, projectId, limit = 50, page = 1 } = req.query;
 
     const filter: any = { userId };
+    console.log(`[AssetController] Fetching for userId: ${userId}`);
     if (type) filter.type = type;
     if (folderId) filter.folderId = folderId;
     if (projectId) filter.projectId = projectId;
+    console.log(`[AssetController] Filter:`, filter);
 
     const assets = await AssetModel.find(filter)
         .sort({ createdAt: -1 })
@@ -34,7 +36,7 @@ export const getAssets = asyncHandler(async (req: Request, res: Response) => {
 // Get single asset
 export const getAsset = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const userId = req.user?._id;
+    const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
 
     const asset = await AssetModel.findOne({ _id: id, userId });
 
@@ -47,7 +49,7 @@ export const getAsset = asyncHandler(async (req: Request, res: Response) => {
 
 // Create/Upload asset
 export const createAsset = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?._id;
+    const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
     const { name, type, url, thumbnailUrl, projectId, folderId, metadata, tags } = req.body;
 
     const asset = await AssetModel.create({
@@ -68,7 +70,7 @@ export const createAsset = asyncHandler(async (req: Request, res: Response) => {
 // Update asset
 export const updateAsset = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const userId = req.user?._id;
+    const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
     const updates = req.body;
 
     const asset = await AssetModel.findOneAndUpdate(
@@ -87,7 +89,7 @@ export const updateAsset = asyncHandler(async (req: Request, res: Response) => {
 // Delete asset
 export const deleteAsset = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const userId = req.user?._id;
+    const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
 
     const asset = await AssetModel.findOneAndDelete({ _id: id, userId });
 
@@ -100,7 +102,7 @@ export const deleteAsset = asyncHandler(async (req: Request, res: Response) => {
 
 // Search assets
 export const searchAssets = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user?._id;
+    const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
     const { q, type } = req.query;
 
     const filter: any = { userId };

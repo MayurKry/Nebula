@@ -54,6 +54,7 @@ const userSchema = new Schema<IUser>(
     avatar: { type: String },
     credits: { type: Number, default: 100 },
     storageUsage: { type: Number, default: 0 },
+    plan: { type: String, default: "starter" },
   },
   { timestamps: true }
 );

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import config from "../config/db/index";
 
-export const authenticate = (req: Request, res: Response, next: NextFunction) => {
+export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
   // If Authorization header is provided, use real JWT verification
@@ -10,7 +10,27 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     const token = authHeader.split(" ")[1];
     try {
       const decoded = jwt.verify(token, config.ACCESS_SECRET!);
+      console.log(`[Auth] Decoded token:`, JSON.stringify(decoded, null, 2));
       (req as any).user = decoded;
+
+      // Attach Tenant Context if user has tenantId
+      const user = decoded as any;
+      if (user.tenantId) {
+        try {
+          const { TenantModel } = await import("../models/tenant.model");
+          const tenant = await TenantModel.findById(user.tenantId).lean();
+          (req as any).tenant = tenant;
+
+          if (tenant) {
+            console.log(`[Auth] ✅ Loaded tenant: ${tenant.name} (ID: ${tenant._id}) for user: ${user.email}`);
+          } else {
+            console.warn(`[Auth] ⚠️  Tenant not found for tenantId: ${user.tenantId}`);
+          }
+        } catch (err) {
+          console.error("[Auth] ❌ Failed to load tenant context:", err);
+        }
+      }
+
       return next();
     } catch (error: any) {
       if (error.name === 'TokenExpiredError') {
@@ -34,25 +54,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     return next();
   }
 
-  // Attach Tenant Context
-  if ((req as any).user) {
-    const user = (req as any).user;
-    if (user.tenantId) {
-      // Lazy load model to avoid circular deps if any
-      import("../models/tenant.model").then(({ TenantModel }) => {
-        TenantModel.findById(user.tenantId).lean().then(tenant => {
-          (req as any).tenant = tenant;
-          next();
-        }).catch(err => {
-          console.error("Failed to load tenant context", err);
-          next();
-        });
-      });
-      return;
-    }
-  }
-
-  return next();
+  return res.status(401).json({ message: "Authentication required" });
 };
 
 export const requireSuperAdmin = (req: Request, res: Response, next: NextFunction) => {

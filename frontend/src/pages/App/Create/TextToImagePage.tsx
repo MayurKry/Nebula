@@ -58,7 +58,7 @@ const TextToImagePage = () => {
                     aspectRatio,
                     seed: seedEnabled ? seed : undefined,
                 },
-                2
+                1
             );
 
             // Extract URLs from the response and track provider
@@ -245,7 +245,7 @@ const TextToImagePage = () => {
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-4 pb-20">
+                        <div className="grid grid-cols-1 max-w-2xl mx-auto gap-8 px-4 pb-20">
                             {results.map((url, i) => (
                                 <div
                                     key={i}
@@ -287,8 +287,8 @@ const TextToImagePage = () => {
                 {/* Loading State */}
                 {isGenerating && (
                     <div className="w-full px-4 mb-20 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {[...Array(2)].map((_, i) => (
+                        <div className="grid grid-cols-1 max-w-2xl mx-auto gap-8">
+                            {[...Array(1)].map((_, i) => (
                                 <div key={i} className="aspect-video bg-[#141414] border border-white/5 rounded-[2rem] overflow-hidden relative">
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
                                     <div className="absolute inset-0 flex items-center justify-center flex-col gap-4">

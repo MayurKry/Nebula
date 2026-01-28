@@ -89,9 +89,9 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({ isOpen, onClose, onApply,
                     <div>
                         <h2 className="text-xl font-bold text-white flex items-center gap-2">
                             <Sparkles className="w-5 h-5 text-[#00FF88]" />
-                            Gen-4 Prompt Architect
+                            Nebula Prompt Architect
                         </h2>
-                        <p className="text-xs text-gray-500 mt-1">based on RunwayML Best Practices</p>
+                        <p className="text-xs text-gray-500 mt-1">based on cinematic industry standards</p>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-gray-400">
                         <X className="w-5 h-5" />
@@ -139,8 +139,8 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({ isOpen, onClose, onApply,
                                             key={option}
                                             onClick={() => handleSelect(key, option)}
                                             className={`px-3 py-1.5 rounded-lg text-[10px] font-medium border transition-all ${selections[key] === option
-                                                    ? `bg-white text-black border-white shadow-[0_0_10px_rgba(255,255,255,0.3)]`
-                                                    : 'bg-white/5 text-gray-400 border-transparent hover:bg-white/10 hover:text-white'
+                                                ? `bg-white text-black border-white shadow-[0_0_10px_rgba(255,255,255,0.3)]`
+                                                : 'bg-white/5 text-gray-400 border-transparent hover:bg-white/10 hover:text-white'
                                                 }`}
                                         >
                                             {option}

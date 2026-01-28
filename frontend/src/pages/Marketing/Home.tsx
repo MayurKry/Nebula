@@ -97,7 +97,7 @@ const Home = () => {
                         </h1>
 
                         <p className="hero-description text-xl md:text-2xl text-[var(--marketing-muted)] mb-12 max-w-3xl mx-auto font-medium leading-relaxed">
-                            Orchestrate <span className="text-white">Gemini 2.0</span>, <span className="text-white">Runway Gen-3</span>, and <span className="text-white">ElevenLabs</span> into a single, unified cinematic workflow.
+                            Orchestrate next-generation cinematic foundation models into a single, unified creative workflow.
                         </p>
 
                         <div className="hero-cta flex flex-col sm:flex-row items-center justify-center gap-6">

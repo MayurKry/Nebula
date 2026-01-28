@@ -8,7 +8,7 @@ export const jobController = {
      */
     async createJob(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.userId;
+            const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
             if (!userId) {
                 return res.status(401).json({
                     success: false,
@@ -50,7 +50,7 @@ export const jobController = {
      */
     async getJob(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.userId;
+            const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
             if (!userId) {
                 return res.status(401).json({
                     success: false,
@@ -85,7 +85,7 @@ export const jobController = {
      */
     async getUserJobs(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.userId;
+            const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
             if (!userId) {
                 return res.status(401).json({
                     success: false,
@@ -95,12 +95,14 @@ export const jobController = {
 
             const { module, status, limit, skip } = req.query;
 
+            console.log(`[JobController] Requesting jobs for userId: ${userId}`);
             const result = await jobService.getUserJobs(userId, {
                 module: module as JobModule,
                 status: status as JobStatus,
                 limit: limit ? parseInt(limit as string) : undefined,
                 skip: skip ? parseInt(skip as string) : undefined
             });
+            console.log(`[JobController] Found ${result.jobs?.length} jobs`);
 
             return res.status(200).json({
                 success: true,
@@ -119,7 +121,7 @@ export const jobController = {
      */
     async retryJob(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.userId;
+            const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
             if (!userId) {
                 return res.status(401).json({
                     success: false,
@@ -148,7 +150,7 @@ export const jobController = {
      */
     async cancelJob(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.userId;
+            const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
             if (!userId) {
                 return res.status(401).json({
                     success: false,
@@ -184,7 +186,7 @@ export const jobController = {
      */
     async getJobStats(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.userId;
+            const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
             if (!userId) {
                 return res.status(401).json({
                     success: false,
@@ -211,7 +213,7 @@ export const jobController = {
      */
     async cancelAllJobs(req: Request, res: Response) {
         try {
-            const userId = (req as any).user?.userId;
+            const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
             if (!userId) {
                 return res.status(401).json({
                     success: false,

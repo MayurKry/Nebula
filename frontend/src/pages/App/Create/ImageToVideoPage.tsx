@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
     Loader2, Move, Wind, ZoomIn, Eye,
     Layers, RotateCw, Folder, Play, Download,
@@ -28,9 +29,18 @@ const cameraMoves = [
 
 const ImageToVideoPage = () => {
     const { addJob } = useGeneration();
+    const location = useLocation();
+    const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [sourceImage, setSourceImage] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (location.state?.sourceImage) {
+            setSourceImage(location.state.sourceImage);
+            toast.info('Continuing from existing asset');
+        }
+    }, [location.state]);
     const [motionDynamics] = useState(50);
     const [cameraMove, setCameraMove] = useState('zoom-in');
     const [sceneEffect, setSceneEffect] = useState('parallax');
@@ -102,7 +112,13 @@ const ImageToVideoPage = () => {
             <main className="w-full max-w-5xl z-10 flex flex-col items-center">
 
                 {/* Header */}
-                <GSAPTransition animation="fade-in-up" className="text-center space-y-4 pt-12 mb-12">
+                <GSAPTransition animation="fade-in-up" className="text-center space-y-4 pt-12 mb-12 relative w-full">
+                    <button
+                        onClick={() => navigate('/app/assets')}
+                        className="absolute left-0 top-12 flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-sm font-medium"
+                    >
+                        <RotateCw className="w-4 h-4 rotate-180" /> Back to Library
+                    </button>
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-full mb-4">
                         <Move className="w-3 h-3 text-orange-400" />
                         <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Nebula Motion 2.0</span>

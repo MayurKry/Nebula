@@ -15,7 +15,7 @@ import ActivityLogPage from "@/pages/App/ActivityLogPage";
 import LibraryPage from "@/pages/App/LibraryPage";
 import PaymentPage from "@/pages/App/PaymentPage";
 import NotFoundPage from "@/pages/Shared/NotFoundPage";
-import AssetsNotFoundPage from "@/pages/App/AssetsNotFoundPage";
+import AssetLibraryPage from "@/pages/App/AssetLibraryPage";
 import VideoEditorPreviewPage from "@/pages/App/VideoEditorPreviewPage";
 import MarketingRoutes from "./MarketingRoute";
 import PublicRoutes from "./PublicRoute";
@@ -44,7 +44,7 @@ function AppRoutes() {
         <Route path="history" element={<JobHistoryPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="activity" element={<ActivityLogPage />} />
-        <Route path="assets" element={<AssetsNotFoundPage />} />
+        <Route path="assets" element={<AssetLibraryPage />} />
       </Route>
 
 

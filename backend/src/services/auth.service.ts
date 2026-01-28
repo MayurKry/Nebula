@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { ApiError } from "../utils/ApiError";
 import { UserModel } from "../models/user.model";
 import { ActivityService } from "./activity.service";
+import { TenantService } from "./tenant.service";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -11,8 +12,8 @@ import {
 
 export const AuthService = {
   async register(req: Request) {
-    console.log("req.body", req.body);
-    const { firstName, lastName, email, password } = req.body;
+    console.log("Registration request body:", req.body);
+    const { firstName, lastName, email, password, companyName, industry, useCase, plan } = req.body;
 
     if (!firstName || !lastName || !email || !password)
       throw new ApiError(400, "Name, email, and password are required");
@@ -20,17 +21,55 @@ export const AuthService = {
     const existing = await UserModel.findOne({ email });
     if (existing) throw new ApiError(400, "User already exists");
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
+    // 1. Create User
     const user = await UserModel.create({
       firstName,
       lastName,
       email,
-      password: hashedPassword,
+      password, // Plain password; hashed by UserModel pre-save hook
+      role: "tenant_owner",
+      industry,
+      useCase,
+      plan: plan || "starter",
+      onboardingCompleted: true
+    }) as any;
+
+    // Plan Mapping
+    const planMapping: Record<string, string> = {
+      'starter': 'FREE',
+      'creator': 'PRO',
+      'enterprise': 'TEAM'
+    };
+
+    const mappedPlanId = planMapping[plan?.toLowerCase()] || 'FREE';
+
+    // 2. Create Tenant (Organization)
+    const tenant = await TenantService.createTenant({
+      name: companyName || `${firstName}'s Space`,
+      type: companyName ? "ORGANIZATION" : "INDIVIDUAL",
+      ownerUserId: user._id.toString(),
+      planId: mappedPlanId as any,
+      initialCredits: plan === 'creator' ? 1000 : 100
     });
 
-    const accessToken = generateAccessToken({ id: user._id, email, role: user.role });
-    const refreshToken = generateRefreshToken({ id: user._id, email, role: user.role });
+    // 3. Update User with TenantId (redundant as TenantService does it, but safety first)
+    user.tenantId = tenant._id as any;
+    user.credits = plan === 'creator' ? 1000 : 100; // Sync user credits with tenant balance
+
+    const accessToken = generateAccessToken({
+      id: user._id,
+      userId: user._id,
+      email,
+      role: user.role,
+      tenantId: user.tenantId
+    });
+    const refreshToken = generateRefreshToken({
+      id: user._id,
+      userId: user._id,
+      email,
+      role: user.role,
+      tenantId: user.tenantId
+    });
 
     user.refreshToken = refreshToken;
     await user.save();
@@ -39,7 +78,7 @@ export const AuthService = {
       userId: user._id as any,
       type: "login",
       action: "Account Created",
-      description: `Welcome to Nebula, ${firstName}! Your account has been successfully created.`,
+      description: `Welcome to Nebula, ${firstName}! Your organization '${tenant.name}' has been created.`,
       status: "success",
       ip: req.ip,
       userAgent: req.get('user-agent')
@@ -52,6 +91,7 @@ export const AuthService = {
       email: user.email,
       role: user.role,
       credits: user.credits,
+      tenantId: user.tenantId
     };
 
     return { user: safeUser, accessToken, refreshToken };
@@ -69,8 +109,20 @@ export const AuthService = {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) throw new ApiError(401, "Invalid email or password");
 
-    const accessToken = generateAccessToken({ id: user._id, email, role: user.role });
-    const refreshToken = generateRefreshToken({ id: user._id, email, role: user.role });
+    const accessToken = generateAccessToken({
+      id: user._id,
+      userId: user._id,
+      email,
+      role: user.role,
+      tenantId: user.tenantId
+    });
+    const refreshToken = generateRefreshToken({
+      id: user._id,
+      userId: user._id,
+      email,
+      role: user.role,
+      tenantId: user.tenantId
+    });
 
     user.refreshToken = refreshToken;
     await user.save();
@@ -112,13 +164,17 @@ export const AuthService = {
 
       const newAccessToken = generateAccessToken({
         id: decoded.id,
+        userId: decoded.id,
         email: decoded.email,
         role: user.role,
+        tenantId: user.tenantId
       });
       const newRefreshToken = generateRefreshToken({
         id: decoded.id,
+        userId: decoded.id,
         email: decoded.email,
         role: user.role,
+        tenantId: user.tenantId
       });
 
       user.refreshToken = newRefreshToken;

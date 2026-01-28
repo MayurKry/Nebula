@@ -6,6 +6,10 @@ export interface RegisterRequest {
     lastName: string;
     email: string;
     password: string;
+    companyName?: string;
+    industry?: string;
+    useCase?: string;
+    plan?: string;
 }
 
 export interface LoginRequest {
