@@ -5,7 +5,7 @@ import {
     Layers, RotateCw, Folder, Play, Download,
     Camera, Maximize
 } from 'lucide-react';
-import { useGeneration, SAMPLE_VIDEO_THUMBS } from '@/components/generation/GenerationContext';
+import { useGeneration } from '@/components/generation/GenerationContext';
 import { aiService } from '@/services/ai.service';
 import GenerationQueue from '@/components/generation/GenerationQueue';
 import PromptBar from '@/components/ui/PromptBar';
