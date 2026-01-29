@@ -83,7 +83,7 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
                 </div>
 
                 {/* Control Grid (Visible Controls) */}
-                <div className="bg-[#141414] border border-white/5 p-1 rounded-2xl flex flex-wrap items-center justify-center gap-2 md:inline-flex md:left-1/2 md:relative md:-translate-x-1/2 mb-6 shadow-2xl">
+                <div className="bg-[#141414] border border-white/5 p-1 rounded-2xl flex flex-wrap items-center justify-center gap-2 md:inline-flex mx-auto mb-6 shadow-2xl">
 
                     {/* Model Selector */}
                     <div className="flex items-center gap-1 bg-black/40 rounded-xl p-1 border border-white/5">
