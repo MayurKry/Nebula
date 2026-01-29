@@ -157,7 +157,7 @@ export const grantCredits = controllerHandler(
     async (req) => {
         const { id } = req.params;
         const { amount, reason } = req.body;
-        const adminUserId = (req as any).user._id;
+        const adminUserId = (req as any).user._id.toString();
 
         const result = await CreditService.grantCredits({
             tenantId: id,
@@ -182,7 +182,7 @@ export const deductCredits = controllerHandler(
     async (req) => {
         const { id } = req.params;
         const { amount, reason } = req.body;
-        const adminUserId = (req as any).user._id;
+        const adminUserId = (req as any).user._id.toString();
 
         const result = await CreditService.deductCredits({
             tenantId: id,

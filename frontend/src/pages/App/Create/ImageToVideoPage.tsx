@@ -6,6 +6,7 @@ import {
     Camera, Maximize
 } from 'lucide-react';
 import { useGeneration, SAMPLE_VIDEO_THUMBS } from '@/components/generation/GenerationContext';
+import { aiService } from '@/services/ai.service';
 import GenerationQueue from '@/components/generation/GenerationQueue';
 import PromptBar from '@/components/ui/PromptBar';
 import GSAPTransition from '@/components/ui/GSAPTransition';
@@ -34,6 +35,26 @@ const ImageToVideoPage = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [sourceImage, setSourceImage] = useState<string | null>(null);
+    const [settings, setSettings] = useState({
+        model: 'veo3.1',
+        duration: 4,
+        motionLevel: 50
+    });
+    const [cameraMove, setCameraMove] = useState('zoom-in');
+    const [sceneEffect, setSceneEffect] = useState('parallax');
+    const [prompt, setPrompt] = useState('');
+
+    const handleModelChange = (model: string) => {
+        setSettings(prev => ({
+            ...prev,
+            model,
+            duration: model === 'veo3' ? 8 : 4
+        }));
+    };
+
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [generationProgress, setGenerationProgress] = useState(0);
+    const [results, setResults] = useState<{ thumbnail: string; url: string }[]>([]);
 
     useEffect(() => {
         if (location.state?.sourceImage) {
@@ -41,15 +62,6 @@ const ImageToVideoPage = () => {
             toast.info('Continuing from existing asset');
         }
     }, [location.state]);
-    const [motionDynamics] = useState(50);
-    const [cameraMove, setCameraMove] = useState('zoom-in');
-    const [sceneEffect, setSceneEffect] = useState('parallax');
-    const [prompt, setPrompt] = useState('');
-
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [generationProgress, setGenerationProgress] = useState(0);
-    const [results, setResults] = useState<{ thumbnail: string; url: string }[]>([]);
-
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -73,36 +85,55 @@ const ImageToVideoPage = () => {
         setGenerationProgress(0);
         setResults([]);
 
-        addJob({
-            type: 'image-to-video',
-            prompt: prompt || `Animate image with ${sceneEffect} effect, ${cameraMove} camera`,
-            settings: {
-                motionLevel: motionDynamics,
-                cameraPath: cameraMove,
-            },
-        });
+        try {
+            // Step 1: Start real generation
+            const result = await aiService.animateScene(sourceImage, prompt, {
+                model: settings.model,
+                duration: settings.duration,
+                motionLevel: settings.motionLevel,
+                cameraPath: cameraMove
+            } as any);
 
-        const progressInterval = setInterval(() => {
-            setGenerationProgress(prev => {
-                if (prev >= 100) {
-                    clearInterval(progressInterval);
-                    return 100;
-                }
-                return prev + 1.2;
+            addJob({
+                type: 'image-to-video',
+                prompt: prompt || `Animate image with ${sceneEffect} effect`,
+                settings: {
+                    model: settings.model,
+                    duration: settings.duration,
+                },
             });
-        }, 100);
 
-        await new Promise(resolve => setTimeout(resolve, 8000));
+            // Step 2: Polling for status
+            let status = 'processing';
+            let videoUrl = '';
+            let attempts = 0;
+            const maxAttempts = 50; // 100 seconds
 
-        clearInterval(progressInterval);
-        setGenerationProgress(100);
+            while (status === 'processing' && attempts < maxAttempts) {
+                setGenerationProgress(Math.min((attempts / maxAttempts) * 100 + 10, 95));
+                await new Promise(r => setTimeout(r, 2000));
+                const statusRes = await aiService.checkVideoStatus(result.jobId);
+                status = statusRes.status;
+                videoUrl = statusRes.videoUrl || '';
+                attempts++;
+            }
 
-        setResults([
-            { thumbnail: SAMPLE_VIDEO_THUMBS[2], url: '#video1' },
-            { thumbnail: SAMPLE_VIDEO_THUMBS[3], url: '#video2' },
-            { thumbnail: SAMPLE_VIDEO_THUMBS[0], url: '#video3' },
-        ]);
-        setIsGenerating(false);
+            if (status === 'completed' && videoUrl) {
+                setGenerationProgress(100);
+                setResults([
+                    { thumbnail: sourceImage, url: videoUrl },
+                ]);
+                toast.success('Video animated successfully!');
+            } else {
+                throw new Error("Generation failed or timed out");
+            }
+
+        } catch (error: any) {
+            console.error('Animation error:', error);
+            toast.error('Failed to animate image.');
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     return (
@@ -136,14 +167,37 @@ const ImageToVideoPage = () => {
                     <div className="bg-[#141414] border border-white/5 p-1 rounded-2xl flex flex-wrap items-center justify-center gap-2 md:inline-flex md:left-1/2 md:relative md:-translate-x-1/2 mb-6 shadow-2xl">
 
                         {/* Model Selector */}
-                        <div className="flex items-center gap-2 px-3 py-2 bg-black/40 rounded-xl cursor-not-allowed opacity-50 border border-transparent">
-                            <div className="p-1.5 bg-orange-500/20 rounded-lg">
-                                <Move className="w-4 h-4 text-orange-400" />
-                            </div>
-                            <div className="flex flex-col text-left">
-                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Model</span>
-                                <span className="text-xs font-semibold text-gray-300">Nebula Motion 2.0</span>
-                            </div>
+                        <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl">
+                            {['veo3.1', 'veo3'].map(m => (
+                                <button
+                                    key={m}
+                                    onClick={() => handleModelChange(m)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${settings.model === m
+                                        ? 'bg-[#00FF88] text-black border-[#00FF88]'
+                                        : 'bg-transparent text-gray-500 border-transparent hover:text-white'
+                                        }`}
+                                >
+                                    {m === 'veo3.1' ? 'Veo 3.1' : 'Veo 3.0'}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
+
+                        {/* Duration Selector */}
+                        <div className="flex items-center gap-2">
+                            {(settings.model === 'veo3' ? [8] : [4, 6, 8]).map(d => (
+                                <button
+                                    key={d}
+                                    onClick={() => setSettings(prev => ({ ...prev, duration: d }))}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${settings.duration === d
+                                        ? 'bg-white text-black border-white shadow-lg'
+                                        : 'bg-transparent text-gray-500 border-transparent hover:bg-white/5 hover:text-white'
+                                        }`}
+                                >
+                                    {d}s
+                                </button>
+                            ))}
                         </div>
 
                         <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />

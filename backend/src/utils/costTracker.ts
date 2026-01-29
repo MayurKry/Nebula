@@ -6,7 +6,7 @@
 export interface APICallLog {
     timestamp: Date;
     model: string;
-    type: 'image' | 'video' | 'text';
+    type: 'image' | 'video' | 'text' | 'audio';
     status: 'success' | 'failed' | 'attempted';
     estimatedCost: number;
     metadata?: any;
@@ -43,7 +43,10 @@ class CostTracker {
         'runway-gen4_image': 0.05,       // Explicit Image Model
         'runway-gen3a': 0.25,            // Gen-3 Alpha (text-to-video)
         'runway-gen3a_turbo': 0.25,
-        'runway-veo3.1_fast': 0.50,
+        'runway-veo3': 0.40,
+        'runway-veo3.1': 0.40,
+        'runway-veo3.1_fast': 0.30,
+        'runway-eleven_multilingual_v2': 0.05,
     };
 
     logCall(call: APICallLog): void {

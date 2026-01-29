@@ -134,7 +134,7 @@ export interface StoryboardScene {
 
 export interface HistoryItem {
     id: string;
-    type: 'image' | 'video' | 'video-project';
+    type: 'image' | 'video' | 'video-project' | 'audio';
     prompt: string;
     settings: {
         style?: string;
@@ -326,12 +326,12 @@ class AIService {
     /**
      * Animate a scene image
      */
-    async animateScene(imageUrl: string, prompt?: string): Promise<VideoStatusResponse> {
+    async animateScene(imageUrl: string, prompt?: string, params?: any): Promise<VideoStatusResponse> {
         const response = await axiosInstance.post<{
             success: boolean;
             message: string;
             data: VideoStatusResponse;
-        }>('/ai/animate-scene', { imageUrl, prompt });
+        }>('/ai/animate-scene', { imageUrl, prompt, ...params });
 
         return response.data.data;
     }
@@ -407,6 +407,31 @@ class AIService {
             message: string;
             data: { original: string; enhanced: string };
         }>('/ai/enhance-prompt', { prompt });
+
+        return response.data.data;
+    }
+    /**
+     * Generate audio (Text-to-Speech)
+     */
+    async generateAudio(data: { prompt: string; voiceId?: string }): Promise<{ jobId: string; status: string }> {
+        const response = await axiosInstance.post<{
+            success: boolean;
+            message: string;
+            data: { jobId: string; status: string };
+        }>('/ai/generate-audio', data);
+
+        return response.data.data;
+    }
+
+    /**
+     * Check audio status
+     */
+    async checkAudioStatus(jobId: string): Promise<{ jobId: string; status: string; audioUrl?: string; error?: string }> {
+        const response = await axiosInstance.get<{
+            success: boolean;
+            message: string;
+            data: { jobId: string; status: string; audioUrl?: string; error?: string };
+        }>(`/ai/audio-status/${jobId}`);
 
         return response.data.data;
     }

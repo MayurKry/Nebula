@@ -14,9 +14,10 @@ class JobService {
         module: JobModule;
         input: IJob["input"];
         metadata?: Record<string, any>;
+        cost?: number;
     }): Promise<IJob> {
         try {
-            const cost = this.calculateCredits(data.module);
+            const cost = data.cost !== undefined ? data.cost : this.calculateCredits(data.module, data.input);
             const user = await UserModel.findById(data.userId);
 
             if (!user) {
@@ -513,18 +514,29 @@ class JobService {
     }
 
     /**
-     * Calculate credits based on module
+     * Calculate credits based on module and input configuration
      */
-    private calculateCredits(module: JobModule): number {
-        const creditMap: Record<JobModule, number> = {
+    private calculateCredits(module: JobModule, input?: IJob["input"]): number {
+        const baseCosts: Record<JobModule, number> = {
             text_to_image: 1,
             text_to_video: 5,
-            image_to_video: 3,
+            image_to_video: 5,
             text_to_audio: 2,
             campaign_wizard: 10,
             export: 1
         };
-        return creditMap[module] || 1;
+
+        if (module === "text_to_video" || module === "image_to_video") {
+            const duration = input?.config?.duration || 6;
+            return duration * 5;
+        }
+
+        if (module === "text_to_image") {
+            const count = input?.config?.count || 1;
+            return count * baseCosts.text_to_image;
+        }
+
+        return baseCosts[module] || 1;
     }
 
     /**

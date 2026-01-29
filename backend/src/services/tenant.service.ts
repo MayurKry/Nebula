@@ -14,7 +14,12 @@ export interface TenantFilters {
 export interface CreateTenantDTO {
     name: string;
     type: "INDIVIDUAL" | "ORGANIZATION";
-    ownerUserId: string;
+    ownerUserId?: string; // Made optional since ownerUserData can be provided instead
+    ownerUserData?: {
+        email: string;
+        firstName: string;
+        lastName: string;
+    };
     planId?: "FREE" | "PRO" | "TEAM";
     initialCredits?: number;
 }
@@ -143,7 +148,7 @@ export const TenantService = {
                 });
             }
 
-            ownerUserId = user._id.toString();
+            ownerUserId = (user._id as mongoose.Types.ObjectId).toString();
         }
 
         if (!ownerUserId) {

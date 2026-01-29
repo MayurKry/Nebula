@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useCallback, type ReactNode
 // Types
 export interface GenerationJob {
     id: string;
-    type: 'text-to-image' | 'text-to-video' | 'image-to-video';
+    type: 'text-to-image' | 'text-to-video' | 'image-to-video' | 'audio';
     prompt: string;
     status: 'queued' | 'rendering' | 'completed' | 'error';
     progress: number;
@@ -25,6 +25,8 @@ export interface GenerationSettings {
     fidelity?: number;
     colorTemperature?: number;
     referenceImage?: string;
+    model?: string;
+    voiceId?: string;
 }
 
 interface GenerationContextType {
@@ -65,7 +67,7 @@ export const GenerationProvider: React.FC<{ children: ReactNode }> = ({ children
     const [queueVisible, setQueueVisible] = useState(false);
 
     const simulateGeneration = useCallback((jobId: string, type: string) => {
-        const duration = type === 'text-to-video' ? 12000 : type === 'image-to-video' ? 10000 : 6000;
+        const duration = type === 'text-to-video' ? 12000 : type === 'image-to-video' ? 10000 : type === 'audio' ? 5000 : 6000;
         const interval = 100;
         let progress = 0;
 

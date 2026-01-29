@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IGenerationHistory extends Document {
     userId: Types.ObjectId;
-    type: "image" | "video" | "video-project";
+    type: "image" | "video" | "video-project" | "audio";
     prompt: string;
     settings: {
         style?: string;
@@ -41,7 +41,7 @@ const generationHistorySchema = new Schema<IGenerationHistory>(
         type: {
             type: String,
             required: true,
-            enum: ["image", "video", "video-project"],
+            enum: ["image", "video", "video-project", "audio"],
             index: true
         },
         prompt: {
@@ -61,7 +61,7 @@ const generationHistorySchema = new Schema<IGenerationHistory>(
         },
         results: [{
             assetId: { type: Schema.Types.ObjectId, ref: "Asset" },
-            url: { type: String, required: true },
+            url: { type: String, required: false },
             thumbnailUrl: { type: String },
             provider: { type: String },
             jobId: { type: String },

@@ -19,11 +19,19 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
 
     // Default Settings
     const [settings, setSettings] = useState({
-        model: 'veo3.1_fast',
-        duration: 6,
+        model: 'veo3.1',
+        duration: 4,
         aspectRatio: '16:9',
         quality: 'Pro'
     });
+
+    const handleModelChange = (model: string) => {
+        setSettings(prev => ({
+            ...prev,
+            model,
+            duration: model === 'veo3' ? 8 : 4
+        }));
+    };
 
     // Credit Calculation
     const estimateCredits = () => {
@@ -84,26 +92,33 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
 
                 {/* Control Grid (Visible Controls) */}
                 <div className="flex justify-center">
-                    <div className="bg-[#141414] border border-white/5 p-1 rounded-2xl flex flex-wrap items-center justify-center gap-2 md:inline-flex mb-6 shadow-2xl">
-                        {/* Model Display (Phase 1 - Single Model) */}
-                        <div className="flex items-center gap-2 px-4 py-2 bg-black/40 rounded-xl border border-white/10">
-                            <Sparkles className="w-3.5 h-3.5 text-[#00FF88]" />
-                            <div className="flex flex-col">
-                                <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Model</span>
-                                <span className="text-xs font-bold text-white leading-none">Veo 3.1 Fast</span>
-                            </div>
+                    <div className="bg-[#141414] border border-white/5 p-1.5 rounded-2xl flex flex-wrap items-center justify-center gap-2 md:inline-flex mb-6 shadow-2xl">
+                        {/* Model Selector */}
+                        <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl">
+                            {['veo3.1', 'veo3'].map(m => (
+                                <button
+                                    key={m}
+                                    onClick={() => handleModelChange(m)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${settings.model === m
+                                        ? 'bg-[#00FF88] text-black border-[#00FF88]'
+                                        : 'bg-transparent text-gray-500 border-transparent hover:text-white'
+                                        }`}
+                                >
+                                    {m === 'veo3.1' ? 'Veo 3.1' : 'Veo 3.0'}
+                                </button>
+                            ))}
                         </div>
 
                         <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
 
                         {/* Duration Selector */}
                         <div className="flex items-center gap-2">
-                            {[6].map(d => (
+                            {(settings.model === 'veo3' ? [8] : [4, 6, 8]).map(d => (
                                 <button
                                     key={d}
                                     onClick={() => setSettings(prev => ({ ...prev, duration: d }))}
                                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${settings.duration === d
-                                        ? 'bg-[#00FF88] text-black border-[#00FF88] shadow-[0_0_15px_rgba(0,255,136,0.3)]'
+                                        ? 'bg-white text-black border-white shadow-lg'
                                         : 'bg-transparent text-gray-500 border-transparent hover:bg-white/5 hover:text-white'
                                         }`}
                                 >
@@ -116,18 +131,23 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
 
                         {/* Aspect Ratio Selector */}
                         <div className="flex items-center gap-1">
-                            {['16:9', '9:16'].map(r => (
+                            {[
+                                { label: '16:9', value: '1280:720' },
+                                { label: '9:16', value: '720:1280' },
+                                { label: '21:9', value: '1920:1080' },
+                                { label: '1080p', value: '1080:1920' }
+                            ].map(r => (
                                 <button
-                                    key={r}
-                                    onClick={() => setSettings(prev => ({ ...prev, aspectRatio: r }))}
-                                    className={`px-3 py-2 rounded-lg transition-all border flex items-center gap-2 ${settings.aspectRatio === r
-                                        ? 'bg-white text-black border-white shadow-lg'
+                                    key={r.label}
+                                    onClick={() => setSettings(prev => ({ ...prev, aspectRatio: r.value }))}
+                                    className={`px-3 py-2 rounded-lg transition-all border flex items-center gap-2 ${settings.aspectRatio === r.value
+                                        ? 'bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/50'
                                         : 'text-gray-500 border-transparent hover:text-white hover:bg-white/5'
                                         }`}
-                                    title={`Aspect Ratio ${r}`}
+                                    title={`Aspect Ratio ${r.label}`}
                                 >
-                                    <Ratio className={`w-3.5 h-3.5 ${r === '9:16' ? 'rotate-90' : ''}`} />
-                                    <span className="text-xs font-bold">{r}</span>
+                                    <Ratio className={`w-3.5 h-3.5 ${r.label === '9:16' ? 'rotate-90' : ''}`} />
+                                    <span className="text-xs font-bold">{r.label}</span>
                                 </button>
                             ))}
                         </div>

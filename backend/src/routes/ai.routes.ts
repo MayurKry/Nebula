@@ -9,9 +9,11 @@ import {
     generateStoryboard,
     updateOnboarding,
     getAIProviders,
-    getHistory, // Import getHistory
-    getHistoryItem, // Import getHistoryItem
-    enhancePrompt, // Import enhancePrompt
+    getHistory,
+    getHistoryItem,
+    enhancePrompt,
+    generateAudio,
+    checkAudioStatus
 } from "../controllers/ai.controller";
 import { authenticate } from "../middlewares/auth.middleware";
 import { requireTenant } from "../middlewares/tenant.middleware";
@@ -34,7 +36,9 @@ router.post("/generate-storyboard", generateStoryboard);
 router.get("/providers", getAIProviders);
 router.get("/history", getHistory); // Get all history
 router.get("/history/:id", getHistoryItem); // Get single history item
-router.post("/enhance-prompt", enhancePrompt); // Enhance prompt
+router.post("/enhance-prompt", enhancePrompt);
+router.post("/generate-audio", requireFeature("TEXT_TO_AUDIO"), generateAudio); // Audio Generation
+router.get("/audio-status/:jobId", checkAudioStatus); // Audio Status
 
 // Onboarding
 router.post("/onboarding", updateOnboarding);

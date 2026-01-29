@@ -3,12 +3,14 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { responseHandler } from "../utils/responseHandler";
 import { aiImageService } from "../services/ai-image.service";
 import { aiVideoService } from "../services/ai-video.service";
+import { aiAudioService } from "../services/ai-audio.service";
 import { ActivityService } from "../services/activity.service";
 import { NotificationService } from "../services/notification.service";
 import { AssetModel } from "../models/asset.model";
 import { GenerationHistoryModel } from "../models/generation-history.model";
 import { intentService } from "../services/intent.service";
 import { LoggingService } from "../services/logging.service";
+import { jobService } from "../services/job.service";
 import mongoose from "mongoose";
 
 // Extend Request type to include user (if not already globally defined, but here for safety/clarity in this file scope)
@@ -281,7 +283,22 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
 
         userId = (req as AuthenticatedRequest).user?.userId || (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
 
-        // Optimized flow: Directly call AI Video Service
+        if (!userId) {
+            return responseHandler(res, 401, "Unauthorized: User identification failed");
+        }
+
+        // 1. Create Job & Deduct Credits
+        // This ensures the user has enough credits BEFORE we call the expensive AI service
+        const job = await jobService.createJob({
+            userId: userId.toString(),
+            module: "text_to_video",
+            input: {
+                prompt,
+                config: { style, duration, model }
+            }
+        });
+
+        // 2. Call AI Video Service
         const result = await aiVideoService.generateVideo({
             prompt: prompt,
             model: model,
@@ -289,50 +306,37 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
             duration: duration
         });
 
-        // Synchronize with Job system for History and Activity visibility
-        if (userId && mongoose.Types.ObjectId.isValid(userId)) {
-            try {
-                const { JobModel } = await import("../models/job.model");
-                await JobModel.create({
-                    userId: new mongoose.Types.ObjectId(userId),
-                    module: "text_to_video",
-                    status: "processing",
-                    input: {
-                        prompt,
-                        config: { style, duration }
-                    },
-                    metadata: {
-                        jobId: result.jobId,
-                        provider: "runwayml_proxy"
-                    },
-                    queuedAt: new Date(),
-                    startedAt: new Date(),
-                    creditsUsed: result.creditsUsed || 5
-                });
+        // 3. Update available job with provider metadata
+        // We use the job created in step 1 instead of creating a new one
+        job.status = "processing";
+        job.metadata = {
+            ...(job.metadata || {}),
+            jobId: result.jobId,
+            provider: "runwayml_proxy",
+            originalCreditsCost: result.creditsUsed
+        };
+        job.startedAt = new Date();
+        await job.save();
 
-                // Also save to generation history for legacy support if needed
-                await GenerationHistoryModel.create({
-                    userId: new mongoose.Types.ObjectId(userId),
-                    type: "video",
-                    prompt,
-                    settings: {
-                        style,
-                        duration,
-                        model: "Nebula Video Base",
-                        provider: "runwayml"
-                    },
-                    results: [{
-                        jobId: result.jobId,
-                        url: "",
-                        thumbnailUrl: result.thumbnailUrl,
-                        status: result.status
-                    }],
-                    status: "processing"
-                });
-            } catch (dbErr: any) {
-                console.warn("[Video Generation] Sync failed:", dbErr.message);
-            }
-        }
+        // Also save to generation history for legacy support if needed
+        await GenerationHistoryModel.create({
+            userId: new mongoose.Types.ObjectId(userId),
+            type: "video",
+            prompt,
+            settings: {
+                style,
+                duration,
+                model: "Nebula Video Base",
+                provider: "runwayml"
+            },
+            results: [{
+                jobId: result.jobId,
+                url: "",
+                thumbnailUrl: result.thumbnailUrl,
+                status: result.status
+            }],
+            status: "processing"
+        });
 
         return responseHandler(res, 200, "Video generation started", {
             jobId: result.jobId,
@@ -795,10 +799,15 @@ export const regenerateScene = asyncHandler(async (req: Request, res: Response) 
 
 // Animate a scene (Image-to-Video)
 export const animateScene = asyncHandler(async (req: Request, res: Response) => {
-    const { imageUrl, prompt } = req.body;
+    const { imageUrl, prompt, model, duration, motionLevel, cameraPath } = req.body;
 
     if (!imageUrl) {
         return responseHandler(res, 400, "Image URL is required");
+    }
+
+    const userId = (req as AuthenticatedRequest).user?.userId || (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
+    if (!userId) {
+        return responseHandler(res, 401, "Unauthorized");
     }
 
     try {
@@ -812,12 +821,33 @@ export const animateScene = asyncHandler(async (req: Request, res: Response) => 
             finalPrompt = await intentService.getSystematicPrompt(prompt, intentAnalysis);
         }
 
-        const result = await aiVideoService.animateImage(imageUrl, finalPrompt);
+        // 1. Create Job & Deduct Credits
+        const job = await jobService.createJob({
+            userId: userId.toString(),
+            module: "image_to_video",
+            input: {
+                prompt: finalPrompt,
+                config: { model, duration, imageUrl, motionLevel, cameraPath }
+            }
+        });
 
-        return responseHandler(res, 200, "Scene animation started", {
+        const result = await aiVideoService.animateImage(imageUrl, finalPrompt, req.body);
+
+        // 2. Update Job
+        job.status = "processing";
+        job.metadata = {
+            jobId: result.jobId,
+            provider: "runwayml_proxy",
+            originalCreditsCost: result.creditsUsed
+        };
+        job.startedAt = new Date();
+        await job.save();
+
+        return responseHandler(res, 200, "Animation started", {
             jobId: result.jobId,
             status: result.status,
-            thumbnailUrl: result.thumbnailUrl
+            thumbnailUrl: result.thumbnailUrl,
+            creditsUsed: result.creditsUsed
         });
     } catch (error: any) {
         console.error("Scene animation failed:", error);
@@ -937,5 +967,70 @@ export const enhancePrompt = asyncHandler(async (req: Request, res: Response) =>
         return responseHandler(res, 500, "Failed to enhance prompt", {
             error: error.message
         });
+    }
+});
+
+// Generate Audio (Text-to-Speech)
+export const generateAudio = asyncHandler(async (req: Request, res: Response) => {
+    const { prompt, voiceId } = req.body;
+    const userId = (req as AuthenticatedRequest).user?.userId || (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
+
+    if (!prompt) {
+        return responseHandler(res, 400, "Prompt is required");
+    }
+
+    try {
+        const result = await aiAudioService.generateAudio({ prompt, voiceId });
+
+        // Save to history (non-blocking)
+        if (userId) {
+            try {
+                await GenerationHistoryModel.create({
+                    userId: new mongoose.Types.ObjectId(userId),
+                    type: "audio",
+                    prompt,
+                    settings: { voiceId },
+                    results: [{ jobId: result.jobId, status: result.status }],
+                    status: "processing"
+                });
+            } catch (historyErr) {
+                console.warn("Failed to save audio generation to history:", historyErr);
+            }
+        }
+
+        return responseHandler(res, 200, "Audio generation started", result);
+    } catch (error: any) {
+        console.error("Audio generation failed detailed:", error.message);
+        console.error(error.stack);
+        return responseHandler(res, 500, "Failed to generate audio", { error: error.message });
+    }
+});
+
+// Check Audio Status
+export const checkAudioStatus = asyncHandler(async (req: Request, res: Response) => {
+    const { jobId } = req.params;
+    const userId = (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?._id;
+
+    try {
+        const result = await aiAudioService.checkStatus(jobId);
+
+        if (userId && (result.status === 'succeeded' || result.status === 'failed')) {
+            await GenerationHistoryModel.findOneAndUpdate(
+                { userId: new mongoose.Types.ObjectId(userId), "results.jobId": jobId },
+                {
+                    $set: {
+                        status: result.status === 'succeeded' ? "completed" : "failed",
+                        "results.$.url": result.audioUrl,
+                        "results.$.status": result.status,
+                        error: result.error
+                    }
+                }
+            );
+        }
+
+        return responseHandler(res, 200, "Audio status retrieved", result);
+    } catch (error: any) {
+        console.error("Failed to check audio status:", error);
+        return responseHandler(res, 500, "Failed to check audio status");
     }
 });

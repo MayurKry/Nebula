@@ -43,26 +43,47 @@ const TextToAudioPage = () => {
 
         setIsGenerating(true);
         try {
-            // Add job to queue
-            addJob({
-                type: 'text-to-video', // Reusing video type queue just for demo
-                prompt: `[Audio] ${prompt}`,
-                settings: { style, duration: parseInt(duration) },
+            // Step 1: Start real generation
+            const result = await aiService.generateAudio({
+                prompt,
+                voiceId: "cgSgspJ2msm6clMCkdW9" // Default to neutral voice for now 
             });
 
-            // Mocking audio generation for now
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            // Step 2: Polling for status
+            let status = result.status;
+            let audioUrl = '';
+            let attempts = 0;
+            const maxAttempts = 30; // 60 seconds
 
-            const newResult: AudioResult = {
-                id: Math.random().toString(36).substr(2, 9),
-                url: '#',
-                title: prompt.substring(0, 30) + '...',
-                duration: duration === '30s' ? '0:30' : duration === '60s' ? '1:00' : '0:15',
-                style: style,
-            };
+            while (status === 'processing' && attempts < maxAttempts) {
+                await new Promise(r => setTimeout(r, 2000));
+                const statusRes = await aiService.checkAudioStatus(result.jobId);
+                status = statusRes.status;
+                audioUrl = statusRes.audioUrl || '';
+                attempts++;
+            }
 
-            setResults([newResult, ...results]);
-            toast.success('Audio generated successfully!');
+            if (status === 'succeeded' && audioUrl) {
+                const newResult: AudioResult = {
+                    id: result.jobId,
+                    url: audioUrl,
+                    title: prompt.substring(0, 30) + '...',
+                    duration: duration,
+                    style: style,
+                };
+
+                setResults([newResult, ...results]);
+                toast.success('Audio generated successfully!');
+
+                // Track in global queue system
+                addJob({
+                    type: 'audio' as any,
+                    prompt: prompt,
+                    settings: { style, voiceId: "neutral" },
+                });
+            } else {
+                throw new Error("Generation timed out or failed on provider");
+            }
         } catch (error) {
             console.error('Error generating audio:', error);
             toast.error('Failed to generate audio. Please try again.');

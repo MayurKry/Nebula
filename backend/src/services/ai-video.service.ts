@@ -61,8 +61,8 @@ class AIVideoService {
             }
         }
 
-        logger.info("[AI Video Service] 🔒 STRICTLY USING RUNWAY ML ONLY");
-        logger.info("[AI Video Service] Model: gen3a_turbo (Standard Production Model)");
+        logger.info("[AI Video Service] 🔒 RUNWAY ML POWERED");
+        logger.info("[AI Video Service] Models: veo3, veo3.1 enabled");
         logger.info("[AI Video Service] ✅ Prompt enhancement enabled");
     }
 
@@ -89,8 +89,8 @@ class AIVideoService {
         };
 
         const sanitizedPrompt = sanitizePrompt(originalPrompt);
-        const model = "veo3.1_fast";
-        const duration = params.duration || 6;
+        const model = params.model || "gen3a_turbo";
+        const duration = params.duration || 5;
 
         logger.info(`[AI Video Service] 🔒 Input: "${originalPrompt}"`);
         logger.info(`[AI Video Service] ✨ Sanitized: "${sanitizedPrompt}"`);
@@ -213,8 +213,33 @@ class AIVideoService {
      * Animate an image (Image-to-Video) - NOT SUPPORTED
      * This method exists for backward compatibility but is not supported
      */
-    async animateImage(imageUrl: string, prompt?: string): Promise<VideoGenerationResult> {
-        throw new Error("Image-to-video animation is not currently supported with Runway ML gen4_turbo. Please use text-to-video instead.");
+    async animateImage(imageUrl: string, prompt?: string, params?: VideoGenerationParams): Promise<VideoGenerationResult> {
+        const originalPrompt = (prompt || "").trim();
+        const model = params?.model || "veo3.1";
+        const duration = params?.duration || 6;
+
+        try {
+            const costEstimate = runwayService.estimateVideoCost(duration);
+            const result = await runwayService.imageToVideo({
+                prompt: originalPrompt,
+                promptImage: imageUrl,
+                model: model,
+                duration: duration,
+                ratio: params?.width && params?.height ? `${params.width}:${params.height}` : "1280:720"
+            });
+
+            return {
+                jobId: `runway_${result.id}`,
+                status: "processing",
+                thumbnailUrl: imageUrl,
+                originalPrompt,
+                creditsUsed: costEstimate.credits,
+                estimatedCost: costEstimate.cost
+            };
+        } catch (error: any) {
+            logger.error(`[AI Video Service] ❌ Image-to-Video failed: ${error.message}`);
+            throw error;
+        }
     }
 }
 

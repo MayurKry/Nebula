@@ -10,6 +10,9 @@ export interface RunwayGenerationParams {
     ratio?: string;
     seed?: number;
     duration?: number;
+    promptImage?: string; // For i2v
+    voiceId?: string; // For tts
+    tone?: string; // For emotional inflection in tts
 }
 
 export interface RunwayResult {
@@ -127,21 +130,26 @@ class RunwayService {
      * NO OTHER MODELS ALLOWED
      */
     async textToVideo(params: RunwayGenerationParams): Promise<RunwayResult> {
-        // Phase 1: Use veo3.1_fast (supported on this API key for text-to-video)
-        // Requirements: duration must be 4, 6, or 8 seconds.
-        const model = 'veo3.1_fast';
-        const duration = 6;
+        // Models: gen3a_turbo
+        const model = params.model || 'gen3a_turbo';
 
-        logger.info(`[RunwayService] 🎬 Using ${model} with duration ${duration}s`);
+        // Enforce supported durations
+        // veo3: 8s only
+        // veo3.1: 4s, 6s, 8s
+        let duration = params.duration || 6;
+        if (model === 'gen3a') {
+            duration = 10;
+        } else {
+            // gen3a_turbo supports 5s, 10s usually, adjust based on actual provider
+            if (duration <= 5) duration = 5;
+            else duration = 10;
+        }
 
-        const creditsPerSecond = 5; // Assumption for Veo
+        const creditsPerSecond = 5;
         const totalCredits = duration * creditsPerSecond;
         const estimatedCost = totalCredits * 0.01;
 
-        logger.info(`[RunwayService] 🔒 LOCKED MODEL: ${model}`);
-        logger.info(`[RunwayService] Duration: ${duration}s (Snapped from request)`);
-        logger.info(`[RunwayService] Duration: ${duration}s`);
-        logger.info(`[RunwayService] Estimated cost: ${totalCredits} credits ($${estimatedCost.toFixed(2)})`);
+        logger.info(`[RunwayService] 🎬 Video Gen (${model}) | Duration: ${duration}s | Credits: ${totalCredits}`);
 
         // Log to cost tracker
         costTracker.logCall({
@@ -150,37 +158,27 @@ class RunwayService {
             type: 'video',
             status: 'attempted',
             estimatedCost,
-            metadata: {
-                prompt: params.prompt.substring(0, 50),
-                duration,
-                credits: totalCredits
-            }
+            metadata: { prompt: params.prompt.substring(0, 50), duration, credits: totalCredits }
         });
 
-        // Enforce supported aspect ratios for Dev Environment
-        const SUPPORTED_RATIOS = [
-            "1280:720", "720:1280" // Standard 16:9 and 9:16 for video
-        ];
-
-        let bestRatio = "1280:720";
-        // If explicit ratio provided, try to match or snap
-        if (params.ratio) {
-            // For now, video is stricter. Let's just default to 1280:720 if not portrait.
-            if (params.ratio.startsWith("720") || params.ratio.includes("9:16")) {
-                bestRatio = "720:1280";
-            }
+        // Enforce supported aspect ratios
+        const VALID_RATIOS = ["1280:720", "720:1280", "1080:1920", "1920:1080"];
+        let ratio = "1280:720";
+        if (params.ratio && VALID_RATIOS.includes(params.ratio)) {
+            ratio = params.ratio;
+        } else if (params.ratio) {
+            // Smart snapping
+            if (params.ratio.includes("9:16") || params.ratio.startsWith("720")) ratio = "720:1280";
         }
-
-        logger.info(`[RunwayService] Video Ratio: ${bestRatio}`);
 
         try {
             const response = await axios.post(
                 `${this.baseUrl}/text_to_video`,
                 {
                     promptText: params.prompt,
-                    model: model, // 🔒 LOCKED
+                    model: model,
                     duration: duration,
-                    ratio: bestRatio // Enforced
+                    ratio: ratio
                 },
                 {
                     headers: {
@@ -188,25 +186,117 @@ class RunwayService {
                         "X-Runway-Version": "2024-11-06",
                         "Content-Type": "application/json"
                     },
-                    timeout: 120000 // 2 minutes for video
+                    timeout: 120000
                 }
             );
 
-            logger.info(`[RunwayService] ✅ Video generation successful with ${model}`);
-
-            // Log success
             costTracker.logCall({
                 timestamp: new Date(),
                 model: `runway-${model}`,
                 type: 'video',
                 status: 'success',
-                estimatedCost,
-                metadata: { duration, credits: totalCredits }
+                estimatedCost
             });
 
             return response.data;
         } catch (error: any) {
             this.handleRunwayError(error, model, 'video');
+            throw error;
+        }
+    }
+
+    /**
+     * Image to Video Generation
+     */
+    async imageToVideo(params: RunwayGenerationParams): Promise<RunwayResult> {
+        const model = params.model || 'gen3a_turbo';
+        let duration = params.duration || 5;
+        if (model === 'gen3a') duration = 10;
+        else {
+            if (duration <= 5) duration = 5;
+            else duration = 10;
+        }
+
+        const totalCredits = duration * 5;
+        const estimatedCost = totalCredits * 0.01;
+
+        logger.info(`[RunwayService] 🖼️🎬 Image to Video (${model}) | Duration: ${duration}s`);
+
+        try {
+            const response = await axios.post(
+                `${this.baseUrl}/image_to_video`,
+                {
+                    promptText: params.prompt,
+                    promptImage: params.promptImage,
+                    model: model,
+                    duration: duration,
+                    ratio: params.ratio || "1280:720"
+                },
+                {
+                    headers: {
+                        "Authorization": `Bearer ${this.apiKey}`,
+                        "X-Runway-Version": "2024-11-06",
+                        "Content-Type": "application/json"
+                    },
+                    timeout: 120000
+                }
+            );
+
+            costTracker.logCall({
+                timestamp: new Date(),
+                model: `runway-${model}`,
+                type: 'video',
+                status: 'success',
+                estimatedCost
+            });
+
+            return response.data;
+        } catch (error: any) {
+            this.handleRunwayError(error, model, 'video');
+            throw error;
+        }
+    }
+
+    /**
+     * Text to Speech Generation
+     */
+    async textToAudio(params: RunwayGenerationParams): Promise<RunwayResult> {
+        const estimatedCost = 0.05; // Base cost for audio
+
+        logger.info(`[RunwayService] 🔊 Text to Speech | Voice: ${params.voiceId || "default"}`);
+
+        try {
+            const response = await axios.post(
+                `${this.baseUrl}/text_to_speech`,
+                {
+                    model: "eleven_multilingual_v2",
+                    promptText: params.prompt,
+                    voice: {
+                        type: "runway-preset",
+                        presetId: params.voiceId || "Leslie"
+                    }
+                },
+                {
+                    headers: {
+                        "Authorization": `Bearer ${this.apiKey}`,
+                        "X-Runway-Version": "2024-11-06",
+                        "Content-Type": "application/json"
+                    },
+                    timeout: 60000
+                }
+            );
+
+            costTracker.logCall({
+                timestamp: new Date(),
+                model: `runway-tts`,
+                type: 'audio',
+                status: 'success',
+                estimatedCost
+            });
+
+            return response.data;
+        } catch (error: any) {
+            this.handleRunwayError(error, 'text_to_speech', 'audio');
             throw error;
         }
     }
@@ -236,7 +326,7 @@ class RunwayService {
     /**
      * Handle Runway ML API errors with specific messages
      */
-    private handleRunwayError(error: any, model: string, type: 'image' | 'video'): void {
+    private handleRunwayError(error: any, model: string, type: 'image' | 'video' | 'audio'): void {
         const status = error.response?.status;
         const errorData = error.response?.data;
 
