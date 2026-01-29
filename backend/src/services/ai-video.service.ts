@@ -89,7 +89,7 @@ class AIVideoService {
         };
 
         const sanitizedPrompt = sanitizePrompt(originalPrompt);
-        const model = params.model || "gen3a_turbo";
+        const model = params.model || "veo3.1";
         const duration = params.duration || 5;
 
         logger.info(`[AI Video Service] 🔒 Input: "${originalPrompt}"`);

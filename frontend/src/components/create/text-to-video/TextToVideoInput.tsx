@@ -1,20 +1,11 @@
+
 import React, { useState } from 'react';
-import {
-    Zap,
-    History,
-    Settings2,
-    Film,
-    Clock,
-    Layers,
-    Sparkles
-} from 'lucide-react';
+import { Sparkles, Ratio, Zap, Camera, Palette } from 'lucide-react';
 import PromptBar from '@/components/ui/PromptBar';
+import PromptGuide from './PromptGuide';
+import PromptBuilder from './PromptBuilder';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 import { toast } from 'sonner';
-
-// Mini Components
-import VideoStyleSelector, { videoStyles, type VideoStyle } from './VideoStyleSelector';
-import AspectRatioSelector, { aspectRatios, type AspectRatio } from './AspectRatioSelector';
 
 interface TextToVideoInputProps {
     onGenerate: (data: { prompt: string; settings: any }) => void;
@@ -24,33 +15,42 @@ interface TextToVideoInputProps {
 const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGenerating }) => {
     const [prompt, setPrompt] = useState('');
     const [isEnhancing, setIsEnhancing] = useState(false);
+    const [showBuilder, setShowBuilder] = useState(false);
 
-    // Core Settings
-    const [selectedStyle, setSelectedStyle] = useState<VideoStyle>(videoStyles[0]);
-    const [selectedRatio, setSelectedRatio] = useState<AspectRatio>(aspectRatios[0]);
-    const [duration, setDuration] = useState(5);
-    const [model, setModel] = useState('gen3a_turbo');
+    // Default Settings
+    const [settings, setSettings] = useState({
+        model: 'veo3.1', // 'veo3.1' | 'veo3'
+        duration: 5,
+        aspectRatio: '16:9',
+        quality: 'Pro'
+    });
 
     // Credit Calculation
     const estimateCredits = () => {
-        const baseRate = 10; // Credits per generation
-        const durationMultiplier = duration / 5;
-        return Math.round(baseRate * durationMultiplier);
+        const rate = settings.model === 'veo3.1_fast' ? 5 : 5; // Both are 5 per sec currently, but can be adjusted
+        return settings.duration * rate;
     };
 
     const handleEnhance = async () => {
         if (!prompt.trim()) return;
         setIsEnhancing(true);
         try {
-            // Simulated enhancement logic (would normally call an API)
-            await new Promise(r => setTimeout(r, 800));
-            const cinematicKeywords = "cinematic lighting, ultra-realistic textures, 8k resolution, masterful composition";
-            if (!prompt.toLowerCase().includes("cinematic")) {
-                setPrompt(prev => `${prev}, ${cinematicKeywords}`);
-                toast.success("Atmosphere Enhanced!");
+            await new Promise(r => setTimeout(r, 1000));
+            const enhancements = [
+                "cinematic lighting, 8k resolution, highly detailed",
+                "volumetric fog, photorealistic, shot on 35mm",
+                "dramatic angle, slow motion, award winning composition"
+            ];
+            const randomEnhancement = enhancements[Math.floor(Math.random() * enhancements.length)];
+
+            if (!prompt.includes(randomEnhancement)) {
+                setPrompt(prev => `${prev}, ${randomEnhancement}`);
+                toast.success("Prompt Enhanced with cinematic keywords!");
+            } else {
+                toast.info("Prompt is already optimized.");
             }
         } catch (error) {
-            toast.error("Enhancement failed.");
+            toast.error("Failed to enhance prompt.");
         } finally {
             setIsEnhancing(false);
         }
@@ -58,217 +58,176 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
 
     const handleGenerate = () => {
         if (!prompt.trim()) {
-            toast.error("Please describe your cinematic vision.");
+            toast.error("Please enter a prompt to generate video.");
             return;
         }
-
-        // Merge visual styles into prompt for the engine
-        const finalPrompt = `${prompt}. Style: ${selectedStyle.prompt}`;
-
-        onGenerate({
-            prompt: finalPrompt,
-            settings: {
-                model,
-                duration,
-                aspectRatio: selectedRatio.value,
-                styleId: selectedStyle.id
-            }
-        });
+        onGenerate({ prompt, settings });
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-6 py-12">
-            <GSAPTransition animation="fade-in-up" duration={0.8}>
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="min-h-[80vh] flex flex-col items-center justify-center p-4 relative">
+            <GSAPTransition animation="fade-in-up" className="w-full max-w-4xl space-y-8 z-10">
 
-                    {/* LEFT PANEL: Settings & Configuration */}
-                    <div className="lg:col-span-4 space-y-6">
-                        <div className="bg-[#0C0C0C] border border-white/5 rounded-[2.5rem] p-8 shadow-3xl relative overflow-hidden group">
-                            {/* Ambient background glow */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                {/* Header Section */}
+                <div className="text-center space-y-4 mb-12">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-full mb-4">
+                        <Sparkles className="w-3 h-3 text-purple-400" />
+                        <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Nebula AI Video 2.0</span>
+                    </div>
+                    <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter">
+                        What do you want to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00FF88] to-emerald-400">see?</span>
+                    </h1>
+                    <p className="text-gray-500 text-lg max-w-xl mx-auto">
+                        transform text into cinema with our simplified professional engine.
+                    </p>
+                </div>
 
-                            <div className="relative space-y-8">
-                                <div className="flex items-center justify-between pb-4 border-b border-white/5">
-                                    <div className="flex items-center gap-2">
-                                        <Settings2 className="w-4 h-4 text-[#00FF88]" />
-                                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Director's Controls</h3>
-                                    </div>
-                                    <History className="w-4 h-4 text-gray-700 hover:text-white transition-colors cursor-pointer" />
-                                </div>
+                {/* Control Hub */}
+                <div className="flex flex-col items-center gap-4 w-full max-w-5xl mx-auto mb-8 relative z-20">
 
-                                {/* Model Selector */}
-                                <div className="space-y-3">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest pl-1">Engine</label>
-                                    <div className="flex p-1 bg-black/40 rounded-2xl border border-white/5">
-                                        {['gen3a_turbo', 'gen3a'].map((m) => (
-                                            <button
-                                                key={m}
-                                                onClick={() => setModel(m)}
-                                                className={`flex-1 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${model === m
-                                                        ? 'bg-white text-black shadow-xl'
-                                                        : 'text-gray-500 hover:text-white'
-                                                    }`}
-                                            >
-                                                {m === 'gen3a_turbo' ? 'TURBO v3' : 'CINEMA v3'}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
+                    {/* Primary Controls (Tech Specs) */}
+                    <div className="bg-[#0A0A0A]/90 backdrop-blur-xl border border-white/10 p-2 rounded-2xl flex flex-wrap items-center justify-center gap-2 shadow-2xl">
 
-                                <VideoStyleSelector
-                                    selectedId={selectedStyle.id}
-                                    onSelect={setSelectedStyle}
-                                />
-
-                                <AspectRatioSelector
-                                    selectedId={selectedRatio.id}
-                                    onSelect={setSelectedRatio}
-                                />
-
-                                {/* Duration Setting */}
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center px-1">
-                                        <label className="text-xs font-black text-gray-500 uppercase tracking-widest">Duration</label>
-                                        <span className="text-xs font-black text-[#00FF88]">{duration}s</span>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        {[5, 10].map((d) => (
-                                            <button
-                                                key={d}
-                                                onClick={() => setDuration(d)}
-                                                className={`flex-1 py-3 rounded-2xl border transition-all font-black text-xs ${duration === d
-                                                        ? 'bg-white/10 border-[#00FF88] text-white'
-                                                        : 'bg-white/5 border-white/5 text-gray-500 hover:text-white'
-                                                    }`}
-                                            >
-                                                {d} Seconds
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Credit Estimation */}
-                                <div className="pt-4 border-t border-white/5">
-                                    <div className="p-6 bg-white/5 rounded-3xl border border-white/5 flex items-center justify-between group/cost">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-[#00FF88] rounded-full flex items-center justify-center text-black shadow-[0_0_20px_rgba(0,255,136,0.3)] group-hover/cost:scale-110 transition-transform">
-                                                <Zap className="w-5 h-5 fill-current" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black text-gray-500 uppercase">Estimated</p>
-                                                <p className="text-lg font-black tracking-tight">{estimateCredits()} Credits</p>
-                                            </div>
-                                        </div>
-                                        <Clock className="w-5 h-5 text-gray-700" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Feature Badges */}
-                        <div className="grid grid-cols-2 gap-3">
-                            {[
-                                { icon: Film, label: '4K Upscale', status: 'Ready' },
-                                { icon: Layers, label: 'Multi-Scene', status: 'Active' }
-                            ].map((badge, i) => (
-                                <div key={i} className="flex items-center gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl">
-                                    <badge.icon className="w-4 h-4 text-purple-400" />
-                                    <div>
-                                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-tighter">{badge.status}</p>
-                                        <p className="text-[10px] font-bold text-white">{badge.label}</p>
-                                    </div>
-                                </div>
+                        {/* Model Selector */}
+                        <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl">
+                            {['veo3.1', 'veo3'].map(m => (
+                                <button
+                                    key={m}
+                                    onClick={() => setSettings(prev => ({
+                                        ...prev,
+                                        model: m,
+                                        duration: m === 'veo3' ? 8 : (prev.duration === 8 ? 8 : 4)
+                                    }))}
+                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all border ${settings.model === m
+                                        ? 'bg-[#00FF88] text-black border-[#00FF88] shadow-[0_0_15px_rgba(0,255,136,0.3)]'
+                                        : 'bg-transparent text-gray-400 border-transparent hover:text-white hover:bg-white/5'
+                                        }`}
+                                >
+                                    {m === 'veo3.1' ? 'Veo 3.1' : 'Veo 3.0'}
+                                </button>
                             ))}
                         </div>
-                    </div>
 
-                    {/* RIGHT PANEL: Prompt & Generation */}
-                    <div className="lg:col-span-8 space-y-12">
-                        {/* The Studio Stage */}
-                        <div className="relative aspect-video lg:aspect-[21/9] bg-[#0C0C0C] border border-white/5 rounded-[3rem] overflow-hidden shadow-InnerHeavy group">
-                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
+                        <div className="w-px h-6 bg-white/10 mx-1 hidden sm:block" />
 
-                            {/* Dynamic Preview Placeholder */}
-                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
-                                <div className="w-20 h-20 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-700">
-                                    <Film className="w-8 h-8 text-[#00FF88]" />
-                                </div>
-                                <div className="text-center space-y-2">
-                                    <p className="text-[10px] font-black text-white uppercase tracking-[0.5em] animate-pulse">Awaiting Scene Description</p>
-                                    <p className="text-xs text-gray-500 font-bold">Use the prompt bar below to start your production</p>
-                                </div>
-                            </div>
-
-                            {/* Tech HUD Overlay */}
-                            <div className="absolute top-8 left-8 flex items-center gap-6 opacity-40">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-[#00FF88] rounded-full" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-[#00FF88]">Engine Online</span>
-                                </div>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">FPS: 24</div>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">RES: {selectedRatio.label}</div>
-                            </div>
-                        </div>
-
-                        {/* Input Hub */}
-                        <div className="relative group">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/20 via-[#00FF88]/20 to-blue-500/20 rounded-[3rem] blur-2xl group-hover:blur-3xl transition-all opacity-40 duration-1000" />
-
-                            <div className="relative bg-[#0C0C0C] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-3xl">
-                                <div className="p-1">
-                                    <PromptBar
-                                        value={prompt}
-                                        onChange={setPrompt}
-                                        onGenerate={handleGenerate}
-                                        onEnhance={handleEnhance}
-                                        isGenerating={isGenerating}
-                                        isEnhancing={isEnhancing}
-                                        placeholder="Describe the cinematic scene you want to create..."
-                                    />
-                                </div>
-
-                                <div className="px-8 py-4 bg-white/5 flex items-center justify-between">
-                                    <div className="flex items-center gap-6">
-                                        <button className="flex items-center gap-2 text-[10px] font-black text-purple-400 uppercase tracking-widest hover:brightness-125 transition-all">
-                                            <Sparkles className="w-3.5 h-3.5" />
-                                            PRO DIRECTOR
-                                        </button>
-                                        <div className="w-px h-3 bg-gray-800" />
-                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Mastering Mode</span>
-                                    </div>
-
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Physics</span>
-                                            <div className="w-8 h-1 bg-white/5 rounded-full overflow-hidden">
-                                                <div className="h-full w-2/3 bg-purple-500" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Quick Suggestions */}
-                        <div className="flex flex-wrap gap-2 justify-center">
-                            {[
-                                "Hyper-realistic portrait of a space wanderer",
-                                "Aerial shot of an ancient neon-lit city in the rain",
-                                "Macro slow motion of a splash of cosmic ink",
-                                "Ethereal forest with bioluminescent butterflies"
-                            ].map((suggestion, i) => (
+                        {/* Duration Selector */}
+                        <div className="flex items-center gap-1">
+                            {(settings.model === 'veo3' ? [8] : [4, 6, 8]).map(d => (
                                 <button
-                                    key={i}
-                                    onClick={() => setPrompt(suggestion)}
-                                    className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl text-[10px] font-bold text-gray-400 hover:text-white transition-all uppercase tracking-widest"
+                                    key={d}
+                                    onClick={() => setSettings(prev => ({ ...prev, duration: d }))}
+                                    className={`w-10 h-9 rounded-lg text-xs font-bold transition-all border flex items-center justify-center ${settings.duration === d
+                                        ? 'bg-white text-black border-white'
+                                        : 'bg-transparent text-gray-500 border-transparent hover:bg-white/5 hover:text-white'
+                                        }`}
                                 >
-                                    {suggestion.slice(0, 30)}...
+                                    {d}s
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="w-px h-6 bg-white/10 mx-1 hidden sm:block" />
+
+                        {/* Aspect Ratio Selector */}
+                        <div className="flex items-center gap-1">
+                            {['16:9', '9:16', '1:1', '21:9'].map(r => (
+                                <button
+                                    key={r}
+                                    onClick={() => setSettings(prev => ({ ...prev, aspectRatio: r }))}
+                                    className={`px-3 py-2 rounded-lg transition-all border flex items-center gap-2 ${settings.aspectRatio === r
+                                        ? 'bg-white/10 text-white border-white/20'
+                                        : 'text-gray-500 border-transparent hover:text-white hover:bg-white/5'
+                                        }`}
+                                >
+                                    <Ratio className={`w-3.5 h-3.5 ${r === '9:16' ? 'rotate-90' : ''}`} />
+                                    <span className="text-xs font-bold">{r}</span>
                                 </button>
                             ))}
                         </div>
                     </div>
 
+                    {/* Creative Controls (Prompt Builder Integration) */}
+                    <div className="flex flex-wrap items-center justify-center gap-3">
+                        {[
+                            { id: 'camera', label: 'Camera', icon: Camera, options: ["Static Shot", "Slow Pan Right", "Tracking Shot", "Drone Flyover", "Dolly Zoom", "FPV"] },
+                            { id: 'lighting', label: 'Lighting', icon: Zap, options: ["Cinematic", "Natural", "Cyberpunk", "Golden Hour", "Studio", "Dark & Moody"] },
+                            { id: 'style', label: 'Film Look', icon: Palette, options: ["Photorealistic", "35mm Film", "Analog VHS", "Anime", "Black & White", "Vintage"] }
+                        ].map((control) => (
+                            <div key={control.id} className="relative group">
+                                <select
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val && !prompt.includes(val)) {
+                                            setPrompt(prev => prev ? `${prev}, ${val}` : val);
+                                            toast.success(`Added ${control.label}: ${val}`);
+                                        }
+                                    }}
+                                    value=""
+                                >
+                                    <option value="" disabled>Select {control.label}</option>
+                                    {control.options.map(opt => (
+                                        <option key={opt} value={opt} className="bg-black text-white">{opt}</option>
+                                    ))}
+                                </select>
+                                <button className="flex items-center gap-2 px-4 py-2.5 bg-[#141414] border border-white/5 rounded-xl hover:border-white/20 hover:bg-white/5 transition-all group-hover:shadow-[0_0_15px_rgba(255,255,255,0.05)]">
+                                    <control.icon className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#00FF88] transition-colors" />
+                                    <span className="text-xs font-bold text-gray-300 group-hover:text-white">{control.label}</span>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+
                 </div>
+
+                {/* Main Input Field */}
+                <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/20 via-[#00FF88]/20 to-blue-500/20 rounded-[28px] blur-lg group-hover:blur-xl transition-all opacity-50 group-hover:opacity-100 duration-1000" />
+                    <div className="relative">
+                        <PromptBar
+                            value={prompt}
+                            onChange={setPrompt}
+                            onGenerate={handleGenerate}
+                            onEnhance={handleEnhance}
+                            isGenerating={isGenerating}
+                            isEnhancing={isEnhancing}
+                            placeholder="Describe your scene (e.g., 'A cyberpunk street in rain, 4k')..."
+                            settings={settings}
+                            onSettingsChange={(newSettings) => setSettings(prev => ({ ...prev, ...newSettings }))}
+                        />
+                        {/* Cost Badge */}
+                        <div className="absolute -top-3 right-8 px-3 py-1 bg-[#1A1A1A] border border-white/10 rounded-full flex items-center gap-2 shadow-xl z-20">
+                            <Zap className="w-3 h-3 text-yellow-500" />
+                            <span className="text-[10px] font-bold text-gray-400">EST. COST: <span className="text-[#00FF88]">{estimateCredits()} CREDITS</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer Tools */}
+                <div className="flex items-center justify-center gap-6 text-sm text-gray-500">
+                    <PromptGuide />
+
+                    <button
+                        onClick={() => setShowBuilder(true)}
+                        className="flex items-center gap-2 text-xs font-semibold text-[#00FF88] hover:text-emerald-400 transition-colors uppercase tracking-wider"
+                    >
+                        <Zap className="w-4 h-4" />
+                        Smart Prompt Builder
+                    </button>
+                </div>
+
+                {showBuilder && (
+                    <PromptBuilder
+                        isOpen={showBuilder}
+                        onClose={() => setShowBuilder(false)}
+                        onApply={(newPrompt) => {
+                            setPrompt(newPrompt);
+                            toast.success("Structure Applied to Prompt Input");
+                        }}
+                        currentPrompt={prompt}
+                    />
+                )}
+
             </GSAPTransition>
         </div>
     );

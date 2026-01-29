@@ -45,8 +45,8 @@ const TextToAudioPage = () => {
         try {
             // Step 1: Start real generation
             const result = await aiService.generateAudio({
-                prompt,
-                voiceId: "cgSgspJ2msm6clMCkdW9" // Default to neutral voice for now 
+                prompt: `[${style} Style] ${prompt}`,
+                voiceId: "cgSgspJ2msm6clMCkdW9"
             });
 
             // Step 2: Polling for status

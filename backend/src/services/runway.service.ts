@@ -130,19 +130,26 @@ class RunwayService {
      * NO OTHER MODELS ALLOWED
      */
     async textToVideo(params: RunwayGenerationParams): Promise<RunwayResult> {
-        // Models: gen3a_turbo
-        const model = params.model || 'gen3a_turbo';
+        // Models: Strictly veo3.1 or veo3 as per user request
+        let model = params.model || 'veo3.1';
 
-        // Enforce supported durations
+        // Enforce strictly supported models
+        if (model !== 'veo3' && model !== 'veo3.1') {
+            model = 'veo3.1'; // Default to newest
+        }
+
+        // Duration Logic:
         // veo3: 8s only
         // veo3.1: 4s, 6s, 8s
         let duration = params.duration || 6;
-        if (model === 'gen3a') {
-            duration = 10;
-        } else {
-            // gen3a_turbo supports 5s, 10s usually, adjust based on actual provider
-            if (duration <= 5) duration = 5;
-            else duration = 10;
+
+        if (model === 'veo3') {
+            duration = 8;
+        } else if (model === 'veo3.1') {
+            // Snap to closest supported duration (4, 6, 8)
+            if (duration <= 4) duration = 4;
+            else if (duration <= 6) duration = 6;
+            else duration = 8;
         }
 
         const creditsPerSecond = 5;
@@ -209,12 +216,19 @@ class RunwayService {
      * Image to Video Generation
      */
     async imageToVideo(params: RunwayGenerationParams): Promise<RunwayResult> {
-        const model = params.model || 'gen3a_turbo';
-        let duration = params.duration || 5;
-        if (model === 'gen3a') duration = 10;
-        else {
-            if (duration <= 5) duration = 5;
-            else duration = 10;
+        let model = params.model || 'veo3.1';
+
+        if (model !== 'veo3' && model !== 'veo3.1') {
+            model = 'veo3.1';
+        }
+
+        let duration = params.duration || 6;
+        if (model === 'veo3') {
+            duration = 8;
+        } else if (model === 'veo3.1') {
+            if (duration <= 4) duration = 4;
+            else if (duration <= 6) duration = 6;
+            else duration = 8;
         }
 
         const totalCredits = duration * 5;
