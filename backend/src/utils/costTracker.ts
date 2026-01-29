@@ -39,7 +39,9 @@ class CostTracker {
         'veo-2.0-24s': 0.80,
 
         // RunwayML Models (Locked Basic/Cheap)
-        'runway-image_generation': 0.01,
+        'runway-image_generation': 0.05, // Generic catch-all
+        'runway-gen4_image': 0.05,       // Explicit Image Model
+        'runway-gen3a': 0.25,            // Gen-3 Alpha (text-to-video)
         'runway-gen3a_turbo': 0.25,
         'runway-veo3.1_fast': 0.50,
     };

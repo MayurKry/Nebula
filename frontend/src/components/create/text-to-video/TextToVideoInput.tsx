@@ -19,8 +19,8 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
 
     // Default Settings
     const [settings, setSettings] = useState({
-        model: 'gen3a_turbo', // 'gen3a_turbo' | 'veo3.1_fast'
-        duration: 5,
+        model: 'veo3.1_fast',
+        duration: 6,
         aspectRatio: '16:9',
         quality: 'Pro'
     });
@@ -83,67 +83,54 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
                 </div>
 
                 {/* Control Grid (Visible Controls) */}
-                <div className="bg-[#141414] border border-white/5 p-1 rounded-2xl flex flex-wrap items-center justify-center gap-2 md:inline-flex mx-auto mb-6 shadow-2xl">
+                <div className="flex justify-center">
+                    <div className="bg-[#141414] border border-white/5 p-1 rounded-2xl flex flex-wrap items-center justify-center gap-2 md:inline-flex mb-6 shadow-2xl">
+                        {/* Model Display (Phase 1 - Single Model) */}
+                        <div className="flex items-center gap-2 px-4 py-2 bg-black/40 rounded-xl border border-white/10">
+                            <Sparkles className="w-3.5 h-3.5 text-[#00FF88]" />
+                            <div className="flex flex-col">
+                                <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Model</span>
+                                <span className="text-xs font-bold text-white leading-none">Veo 3.1 Fast</span>
+                            </div>
+                        </div>
 
-                    {/* Model Selector */}
-                    <div className="flex items-center gap-1 bg-black/40 rounded-xl p-1 border border-white/5">
-                        {[
-                            { id: 'gen3a_turbo', label: 'Fast', sub: 'Gen-3', icon: Zap, color: 'text-purple-400' },
-                            { id: 'veo3.1_fast', label: 'Pro', sub: 'Veo', icon: Sparkles, color: 'text-[#00FF88]' }
-                        ].map(m => (
-                            <button
-                                key={m.id}
-                                onClick={() => setSettings(prev => ({ ...prev, model: m.id }))}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${settings.model === m.id
-                                    ? 'bg-white/10 text-white border border-white/10 shadow-lg'
-                                    : 'text-gray-500 hover:text-gray-300'
-                                    }`}
-                            >
-                                <m.icon className={`w-3.5 h-3.5 ${m.color}`} />
-                                <div className="flex flex-col text-left">
-                                    <span className="text-[9px] font-bold uppercase tracking-tighter opacity-70">{m.sub}</span>
-                                    <span className="text-[11px] font-bold leading-none">{m.label}</span>
-                                </div>
-                            </button>
-                        ))}
-                    </div>
+                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
 
-                    <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
+                        {/* Duration Selector */}
+                        <div className="flex items-center gap-2">
+                            {[6].map(d => (
+                                <button
+                                    key={d}
+                                    onClick={() => setSettings(prev => ({ ...prev, duration: d }))}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${settings.duration === d
+                                        ? 'bg-[#00FF88] text-black border-[#00FF88] shadow-[0_0_15px_rgba(0,255,136,0.3)]'
+                                        : 'bg-transparent text-gray-500 border-transparent hover:bg-white/5 hover:text-white'
+                                        }`}
+                                >
+                                    {d}s
+                                </button>
+                            ))}
+                        </div>
 
-                    {/* Duration Selector */}
-                    <div className="flex items-center gap-2">
-                        {[5, 10].map(d => (
-                            <button
-                                key={d}
-                                onClick={() => setSettings(prev => ({ ...prev, duration: d }))}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${settings.duration === d
-                                    ? 'bg-[#00FF88] text-black border-[#00FF88] shadow-[0_0_15px_rgba(0,255,136,0.3)]'
-                                    : 'bg-transparent text-gray-500 border-transparent hover:bg-white/5 hover:text-white'
-                                    }`}
-                            >
-                                {d}s
-                            </button>
-                        ))}
-                    </div>
+                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
 
-                    <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
-
-                    {/* Aspect Ratio Selector */}
-                    <div className="flex items-center gap-1">
-                        {['16:9', '9:16'].map(r => (
-                            <button
-                                key={r}
-                                onClick={() => setSettings(prev => ({ ...prev, aspectRatio: r }))}
-                                className={`px-3 py-2 rounded-lg transition-all border flex items-center gap-2 ${settings.aspectRatio === r
-                                    ? 'bg-white text-black border-white shadow-lg'
-                                    : 'text-gray-500 border-transparent hover:text-white hover:bg-white/5'
-                                    }`}
-                                title={`Aspect Ratio ${r}`}
-                            >
-                                <Ratio className={`w-3.5 h-3.5 ${r === '9:16' ? 'rotate-90' : ''}`} />
-                                <span className="text-xs font-bold">{r}</span>
-                            </button>
-                        ))}
+                        {/* Aspect Ratio Selector */}
+                        <div className="flex items-center gap-1">
+                            {['16:9', '9:16'].map(r => (
+                                <button
+                                    key={r}
+                                    onClick={() => setSettings(prev => ({ ...prev, aspectRatio: r }))}
+                                    className={`px-3 py-2 rounded-lg transition-all border flex items-center gap-2 ${settings.aspectRatio === r
+                                        ? 'bg-white text-black border-white shadow-lg'
+                                        : 'text-gray-500 border-transparent hover:text-white hover:bg-white/5'
+                                        }`}
+                                    title={`Aspect Ratio ${r}`}
+                                >
+                                    <Ratio className={`w-3.5 h-3.5 ${r === '9:16' ? 'rotate-90' : ''}`} />
+                                    <span className="text-xs font-bold">{r}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 

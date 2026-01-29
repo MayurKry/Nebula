@@ -21,7 +21,7 @@ export interface RunwayResult {
 
 class RunwayService {
     private readonly apiKey: string;
-    private readonly baseUrl = "https://api.runwayml.com/v1";
+    private readonly baseUrl = "https://api.dev.runwayml.com/v1";
 
     constructor() {
         this.apiKey = (process.env.RUNWAYML_API_KEY || "").trim();
@@ -127,12 +127,12 @@ class RunwayService {
      * NO OTHER MODELS ALLOWED
      */
     async textToVideo(params: RunwayGenerationParams): Promise<RunwayResult> {
-        const model = params.model || "gen3a_turbo"; // Dynamic model selection
+        // Phase 1: Use veo3.1_fast (supported on this API key for text-to-video)
+        // Requirements: duration must be 4, 6, or 8 seconds.
+        const model = 'veo3.1_fast';
+        const duration = 6;
 
-        // Enforce supported durations for Gen-3 Alpha Turbo: 5, 10 seconds
-        let duration = params.duration || 5;
-        if (duration <= 7) duration = 5;
-        else duration = 10;
+        logger.info(`[RunwayService] 🎬 Using ${model} with duration ${duration}s`);
 
         const creditsPerSecond = 5; // Assumption for Veo
         const totalCredits = duration * creditsPerSecond;
