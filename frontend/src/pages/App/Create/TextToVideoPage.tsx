@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { aiService } from '@/services/ai.service';
 import TextToVideoInput from '@/components/create/text-to-video/TextToVideoInput';
@@ -34,7 +33,7 @@ const TextToVideoPage = () => {
             const pollInterval = setInterval(async () => {
                 try {
                     const statusRes = await aiService.checkVideoStatus(result.jobId);
-                    if (statusRes.status === 'completed' || statusRes.status === 'succeeded') {
+                    if (statusRes.status === 'completed') {
                         clearInterval(pollInterval);
 
                         setGenerationData({
