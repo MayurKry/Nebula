@@ -132,13 +132,14 @@ class AIVideoService {
 
             return {
                 jobId: `demo_${uuidv4()}`,
-                status: "succeeded",
+                status: "succeeded", // Keeping as succeeded to show the video, but attaching error for debug
                 videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
                 thumbnailUrl: "https://via.placeholder.com/1280x720/0a0a0a/00FF88?text=Demo+Video+Result",
                 originalPrompt,
                 enhancedPrompt: sanitizedPrompt,
                 creditsUsed: 0,
-                estimatedCost: 0
+                estimatedCost: 0,
+                error: `FALLBACK MODE ACTIVE. Real Error: ${error.message}`
             };
         }
     }
