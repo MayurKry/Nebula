@@ -128,8 +128,12 @@ class AIVideoService {
 
         } catch (error: any) {
             logger.error(`[AI Video Service] ❌ API call failed: ${error.message}`);
-            logger.warn(`[AI Video Service] 🛡️ EMERGENCY FALLBACK: Returning high-quality demo video to prevent presentation crash.`);
+            // logger.warn(`[AI Video Service] 🛡️ EMERGENCY FALLBACK: Returning high-quality demo video to prevent presentation crash.`);
 
+            // THROW THE ERROR to the controller so the user sees it
+            throw new Error(`RunwayGenerationFailed: ${error.message}`);
+
+            /*
             return {
                 jobId: `demo_${uuidv4()}`,
                 status: "succeeded", // Keeping as succeeded to show the video, but attaching error for debug
@@ -141,6 +145,7 @@ class AIVideoService {
                 estimatedCost: 0,
                 error: `FALLBACK MODE ACTIVE. Real Error: ${error.message}`
             };
+            */
         }
     }
 
