@@ -62,6 +62,8 @@ const voices = [
     { id: 'Leslie', name: 'Maya', desc: 'Indian Female' },
     { id: 'Thomas', name: 'Giovanni', desc: 'Italian Male' },
     { id: 'Charlotte', name: 'Mimi', desc: 'French Female' },
+    { id: 'Serena', name: 'Serena', desc: 'Neutral Female' },
+    { id: 'Nicole', name: 'Nicole', desc: 'Professional Female' },
 ];
 
 interface AudioResult {
@@ -265,13 +267,13 @@ const TextToAudioPage = () => {
                             </button>
                             <select
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                value={voice.id}
+                                value={voice.name} // Use name as unique identifier for UI state
                                 onChange={(e) => {
-                                    const selected = voices.find(v => v.id === e.target.value);
+                                    const selected = voices.find(v => v.name === e.target.value);
                                     if (selected) setVoice(selected);
                                 }}
                             >
-                                {voices.map(v => <option key={v.id} value={v.id}>{v.name} ({v.desc})</option>)}
+                                {voices.map(v => <option key={v.name} value={v.name}>{v.name} ({v.desc})</option>)}
                             </select>
                         </div>
                     </div>
