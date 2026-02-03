@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { aiService } from '@/services/ai.service';
@@ -26,7 +26,7 @@ const TextToVideoPage = () => {
         }
     }, [projectId]);
 
-    const pollIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+    const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     // Clean up polling on unmount
     useEffect(() => {
