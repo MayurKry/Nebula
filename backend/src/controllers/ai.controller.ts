@@ -1001,6 +1001,8 @@ export const generateAudio = asyncHandler(async (req: Request, res: Response) =>
         return responseHandler(res, 400, "Prompt is required");
     }
 
+    console.log(`[AudioController] 🎙️ Request received | Prompt: ${prompt.substring(0, 30)}... | VoiceId: ${voiceId}`);
+
     try {
         const result = await aiAudioService.generateAudio({ prompt, voiceId });
 

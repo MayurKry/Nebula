@@ -276,8 +276,9 @@ class RunwayService {
      */
     async textToAudio(params: RunwayGenerationParams): Promise<RunwayResult> {
         const estimatedCost = 0.05; // Base cost for audio
+        const presetId = params.voiceId || "Leslie";
 
-        logger.info(`[RunwayService] 🔊 Text to Speech | Voice: ${params.voiceId || "default"}`);
+        logger.info(`[RunwayService] 🔊 Sending Text-to-Speech Request | Voice: ${presetId}`);
 
         try {
             const response = await axios.post(
@@ -287,7 +288,7 @@ class RunwayService {
                     promptText: params.prompt,
                     voice: {
                         type: "runway-preset",
-                        presetId: params.voiceId || "Leslie"
+                        presetId: presetId
                     }
                 },
                 {
