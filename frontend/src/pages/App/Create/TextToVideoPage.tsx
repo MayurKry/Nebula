@@ -26,6 +26,17 @@ const TextToVideoPage = () => {
         }
     }, [projectId]);
 
+    const pollIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    // Clean up polling on unmount
+    useEffect(() => {
+        return () => {
+            if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+            }
+        };
+    }, []);
+
     const handleGenerate = async (data: { prompt: string; settings: any }) => {
         setIsGenerating(true);
 
@@ -57,7 +68,7 @@ const TextToVideoPage = () => {
                     const status = statusRes.status as string;
 
                     if (status === 'completed' || status === 'succeeded') { // Handle both statii
-                        clearInterval(pollInterval);
+                        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
 
                         // Construct success result
                         const result = {
@@ -84,11 +95,11 @@ const TextToVideoPage = () => {
                             settings: data.settings,
                         });
                     } else if (statusRes.status === 'failed') {
-                        clearInterval(pollInterval);
+                        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
                         setIsGenerating(false);
                         toast.error("Video generation failed via API.");
                     } else if (attempts >= maxAttempts) {
-                        clearInterval(pollInterval);
+                        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
                         setIsGenerating(false);
                         toast.error("Generation timed out. Please check History later.");
                     }
@@ -99,12 +110,13 @@ const TextToVideoPage = () => {
                 }
             }, 10000); // Poll every 10 seconds
 
+            pollIntervalRef.current = pollInterval;
+
         } catch (error) {
             console.error("Generation error:", error);
             toast.error("Failed to start generation.");
             setIsGenerating(false);
         }
-        // Note: moved setIsGenerating(false) into polling completion to keep loader active
     };
 
     const handleSaveToAssets = async (scene: any) => {
