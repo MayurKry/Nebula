@@ -93,7 +93,7 @@ const TextToAudioPage = () => {
         try {
             // Step 1: Start real generation
             const result = await aiService.generateAudio({
-                prompt: `[${style} Style, Language: ${language.name}] ${prompt}`,
+                prompt: prompt, // Send ONLY the clean prompt now
                 voiceId: voice.id
             });
 
