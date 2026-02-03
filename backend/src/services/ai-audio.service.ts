@@ -42,16 +42,8 @@ class AIAudioService {
                 estimatedCost: 0.05
             };
         } catch (error: any) {
-            console.error("AI Audio Service Error (Catch Block Reached):", error.message);
-
-            // Fallback to demo
-            return {
-                jobId: `demo_audio_${Date.now()}`,
-                status: "succeeded",
-                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-                creditsUsed: 0,
-                estimatedCost: 0
-            };
+            console.error("AI Audio Service Error:", error.message);
+            throw error; // Throw real error to see it in logs/response
         }
     }
 
