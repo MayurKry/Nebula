@@ -269,6 +269,7 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
     let prompt: string = "";
     let style: string = "Cinematic";
     let duration: number = 6;
+    let job: any = null;
 
     try {
         const body = req.body;
@@ -289,7 +290,7 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
 
         // 1. Create Job & Deduct Credits
         // This ensures the user has enough credits BEFORE we call the expensive AI service
-        const job = await jobService.createJob({
+        job = await jobService.createJob({
             userId: userId.toString(),
             module: "text_to_video",
             input: {
@@ -350,6 +351,26 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
 
     } catch (error: any) {
         console.error("Video generation failed:", error.message, error.stack);
+
+        // Auto-Refund Logic: Return credits if generation fails
+        if (job && userId) {
+            try {
+                const { UserModel } = await import("../models/user.model");
+                const { JobModel } = await import("../models/job.model");
+
+                if (job.creditsUsed > 0) {
+                    await UserModel.findByIdAndUpdate(userId, { $inc: { credits: job.creditsUsed } });
+                    console.log(`[Auto-Refund] Returned ${job.creditsUsed} credits to ${userId} for failed job ${job._id}`);
+                }
+
+                await JobModel.findByIdAndUpdate(job._id, {
+                    status: 'failed',
+                    error: { message: error.message, code: 'GENERATION_FAILED', timestamp: new Date(), refunded: true }
+                });
+            } catch (refundError) {
+                console.error("Failed to process auto-refund:", refundError);
+            }
+        }
 
         // Log to file for visibility
         try {
