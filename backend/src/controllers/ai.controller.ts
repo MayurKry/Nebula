@@ -296,7 +296,8 @@ export const generateVideo = asyncHandler(async (req: Request, res: Response) =>
             input: {
                 prompt,
                 config: { style, duration, model }
-            }
+            },
+            skipProcessing: true // <--- IMPORTANT: Prevent double generation
         });
 
         // 2. Call AI Video Service

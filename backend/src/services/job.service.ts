@@ -15,6 +15,7 @@ class JobService {
         input: IJob["input"];
         metadata?: Record<string, any>;
         cost?: number;
+        skipProcessing?: boolean;
     }): Promise<IJob> {
         try {
             const cost = data.cost !== undefined ? data.cost : this.calculateCredits(data.module, data.input);
@@ -47,8 +48,10 @@ class JobService {
             logger.info(`Job created: ${job._id} for module ${data.module}`);
 
             // In a real implementation, this would trigger the job processor
-            // For now, we'll simulate async processing
-            this.processJobAsync((job._id as any).toString());
+            // For now, we'll simulate async processing ONLY if not skipped
+            if (!data.skipProcessing) {
+                this.processJobAsync((job._id as any).toString());
+            }
 
             return job;
         } catch (error: any) {
