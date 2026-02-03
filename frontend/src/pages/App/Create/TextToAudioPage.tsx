@@ -58,9 +58,10 @@ const voices = [
     { id: 'James', name: 'James', desc: 'US Male' },
     { id: 'Thomas', name: 'Thomas', desc: 'UK Male' },
     { id: 'Charlotte', name: 'Charlotte', desc: 'UK Female' },
-    { id: 'Maya', name: 'Maya', desc: 'Indian Female' },
-    { id: 'Giovanni', name: 'Giovanni', desc: 'Italian Male' },
-    { id: 'Mimi', name: 'Mimi', desc: 'French Female' },
+    { id: 'James', name: 'Rahul', desc: 'Indian Male' },
+    { id: 'Leslie', name: 'Maya', desc: 'Indian Female' },
+    { id: 'Thomas', name: 'Giovanni', desc: 'Italian Male' },
+    { id: 'Charlotte', name: 'Mimi', desc: 'French Female' },
 ];
 
 interface AudioResult {
