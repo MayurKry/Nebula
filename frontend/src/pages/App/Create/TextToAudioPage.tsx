@@ -160,6 +160,34 @@ const TextToAudioPage = () => {
         setActiveAudio(activeAudio === id ? null : id);
     };
 
+    const handleDownload = async (url: string, filename: string) => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename || 'generated-audio.mp3';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+            toast.success("Download started");
+        } catch (e) {
+            console.error("Download failed:", e);
+            toast.error("Failed to download audio");
+        }
+    };
+
+    const handleShare = (url: string) => {
+        navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard!");
+    };
+
+    const handleAddToStudio = () => {
+        toast.info("Adding to Studio... This feature will be available in the next release.");
+    };
+
     return (
         <div className="min-h-screen bg-[#0A0A0A] p-4 flex flex-col items-center relative overflow-hidden">
             <main className="w-full max-w-5xl z-10 flex flex-col items-center">
@@ -370,17 +398,35 @@ const TextToAudioPage = () => {
                                 {/* Controls */}
                                 <div className="flex items-center justify-between mt-6 pt-6 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <div className="flex items-center gap-2">
-                                        <button className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors" title="Download">
+                                        <button
+                                            onClick={() => handleDownload(audio.url, `nebula-audio-${audio.id}.mp3`)}
+                                            className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                                            title="Download"
+                                        >
                                             <Download className="w-4 h-4" />
                                         </button>
-                                        <button className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors" title="Add to Studio">
+                                        <button
+                                            onClick={handleAddToStudio}
+                                            className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                                            title="Add to Studio"
+                                        >
                                             <Layers className="w-4 h-4" />
                                         </button>
-                                        <button className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors" title="Share">
+                                        <button
+                                            onClick={() => handleShare(audio.url)}
+                                            className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                                            title="Share"
+                                        >
                                             <Share2 className="w-4 h-4" />
                                         </button>
                                     </div>
-                                    <button className="px-3 py-1.5 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-xs font-bold flex items-center gap-2">
+                                    <button
+                                        onClick={() => {
+                                            setPrompt(audio.title.replace('...', ''));
+                                            handleGenerate();
+                                        }}
+                                        className="px-3 py-1.5 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-xs font-bold flex items-center gap-2"
+                                    >
                                         <RotateCw className="w-3.5 h-3.5" />
                                         Regenerate
                                     </button>

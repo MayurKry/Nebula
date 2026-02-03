@@ -19,11 +19,12 @@ interface TextToVideoResultProps {
         settings: any;
     };
     onBack: () => void;
+    onContinue: () => void;
     onSaveToAssets: (scene: Scene) => void;
     onRegenerate: (sceneId: string, newPrompt: string) => void;
 }
 
-const TextToVideoResult: React.FC<TextToVideoResultProps> = ({ project, onBack, onSaveToAssets }) => {
+const TextToVideoResult: React.FC<TextToVideoResultProps> = ({ project, onBack, onContinue, onSaveToAssets }) => {
     const isMultiScene = project.scenes.length > 1;
     const [isTrimmerOpen, setIsTrimmerOpen] = useState(false);
     const [currentSceneForTrim, setCurrentSceneForTrim] = useState<Scene | null>(null);
@@ -215,7 +216,7 @@ const TextToVideoResult: React.FC<TextToVideoResultProps> = ({ project, onBack, 
                         <div className="pt-8 border-t border-white/5">
                             <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-4">Continuity</h3>
                             <button
-                                onClick={onBack} // Ideally this opens a "Generate Next Scene" mode
+                                onClick={onContinue}
                                 className="w-full py-4 bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 font-bold rounded-xl flex items-center justify-center gap-2 border border-purple-500/30 transition-all dashed"
                             >
                                 <Plus className="w-5 h-5" />
@@ -310,6 +311,22 @@ const TextToVideoResult: React.FC<TextToVideoResultProps> = ({ project, onBack, 
                         </div>
                     </GSAPTransition>
                 ))}
+
+                {/* Multi-scene add button at bottom */}
+                <GSAPTransition animation="fade-in-up" delay={project.scenes.length * 0.1}>
+                    <button
+                        onClick={onContinue}
+                        className="w-full py-12 border-2 border-dashed border-white/5 hover:border-purple-500/30 hover:bg-purple-500/5 rounded-2xl flex flex-col items-center justify-center gap-4 transition-all group"
+                    >
+                        <div className="w-12 h-12 bg-purple-500/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Plus className="w-6 h-6 text-purple-400" />
+                        </div>
+                        <div className="text-center">
+                            <h4 className="text-white font-bold">Add Next Scene</h4>
+                            <p className="text-gray-500 text-sm">Continue building your cinematic story</p>
+                        </div>
+                    </button>
+                </GSAPTransition>
             </div>
 
             <TrimmerModal

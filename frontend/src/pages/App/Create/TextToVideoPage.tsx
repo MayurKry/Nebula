@@ -15,7 +15,8 @@ const TextToVideoPage = () => {
     // Workflow State
     const [step, setStep] = useState<'input' | 'result'>('input');
     const [isGenerating, setIsGenerating] = useState(false);
-    const [generationData, setGenerationData] = useState<any>(null);
+    const [scenes, setScenes] = useState<any[]>([]);
+    const [lastSettings, setLastSettings] = useState<any>(null);
 
     // Auto-load if projectId is present (mocking this behavior for consistency with previous version)
     useEffect(() => {
@@ -71,19 +72,16 @@ const TextToVideoPage = () => {
                         if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
 
                         // Construct success result
-                        const result = {
-                            prompt: data.prompt,
-                            settings: data.settings,
-                            scenes: [{
-                                id: jobId,
-                                description: data.prompt,
-                                imageUrl: statusRes.thumbnailUrl || statusRes.videoUrl, // Use video thumbnail or url
-                                videoUrl: statusRes.videoUrl,
-                                duration: data.settings.duration
-                            }]
+                        const newScene = {
+                            id: jobId,
+                            description: data.prompt,
+                            imageUrl: statusRes.thumbnailUrl || statusRes.videoUrl,
+                            videoUrl: statusRes.videoUrl,
+                            duration: data.settings.duration
                         };
 
-                        setGenerationData(result);
+                        setScenes(prev => [...prev, newScene]);
+                        setLastSettings(data.settings);
                         setStep('result');
                         setIsGenerating(false);
                         toast.success("Video Generated Successfully!");
@@ -136,8 +134,17 @@ const TextToVideoPage = () => {
     };
 
     const handleRegenerate = async (sceneId: string, newPrompt: string) => {
-        // Mock regeneration of a specific scene
-        toast.info(`Regenerating scene ${sceneId} with: ${newPrompt.slice(0, 10)}...`);
+        // Mock regeneration
+        toast.info(`Regenerating scene ${sceneId} with new prompt: ${newPrompt.slice(0, 20)}...`);
+    };
+
+    const handleContinue = () => {
+        setStep('input');
+    };
+
+    const handleReset = () => {
+        setScenes([]);
+        setStep('input');
     };
 
     return (
@@ -163,10 +170,11 @@ const TextToVideoPage = () => {
                 />
             )}
 
-            {step === 'result' && generationData && (
+            {step === 'result' && scenes.length > 0 && (
                 <TextToVideoResult
-                    project={generationData}
-                    onBack={() => setStep('input')}
+                    project={{ scenes, settings: lastSettings }}
+                    onBack={handleReset}
+                    onContinue={handleContinue}
                     onSaveToAssets={handleSaveToAssets}
                     onRegenerate={handleRegenerate}
                 />
