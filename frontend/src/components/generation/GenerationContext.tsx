@@ -27,6 +27,7 @@ export interface GenerationSettings {
     referenceImage?: string;
     model?: string;
     voiceId?: string;
+    language?: string;
 }
 
 interface GenerationContextType {

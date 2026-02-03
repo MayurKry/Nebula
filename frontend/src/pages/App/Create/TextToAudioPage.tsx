@@ -4,7 +4,7 @@ import {
     Loader2,
     RotateCw, Download,
     Volume2, Play, Pause,
-    Share2, Layers, Disc
+    Share2, Layers, Disc, Wand2
 } from 'lucide-react';
 import { useGeneration } from '@/components/generation/GenerationContext';
 import { aiService } from '@/services/ai.service';
@@ -16,6 +16,27 @@ const audioStyles = [
     'Cinematic Orchestral', 'Cyberpunk Synth', 'Lo-Fi Chill',
     'Epic Hybrid', 'Ambient Space', 'Fast Action',
     'Horror Suspense', 'Cheerful Pop', 'Acoustic Folk'
+];
+
+const languages = [
+    { name: 'English (US)', code: 'en-US' },
+    { name: 'English (UK)', code: 'en-GB' },
+    { name: 'Spanish', code: 'es' },
+    { name: 'French', code: 'fr' },
+    { name: 'German', code: 'de' },
+    { name: 'Hindi', code: 'hi' },
+    { name: 'Japanese', code: 'ja' },
+    { name: 'Chinese', code: 'zh' },
+];
+
+const voices = [
+    { id: 'Leslie', name: 'Leslie', desc: 'US Female' },
+    { id: 'James', name: 'James', desc: 'US Male' },
+    { id: 'Thomas', name: 'Thomas', desc: 'UK Male' },
+    { id: 'Charlotte', name: 'Charlotte', desc: 'UK Female' },
+    { id: 'Maya', name: 'Maya', desc: 'Indian Female' },
+    { id: 'Giovanni', name: 'Giovanni', desc: 'Italian Male' },
+    { id: 'Mimi', name: 'Mimi', desc: 'French Female' },
 ];
 
 interface AudioResult {
@@ -33,6 +54,8 @@ const TextToAudioPage = () => {
     const [prompt, setPrompt] = useState('');
     const [style, setStyle] = useState('Epic Hybrid');
     const [duration, setDuration] = useState('30s');
+    const [language, setLanguage] = useState(languages[0]);
+    const [voice, setVoice] = useState(voices[0]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isEnhancing, setIsEnhancing] = useState(false);
     const [results, setResults] = useState<AudioResult[]>([]);
@@ -45,8 +68,8 @@ const TextToAudioPage = () => {
         try {
             // Step 1: Start real generation
             const result = await aiService.generateAudio({
-                prompt: `[${style} Style] ${prompt}`,
-                voiceId: "cgSgspJ2msm6clMCkdW9"
+                prompt: `[${style} Style, Language: ${language.name}] ${prompt}`,
+                voiceId: voice.id
             });
 
             // Step 2: Polling for status
@@ -79,7 +102,7 @@ const TextToAudioPage = () => {
                 addJob({
                     type: 'audio' as any,
                     prompt: prompt,
-                    settings: { style, voiceId: "neutral" },
+                    settings: { style, voiceId: voice.id, language: language.code },
                 });
             } else {
                 throw new Error("Generation timed out or failed on provider");
@@ -178,6 +201,52 @@ const TextToAudioPage = () => {
                                 onChange={(e) => setStyle(e.target.value)}
                             >
                                 {audioStyles.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
+
+                        {/* Language Selector */}
+                        <div className="relative group">
+                            <button className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all border text-gray-500 border-transparent hover:text-white hover:bg-white/5 min-w-[120px]">
+                                <Volume2 className="w-3.5 h-3.5" />
+                                <div className="flex flex-col text-left">
+                                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Language</span>
+                                    <span className="text-xs font-bold text-white truncate max-w-[80px]">{language.name}</span>
+                                </div>
+                            </button>
+                            <select
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                value={language.code}
+                                onChange={(e) => {
+                                    const selected = languages.find(l => l.code === e.target.value);
+                                    if (selected) setLanguage(selected);
+                                }}
+                            >
+                                {languages.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
+
+                        {/* Voice Selector */}
+                        <div className="relative group">
+                            <button className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all border text-gray-500 border-transparent hover:text-white hover:bg-white/5 min-w-[140px]">
+                                <Wand2 className="w-3.5 h-3.5" />
+                                <div className="flex flex-col text-left">
+                                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Character Voice</span>
+                                    <span className="text-xs font-bold text-white truncate max-w-[100px]">{voice.name} ({voice.desc})</span>
+                                </div>
+                            </button>
+                            <select
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                value={voice.id}
+                                onChange={(e) => {
+                                    const selected = voices.find(v => v.id === e.target.value);
+                                    if (selected) setVoice(selected);
+                                }}
+                            >
+                                {voices.map(v => <option key={v.id} value={v.id}>{v.name} ({v.desc})</option>)}
                             </select>
                         </div>
                     </div>
