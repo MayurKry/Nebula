@@ -11,7 +11,9 @@ const SignUpPage = () => {
 
   const { register } = useAuth();
 
-  const [currentStep, setCurrentStep] = useState<'account' | 'details' | 'payment' | 'success'>('account');
+  const [currentStep, setCurrentStep] = useState<'plan' | 'account' | 'details' | 'payment' | 'success'>(
+    searchParams.get('plan') ? 'account' : 'plan'
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -173,6 +175,57 @@ const SignUpPage = () => {
 
   const renderStep = () => {
     switch (currentStep) {
+      case 'plan':
+        return (
+          <div className="space-y-6">
+            <div className="space-y-2 mb-8">
+              <h2 className="text-2xl font-black text-white tracking-tight">Choose Your Plan</h2>
+              <p className="text-sm text-gray-500 font-medium">Select a plan to start your creative journey with Nebula.</p>
+            </div>
+
+            <div className="space-y-4">
+              {[
+                { id: 'starter', name: 'Starter', price: '$0', credits: '100', desc: 'Perfect for exploring AI creation' },
+                { id: 'creator', name: 'Creator', price: '$79', credits: '1,000', desc: 'For professional creators' },
+                { id: 'team', name: 'Team', price: '$249', credits: '5,000', desc: 'For small teams & agencies' }
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, plan: p.id }));
+                    setCurrentStep('account');
+                  }}
+                  className={`w-full p-6 bg-[#141414] border rounded-3xl text-left transition-all hover:scale-[1.02] group relative overflow-hidden ${formData.plan === p.id ? 'border-[#00FF88] shadow-[0_0_30px_rgba(0,255,136,0.1)]' : 'border-white/5 hover:border-white/20'
+                    }`}
+                >
+                  {formData.plan === p.id && (
+                    <div className="absolute top-0 right-0 p-3 bg-[#00FF88]/10 rounded-bl-2xl">
+                      <CheckCircle2 className="w-5 h-5 text-[#00FF88]" />
+                    </div>
+                  )}
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-xl font-black text-white capitalize">{p.name}</h3>
+                    <div className="text-right">
+                      <span className="text-xl font-black text-white">{p.price}</span>
+                      <span className="text-[10px] text-gray-500 font-bold block">/mo</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-4 line-clamp-1">{p.desc}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="px-2 py-1 bg-[#00FF88]/10 rounded-lg">
+                      <span className="text-[10px] font-black text-[#00FF88] tracking-widest">{p.credits} CREDITS</span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="pt-4 text-center">
+              <Link to="/login" className="text-xs font-bold text-gray-500 hover:text-[#00FF88] transition-colors">ALREADY HAVE AN ACCOUNT? LOG IN</Link>
+            </div>
+          </div>
+        );
+
       case 'account':
         return (
           <form onSubmit={handleAccountSubmit} className="space-y-4">
@@ -304,11 +357,15 @@ const SignUpPage = () => {
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-400">Monthly Subscription</span>
-                  <span className="text-white font-bold">{formData.plan === 'starter' ? 'FREE' : formData.plan === 'creator' ? '$79.00' : 'Custom'}</span>
+                  <span className="text-white font-bold">
+                    {formData.plan === 'starter' ? 'FREE' : formData.plan === 'creator' ? '$79.00' : formData.plan === 'team' ? '$249.00' : 'Custom'}
+                  </span>
                 </div>
                 <div className="flex justify-between text-xs border-t border-white/5 pt-2 mt-2">
                   <span className="text-white font-black">Total Due Now</span>
-                  <span className="text-[#00FF88] font-black">{formData.plan === 'starter' ? '$0.00' : formData.plan === 'creator' ? '$79.00' : 'TBD'}</span>
+                  <span className="text-[#00FF88] font-black">
+                    {formData.plan === 'starter' ? '$0.00' : formData.plan === 'creator' ? '$79.00' : formData.plan === 'team' ? '$249.00' : 'TBD'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -437,11 +494,12 @@ const SignUpPage = () => {
             {/* Step Indicator */}
             {currentStep !== 'success' && (
               <div className="flex items-center justify-between mb-8 opacity-50 px-2 text-center">
-                {['Account', 'Profile', 'Payment'].map((step, i) => (
+                {['Plan', 'Account', 'Profile', 'Payment'].map((step, i) => (
                   <div key={step} className="flex flex-col items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${(i === 0 && currentStep === 'account') ||
-                      (i === 1 && currentStep === 'details') ||
-                      (i === 2 && currentStep === 'payment') ? 'bg-[#00FF88] ring-4 ring-[#00FF88]/20' : 'bg-gray-800'
+                    <div className={`w-2 h-2 rounded-full ${(i === 0 && currentStep === 'plan') ||
+                      (i === 1 && currentStep === 'account') ||
+                      (i === 2 && currentStep === 'details') ||
+                      (i === 3 && currentStep === 'payment') ? 'bg-[#00FF88] ring-4 ring-[#00FF88]/20' : 'bg-gray-800'
                       }`} />
                     <span className="text-[9px] font-black uppercase tracking-widest text-white">{step}</span>
                   </div>

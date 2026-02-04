@@ -54,10 +54,11 @@ const languages = [
 ];
 
 const voices = [
-    { name: 'Nebula Male 1', id: 'voice_en_us_male_1' },
-    { name: 'Nebula Female 1', id: 'voice_en_us_female_1' },
-    { name: 'Serena (Cheerful)', id: 'v2/fb706240-a35b-432a-bc96-1033f7c413e1' },
-    { name: 'Nicole (Professional)', id: 'v2/34afef6a-2d33-4ae8-b610-1849842f4951' },
+    { name: 'Leslie (Professional)', id: 'Leslie' },
+    { name: 'Neutral (Balanced)', id: 'Neutral' },
+    { name: 'Messenger (Narrative)', id: 'Messenger' },
+    { name: 'Aria (Expressive)', id: 'Aria' },
+    { name: 'Ben (Deep)', id: 'Ben' },
 ];
 
 interface AudioResult {

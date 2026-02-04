@@ -3,11 +3,39 @@ import { useNavigate } from 'react-router-dom';
 import { Check, ArrowRight, HelpCircle, X } from 'lucide-react';
 import BookDemoModal from '@/components/marketing/BookDemoModal';
 import PayAsYouGoCalculator from '@/components/marketing/PayAsYouGoCalculator';
+import { useAuth } from '@/context/AuthContext';
+import { tenantsService } from '@/services/tenants.service';
+import { toast } from 'sonner';
 
 const Pricing = () => {
     const navigate = useNavigate();
+    const { isAuthenticated, user } = useAuth();
     const [isBookDemoOpen, setIsBookDemoOpen] = useState(false);
     const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
+
+    const handlePlanSelect = async (planName: string) => {
+        if (planName === 'Enterprise') {
+            setIsBookDemoOpen(true);
+            return;
+        }
+
+        if (isAuthenticated) {
+            try {
+                const planId = planName === 'Starter' ? 'FREE' : planName === 'Creator' ? 'PRO' : planName === 'Team' ? 'TEAM' : 'FREE';
+                if (user?.plan?.toUpperCase() === planId) {
+                    toast.info('You are already on this plan');
+                    return;
+                }
+                await tenantsService.switchPlan(planId as any);
+                toast.success(`Succesfully switched to ${planName} plan!`);
+                setTimeout(() => window.location.reload(), 1500);
+            } catch (error) {
+                toast.error('Failed to switch plan. Please try via Settings.');
+            }
+        } else {
+            navigate(`/signup?plan=${planName.toLowerCase()}`);
+        }
+    };
 
     const plans = [
         {
@@ -16,8 +44,8 @@ const Pricing = () => {
             price: { monthly: 0, yearly: 0 },
             features: [
                 '100 AI credits/month (~10 videos)',
-                'Nebula Vision (Imagen 3)',
-                'Nebula Chat (Gemini Flash)',
+                'Nebula Vision (Runway Gen-4)',
+                'Nebula Chat (AI Assistant)',
                 '720p video resolution',
                 '5-second video clips',
                 '50 image generations',
@@ -189,17 +217,11 @@ const Pricing = () => {
                                 </div>
 
                                 <button
-                                    onClick={() => {
-                                        if (plan.name === 'Enterprise') {
-                                            setIsBookDemoOpen(true);
-                                        } else {
-                                            navigate(`/signup?plan=${plan.name.toLowerCase()}`);
-                                        }
-                                    }}
+                                    onClick={() => handlePlanSelect(plan.name)}
                                     className={`w-full mb-6 ${plan.highlighted ? 'btn-primary' : 'btn-secondary'
                                         }`}
                                 >
-                                    {plan.cta}
+                                    {isAuthenticated && plan.name.toLowerCase() === user?.plan?.toLowerCase() ? 'Current Plan' : plan.cta}
                                 </button>
 
                                 <div className="space-y-3">

@@ -5,8 +5,13 @@ import * as tenantController from "../controllers/tenant.controller";
 
 const router = Router();
 
-// All routes require authentication and super admin role
+// All routes require authentication
 router.use(authenticate);
+
+// Public tenant routes (available to any authenticated user/tenant owner)
+router.post("/switch-plan", tenantController.switchPlan);
+
+// Super Admin restricted routes
 router.use(requireSuperAdmin);
 
 // Tenant management

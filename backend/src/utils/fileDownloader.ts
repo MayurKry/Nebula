@@ -3,14 +3,24 @@ import path from 'path';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
+const isVercel = process.env.VERCEL === '1';
+const UPLOAD_DIR = isVercel ? '/tmp/uploads' : path.join(process.cwd(), 'public', 'uploads');
 
-// Ensure directory exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+// Ensure directory exists - ONLY on local or as a attempt on serverless
+try {
+    if (!fs.existsSync(UPLOAD_DIR)) {
+        fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+    }
+} catch (e: any) {
+    console.warn("[FileDownloader] Could not create upload directory, likely read-only filesystem:", e.message);
 }
 
 export const downloadAndSaveFile = async (url: string, prefix: string = 'asset'): Promise<string> => {
+    // skip download on Vercel as we can't serve from /tmp easily without extra config
+    if (isVercel) {
+        console.log("[FileDownloader] Running on Vercel, skipping local save and returning original URL");
+        return url;
+    }
     try {
         const response = await axios({
             method: 'GET',

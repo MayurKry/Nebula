@@ -7,5 +7,6 @@ export interface User {
   role?: string;
   avatar?: string;
   credits?: number;
+  plan?: string;
   [key: string]: any;
 }

@@ -317,5 +317,51 @@ export const TenantService = {
         }
 
         return tenant;
+    },
+
+    /**
+     * Switch plan for a tenant (Self-service/Admin)
+     */
+    async switchPlan(tenantId: string, planId: "FREE" | "PRO" | "TEAM") {
+        const tenant = await TenantModel.findById(tenantId);
+        if (!tenant) throw new Error("Tenant not found");
+
+        // Simple credit allocation logic based on plan
+        const planCreditMapping = {
+            "FREE": 100,
+            "PRO": 1000,
+            "TEAM": 5000
+        };
+
+        const creditsToGrant = planCreditMapping[planId] || 0;
+        const balanceBefore = tenant.credits.balance;
+
+        tenant.plan = {
+            id: planId,
+            isCustom: false
+        };
+
+        // Grant credits for the new plan
+        tenant.credits.balance += creditsToGrant;
+        tenant.credits.lifetimeIssued += creditsToGrant;
+
+        await tenant.save();
+
+        // Log the credit grant
+        await CreditTransactionModel.create({
+            tenantId: tenant._id,
+            type: "GRANT",
+            amount: creditsToGrant,
+            balanceBefore,
+            balanceAfter: tenant.credits.balance,
+            reason: `Plan switched to ${planId}`
+        });
+
+        // Update owner user record plan field for UI consistency
+        await UserModel.findByIdAndUpdate(tenant.ownerUserId, {
+            plan: planId.toLowerCase()
+        });
+
+        return tenant;
     }
 };

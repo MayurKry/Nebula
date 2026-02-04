@@ -1,19 +1,41 @@
 import { useState } from 'react';
 import { CreditCard, Zap, Bell } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { tenantsService } from '@/services/tenants.service';
+import { toast } from 'sonner';
+import PlanSelectionModal from '@/components/settings/PlanSelectionModal';
 
 const SettingsPage = () => {
-    // Mock Data - In real app, this comes from user context/API
+    const { user } = useAuth();
+    const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+
+    // Dynamic data from user context
     const [subscription] = useState({
-        plan: 'Nebula Pro',
+        plan: user?.plan || 'Free',
         status: 'Active',
-        renewalDate: 'Jan 24, 2026',
-        price: '$29.99/mo'
+        renewalDate: 'Auto-renews monthly',
+        price: user?.plan === 'pro' ? '$79/mo' : user?.plan === 'team' ? '$249/mo' : '$0/mo'
     });
 
     const [usage] = useState({
-        credits: { total: 1000, used: 450, remaining: 550 },
-        storage: { total: '100 GB', used: '24 GB' }
+        credits: { total: user?.credits || 100, used: 0, remaining: user?.credits || 100 },
+        storage: { total: '100 GB', used: '0 GB' }
     });
+
+    const handlePlanChange = async (planId: string) => {
+        try {
+            await tenantsService.switchPlan(planId as any);
+            toast.success(`Plan successfully switched to ${planId}`);
+            // In a real app, we'd want to refresh the user context here
+            // For now, we'll suggest a refresh
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } catch (error) {
+            toast.error('Failed to switch plan. Please contact support.');
+            throw error;
+        }
+    };
 
     const [preferences, setPreferences] = useState({
         defaultModel: 'Nebula Pro',
@@ -68,10 +90,20 @@ const SettingsPage = () => {
                             </div>
                         </div>
 
-                        <button className="w-full py-2.5 bg-white text-black font-semibold rounded-lg hover:bg-gray-200 transition-colors">
+                        <button
+                            onClick={() => setIsPlanModalOpen(true)}
+                            className="w-full py-2.5 bg-white text-black font-semibold rounded-lg hover:bg-gray-200 transition-colors"
+                        >
                             Manage Subscription
                         </button>
                     </div>
+
+                    <PlanSelectionModal
+                        isOpen={isPlanModalOpen}
+                        onClose={() => setIsPlanModalOpen(false)}
+                        currentPlan={subscription.plan}
+                        onSelectPlan={handlePlanChange}
+                    />
 
                     {/* Usage Card */}
                     <div className="bg-[#141414] border border-white/10 rounded-2xl p-6 relative overflow-hidden">

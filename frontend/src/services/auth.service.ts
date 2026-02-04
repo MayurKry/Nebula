@@ -25,6 +25,7 @@ export interface AuthResponse {
         email: string;
         role: string;
         credits: number;
+        plan: string;
     };
     accessToken: string;
     refreshToken: string;
@@ -63,6 +64,7 @@ class AuthService {
             lastName: user.lastName,
             role: user.role,
             credits: user.credits,
+            plan: user.plan,
         });
 
         return response.data.data;
@@ -91,6 +93,7 @@ class AuthService {
             lastName: user.lastName,
             role: user.role,
             credits: user.credits,
+            plan: user.plan,
         });
 
         return response.data.data;

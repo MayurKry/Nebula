@@ -522,26 +522,41 @@ Output valid JSON only. Structure:
 
         const userPrompt = `Project Prompt: "${prompt}"`;
 
-        console.log("[VideoProject] Generating script with Gemini...");
-        // Call Gemini for Script
-        let rawContent = await aiImageService.generateText(`${systemSystem}\n\n${userPrompt}`);
-
-        // Clean JSON formatting (remove markdown blocks if present)
-        rawContent = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
-
-        // Find the first '{' and last '}' to ensure valid JSON substring
-        const firstBrace = rawContent.indexOf('{');
-        const lastBrace = rawContent.lastIndexOf('}');
-        if (firstBrace !== -1 && lastBrace !== -1) {
-            rawContent = rawContent.substring(firstBrace, lastBrace + 1);
-        }
-
         let generatedData;
-        try {
-            generatedData = JSON.parse(rawContent);
-        } catch (e) {
-            console.error("Failed to parse Gemini JSON:", rawContent);
-            throw new Error("AI returned invalid project structure. Please try again.");
+        const apiKey = process.env.GEMINI_API_KEY;
+
+        if (!apiKey || apiKey === "api_key_missing") {
+            console.log("[VideoProject] 🛡️ Gemini Key missing, using Fallback Director Plan");
+            generatedData = {
+                script: `In a world where creativity meets technology, Nebula Studio empowers your vision. [Scene 1: Introduction to the landscape]. [Scene 2: The power of AI tools]. [Scene 3: Final Call to Action].`,
+                language: "English",
+                region: "US",
+                scenes: [
+                    { id: "scene_1", order: 0, description: "Breathtaking cinematic landscape of a futuristic digital nebula", duration: 5, cameraPath: "Pan", motionIntensity: 40 },
+                    { id: "scene_2", order: 1, description: "Close up of a stylized eye reflecting vibrant digital universes", duration: 5, cameraPath: "Zoom In", motionIntensity: 60 },
+                    { id: "scene_3", order: 2, description: "A group of diverse creators collaborating with floating holographic screens", duration: 5, cameraPath: "Static", motionIntensity: 30 }
+                ]
+            };
+        } else {
+            console.log("[VideoProject] Generating script with Gemini...");
+            // Call Gemini for Script
+            let rawContent = await aiImageService.generateText(`${systemSystem}\n\n${userPrompt}`);
+
+            // Clean JSON formatting (remove markdown blocks if present)
+            rawContent = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
+
+            const firstBrace = rawContent.indexOf('{');
+            const lastBrace = rawContent.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1) {
+                rawContent = rawContent.substring(firstBrace, lastBrace + 1);
+            }
+
+            try {
+                generatedData = JSON.parse(rawContent);
+            } catch (e) {
+                console.error("Failed to parse Gemini JSON:", rawContent);
+                throw new Error("AI returned invalid project structure. Please try again.");
+            }
         }
 
         // Enhance with Real AI Images (Gemini Imagen)

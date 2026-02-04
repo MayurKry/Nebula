@@ -1,5 +1,6 @@
 
 import { adminApi } from '@/api/admin.api';
+import axiosInstance from '@/api/axiosInstance';
 
 export const tenantsService = {
     /**
@@ -71,6 +72,14 @@ export const tenantsService = {
 
     async removeFeatureOverride(tenantId: string, featureId: string) {
         const response = await adminApi.removeFeatureOverride(tenantId, featureId);
+        return response.data.data.tenant;
+    },
+
+    /**
+     * Switch plan (Self-service)
+     */
+    async switchPlan(planId: "FREE" | "PRO" | "TEAM") {
+        const response = await axiosInstance.post('/tenants/switch-plan', { planId });
         return response.data.data.tenant;
     }
 };

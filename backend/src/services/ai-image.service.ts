@@ -151,11 +151,34 @@ class AIImageService {
     }
 
     /**
-     * Generate text using Runway ML (not supported - throws error)
-     * This method exists for backward compatibility but is not supported
+     * Generate text using Gemini API
      */
     async generateText(prompt: string): Promise<string> {
-        throw new Error("Text generation is not supported with Runway ML. Please use a dedicated text generation service.");
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey || apiKey === "api_key_missing") {
+            throw new Error("Gemini API key is missing. Text generation unavailable.");
+        }
+
+        try {
+            logger.info(`[AI Image Service] 🤖 Generating text with Gemini...`);
+            const response = await axios.post(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+                {
+                    contents: [{ parts: [{ text: prompt }] }]
+                },
+                { headers: { "Content-Type": "application/json" } }
+            );
+
+            const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) {
+                throw new Error("Invalid response from Gemini API");
+            }
+
+            return text;
+        } catch (error: any) {
+            logger.error(`[AI Image Service] Gemini text generation failed: ${error.message}`);
+            throw new Error(`Gemini generation failed: ${error.message}`);
+        }
     }
 }
 

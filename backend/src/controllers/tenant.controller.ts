@@ -264,3 +264,26 @@ export const removeFeatureOverride = controllerHandler(
         message: "Feature override removed successfully"
     }
 );
+
+/**
+ * Switch plan for the authenticated user's tenant
+ * POST /v1/tenants/switch-plan
+ */
+export const switchPlan = controllerHandler(
+    async (req) => {
+        const tenantId = (req as any).user.tenantId;
+        const { planId } = req.body;
+
+        if (!tenantId) {
+            throw new Error("User is not associated with any tenant");
+        }
+
+        const tenant = await TenantService.switchPlan(tenantId, planId);
+
+        return { tenant };
+    },
+    {
+        statusCode: 200,
+        message: "Plan updated successfully"
+    }
+);
