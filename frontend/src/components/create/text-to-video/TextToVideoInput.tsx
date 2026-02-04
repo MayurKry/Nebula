@@ -10,12 +10,19 @@ import { toast } from 'sonner';
 interface TextToVideoInputProps {
     onGenerate: (data: { prompt: string; settings: any }) => void;
     isGenerating: boolean;
+    initialPrompt?: string;
 }
 
-const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGenerating }) => {
-    const [prompt, setPrompt] = useState('');
+const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGenerating, initialPrompt = '' }) => {
+    const [prompt, setPrompt] = useState(initialPrompt);
     const [isEnhancing, setIsEnhancing] = useState(false);
     const [showBuilder, setShowBuilder] = useState(false);
+    // Handle initial prompt from parent
+    React.useEffect(() => {
+        if (initialPrompt) {
+            setPrompt(initialPrompt);
+        }
+    }, [initialPrompt]);
 
     // Default Settings
     const [settings, setSettings] = useState({

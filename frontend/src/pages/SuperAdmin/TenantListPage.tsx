@@ -7,6 +7,7 @@ import GSAPTransition from '@/components/ui/GSAPTransition';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import CreateTenantModal from '@/components/admin/CreateTenantModal';
+import Pagination from '@/components/ui/Pagination';
 
 const TenantListPage = () => {
     const navigate = useNavigate();
@@ -17,6 +18,12 @@ const TenantListPage = () => {
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [planFilter, setPlanFilter] = useState<string>('');
     const container = useRef<HTMLDivElement>(null);
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const ITEMS_PER_PAGE = 10;
 
     useGSAP(() => {
         if (!loading && tenants.length > 0) {
@@ -31,30 +38,47 @@ const TenantListPage = () => {
     }, { scope: container, dependencies: [loading, tenants] });
 
     useEffect(() => {
-        fetchTenants();
+        setCurrentPage(1);
+        fetchTenants(1);
     }, [statusFilter, planFilter]);
 
-    const fetchTenants = async () => {
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        fetchTenants(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const fetchTenants = async (page = 1) => {
         setLoading(true);
         try {
             const params: any = {};
             if (statusFilter) params.status = statusFilter;
             if (planFilter) params.planId = planFilter;
             if (search) params.search = search;
+            params.limit = ITEMS_PER_PAGE;
+            params.page = page;
 
             const response = await adminApi.listTenants(params);
             setTenants(response?.data?.data?.tenants || []);
+
+            // Handle pagination logic
+            const total = response?.data?.data?.total || 0;
+            setTotalItems(total);
+            setTotalPages(Math.ceil(total / ITEMS_PER_PAGE));
         } catch (error: any) {
             console.error('Failed to fetch tenants:', error);
             toast.error('Failed to load tenants');
             setTenants([]);
+            setTotalItems(0);
+            setTotalPages(1);
         } finally {
             setLoading(false);
         }
     };
 
     const handleSearch = () => {
-        fetchTenants();
+        setCurrentPage(1);
+        fetchTenants(1);
     };
 
     const getStatusColor = (status: string) => {
@@ -101,7 +125,7 @@ const TenantListPage = () => {
             <CreateTenantModal
                 isOpen={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
-                onSuccess={() => fetchTenants()}
+                onSuccess={() => fetchTenants(currentPage)}
             />
 
             {/* Filters Bar */}
@@ -232,6 +256,20 @@ const TenantListPage = () => {
                     </div>
                 </div>
             </GSAPTransition>
+
+            {/* Pagination Controls */}
+            {!loading && tenants.length > 0 && (
+                <div className="mt-4 border-t border-white/5 pt-4">
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                    <div className="text-center mt-4 text-xs text-[#8E8E93]">
+                        Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} tenants
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

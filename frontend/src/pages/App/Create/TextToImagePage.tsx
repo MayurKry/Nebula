@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
     Sparkles,
     Loader2,
@@ -18,6 +19,7 @@ const imageStyles = [
 
 const TextToImagePage = () => {
     const { addJob } = useGeneration();
+    const location = useLocation();
 
     const [prompt, setPrompt] = useState('');
     const [style, setStyle] = useState('Cinematic');
@@ -28,6 +30,15 @@ const TextToImagePage = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<string[]>([]);
     const [selectedResult, setSelectedResult] = useState<string | null>(null);
+
+    // Handle initial prompt from dashboard
+    useEffect(() => {
+        if (location.state?.initialPrompt) {
+            setPrompt(location.state.initialPrompt);
+            // Optional: auto-generate
+            // triggerGenerate(location.state.initialPrompt);
+        }
+    }, [location.state]);
     const [usedProvider, setUsedProvider] = useState<string | null>(null);
     const [isEnhancing, setIsEnhancing] = useState(false);
 

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
     Music,
     Loader2,
@@ -38,32 +39,25 @@ const languages = [
     { name: 'Dutch', code: 'nl' },
     { name: 'Polish', code: 'pl' },
     { name: 'Swedish', code: 'sv' },
-    { name: 'Indonesian', code: 'id' },
-    { name: 'Vietnamese', code: 'vi' },
-    { name: 'Thai', code: 'th' },
-    { name: 'Greek', code: 'el' },
-    { name: 'Portuguese (Brazil)', code: 'pt-BR' },
     { name: 'Danish', code: 'da' },
     { name: 'Finnish', code: 'fi' },
     { name: 'Norwegian', code: 'no' },
+    { name: 'Greek', code: 'el' },
     { name: 'Czech', code: 'cs' },
     { name: 'Hungarian', code: 'hu' },
     { name: 'Romanian', code: 'ro' },
-    { name: 'Slovak', code: 'sk' },
-    { name: 'Ukrainian', code: 'uk' }
+    { name: 'Bulgarian', code: 'bg' },
+    { name: 'Indonesian', code: 'id' },
+    { name: 'Malay', code: 'ms' },
+    { name: 'Thai', code: 'th' },
+    { name: 'Vietnamese', code: 'vi' }
 ];
 
 const voices = [
-    { id: 'Leslie', name: 'Leslie', desc: 'US Female' },
-    { id: 'James', name: 'James', desc: 'US Male' },
-    { id: 'Thomas', name: 'Thomas', desc: 'UK Male' },
-    { id: 'Charlotte', name: 'Charlotte', desc: 'UK Female' },
-    { id: 'James', name: 'Rahul', desc: 'Indian Male' },
-    { id: 'Leslie', name: 'Maya', desc: 'Indian Female' },
-    { id: 'Thomas', name: 'Giovanni', desc: 'Italian Male' },
-    { id: 'Charlotte', name: 'Mimi', desc: 'French Female' },
-    { id: 'Serena', name: 'Serena', desc: 'Neutral Female' },
-    { id: 'Nicole', name: 'Nicole', desc: 'Professional Female' },
+    { name: 'Nebula Male 1', id: 'voice_en_us_male_1' },
+    { name: 'Nebula Female 1', id: 'voice_en_us_female_1' },
+    { name: 'Serena (Cheerful)', id: 'v2/fb706240-a35b-432a-bc96-1033f7c413e1' },
+    { name: 'Nicole (Professional)', id: 'v2/34afef6a-2d33-4ae8-b610-1849842f4951' },
 ];
 
 interface AudioResult {
@@ -77,6 +71,7 @@ interface AudioResult {
 
 const TextToAudioPage = () => {
     const { addJob } = useGeneration();
+    const location = useLocation();
 
     const [prompt, setPrompt] = useState('');
     const [style, setStyle] = useState('Epic Hybrid');
@@ -87,6 +82,12 @@ const TextToAudioPage = () => {
     const [isEnhancing, setIsEnhancing] = useState(false);
     const [results, setResults] = useState<AudioResult[]>([]);
     const [activeAudio, setActiveAudio] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (location.state?.initialPrompt) {
+            setPrompt(location.state.initialPrompt);
+        }
+    }, [location.state]);
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
@@ -290,7 +291,7 @@ const TextToAudioPage = () => {
                                 <Wand2 className="w-3.5 h-3.5" />
                                 <div className="flex flex-col text-left">
                                     <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Character Voice</span>
-                                    <span className="text-xs font-bold text-white truncate max-w-[100px]">{voice.name} ({voice.desc})</span>
+                                    <span className="text-xs font-bold text-white truncate max-w-[100px]">{voice.name}</span>
                                 </div>
                             </button>
                             <select
@@ -301,7 +302,7 @@ const TextToAudioPage = () => {
                                     if (selected) setVoice(selected);
                                 }}
                             >
-                                {voices.map(v => <option key={v.name} value={v.name}>{v.name} ({v.desc})</option>)}
+                                {voices.map(v => <option key={v.name} value={v.name}>{v.name}</option>)}
                             </select>
                         </div>
                     </div>
@@ -368,7 +369,7 @@ const TextToAudioPage = () => {
                                     {/* Play Button */}
                                     <button
                                         onClick={() => togglePlay(audio.id)}
-                                        className={`w-14 h-14 rounded-2xl flex items-center justify-center hover:scale-105 transition-transform shadow-lg ${activeAudio === audio.id ? 'bg-purple-500 text-white' : 'bg-white text-black'}`}
+                                        className={`w - 14 h - 14 rounded - 2xl flex items - center justify - center hover: scale - 105 transition - transform shadow - lg ${activeAudio === audio.id ? 'bg-purple-500 text-white' : 'bg-white text-black'} `}
                                     >
                                         {activeAudio === audio.id ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-1" />}
                                     </button>
@@ -387,7 +388,7 @@ const TextToAudioPage = () => {
                                             {activeAudio === audio.id && (
                                                 <div className="flex items-center gap-0.5 h-3 items-end">
                                                     {[1, 2, 3, 4, 5].map(i => (
-                                                        <div key={i} className={`w-0.5 bg-purple-400 rounded-full animate-wave-sm`} style={{ animationDelay: `${i * 0.1}s`, height: `${Math.random() * 12 + 4}px` }} />
+                                                        <div key={i} className={`w - 0.5 bg - purple - 400 rounded - full animate - wave - sm`} style={{ animationDelay: `${i * 0.1} s`, height: `${Math.random() * 12 + 4} px` }} />
                                                     ))}
                                                 </div>
                                             )}
@@ -399,7 +400,7 @@ const TextToAudioPage = () => {
                                 <div className="flex items-center justify-between mt-6 pt-6 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <div className="flex items-center gap-2">
                                         <button
-                                            onClick={() => handleDownload(audio.url, `nebula-audio-${audio.id}.mp3`)}
+                                            onClick={() => handleDownload(audio.url, `nebula - audio - ${audio.id}.mp3`)}
                                             className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
                                             title="Download"
                                         >

@@ -6,13 +6,19 @@ import { responseHandler } from "../utils/responseHandler";
 // Get all assets for current user
 export const getAssets = asyncHandler(async (req: Request, res: Response) => {
     const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
-    const { type, folderId, projectId, limit = 50, page = 1 } = req.query;
+    const { type, folderId, projectId, search, limit = 50, page = 1 } = req.query;
 
     const filter: any = { userId };
     console.log(`[AssetController] Fetching for userId: ${userId}`);
     if (type) filter.type = type;
     if (folderId) filter.folderId = folderId;
     if (projectId) filter.projectId = projectId;
+
+    // Add search support
+    if (search) {
+        filter.name = { $regex: search, $options: 'i' };
+    }
+
     console.log(`[AssetController] Filter:`, filter);
 
     const assets = await AssetModel.find(filter)

@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { TokenStorage } from '@/api/tokenStorage';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
+import Pagination from '@/components/ui/Pagination';
 
 const getModuleIcon = (module: JobModule) => {
     switch (module) {
@@ -73,12 +74,26 @@ const JobHistoryPage = () => {
     const [isLive, setIsLive] = useState(false);
     const [pollInterval, setPollInterval] = useState(30000);
 
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const ITEMS_PER_PAGE = 20;
+
     const containerRef = useRef<HTMLDivElement>(null);
 
     const openModal = (job: Job) => setSelectedJob(job);
     const closeModal = () => setSelectedJob(null);
 
-    const fetchJobs = async (silent = false) => {
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        fetchJobs(false, page);
+        if (containerRef.current) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
+    const fetchJobs = async (silent = false, page = currentPage) => {
         // Don't fetch if no token is available
         const token = TokenStorage.getAccessToken();
         if (!token) {
@@ -92,9 +107,14 @@ const JobHistoryPage = () => {
             const data = await jobService.getUserJobs({
                 module: filterModule === 'all' ? undefined : filterModule,
                 status: filterStatus === 'all' ? undefined : filterStatus,
-                limit: 50
+                limit: ITEMS_PER_PAGE,
+                skip: (page - 1) * ITEMS_PER_PAGE
             });
             setJobs(data.jobs);
+            // Update total counts
+            const total = data.total || 0;
+            setTotalItems(total);
+            setTotalPages(Math.ceil(total / ITEMS_PER_PAGE));
         } catch (error: any) {
             console.error('Failed to fetch jobs:', error);
             // Don't show toast for polling failures or expected 401s that interceptors handle
@@ -116,7 +136,8 @@ const JobHistoryPage = () => {
 
     // Initial fetch and fetch on filter change
     useEffect(() => {
-        fetchJobs();
+        setCurrentPage(1);
+        fetchJobs(false, 1);
     }, [filterModule, filterStatus]);
 
     // Polling effect - separate from filter changes to avoid redundant calls
@@ -127,14 +148,14 @@ const JobHistoryPage = () => {
             // Only create interval if live mode is enabled
             interval = setInterval(() => {
                 // Fetch silently (no loading spinner) when polling
-                if (document.hasFocus()) fetchJobs(true);
+                if (document.hasFocus()) fetchJobs(true, currentPage);
             }, pollInterval);
         }
 
         return () => {
             if (interval) clearInterval(interval);
         };
-    }, [isLive, pollInterval]); // Don't depend on filters here, they are handled above
+    }, [isLive, pollInterval, currentPage]); // Added currentPage dependency to safeguard polling
 
     const handleRetry = async (jobId: string) => {
         try {
@@ -209,7 +230,7 @@ const JobHistoryPage = () => {
                         {isLive ? 'LIVE RADAR ACTIVE' : 'ENABLE LIVE RADAR'}
                     </button>
                     <button
-                        onClick={() => fetchJobs()}
+                        onClick={() => fetchJobs(false, currentPage)}
                         className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition-all group"
                         title="Refresh History"
                     >
@@ -408,6 +429,21 @@ const JobHistoryPage = () => {
                     })
                 )}
             </div>
+
+            {/* Pagination Controls */}
+            {!isLoading && jobs.length > 0 && (
+                <div className="mt-8 border-t border-white/5 pt-6 pb-12">
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                    <div className="text-center mt-4 text-xs text-gray-500">
+                        Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} operations
+                    </div>
+                </div>
+            )}
+
             {/* Detail Modal */}
             {selectedJob && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">

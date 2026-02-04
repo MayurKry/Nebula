@@ -93,12 +93,21 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
             } catch (err) {
                 console.warn("[Image Generation] Job sync failed:", err);
             }
-            const assetPromises = results.map(result => {
+            const { downloadAndSaveFile } = await import("../utils/fileDownloader");
+
+            const assetPromises = results.map(async result => {
+                let permanentUrl = result.url;
+                try {
+                    permanentUrl = await downloadAndSaveFile(result.url, 'image');
+                } catch (e) {
+                    console.error("Failed to download image asset:", e);
+                }
+
                 return AssetModel.create({
                     name: prompt,
                     type: "image",
-                    url: result.url,
-                    thumbnailUrl: result.url,
+                    url: permanentUrl,
+                    thumbnailUrl: permanentUrl,
                     userId: new mongoose.Types.ObjectId(userId),
                     metadata: {
                         width: result.width,
@@ -402,11 +411,27 @@ export const checkVideoStatus = asyncHandler(async (req: Request, res: Response)
                 let assetId;
 
                 if (!existingAsset) {
+                    // Download and save locally
+                    const { downloadAndSaveFile } = await import("../utils/fileDownloader");
+                    let permanentVideoUrl = result.videoUrl;
+                    let permanentThumbnailUrl = result.thumbnailUrl || result.videoUrl;
+
+                    try {
+                        permanentVideoUrl = await downloadAndSaveFile(result.videoUrl, 'video');
+                        if (result.thumbnailUrl && result.thumbnailUrl !== result.videoUrl) {
+                            permanentThumbnailUrl = await downloadAndSaveFile(result.thumbnailUrl, 'thumb');
+                        } else {
+                            permanentThumbnailUrl = permanentVideoUrl; // Use video as thumb if same
+                        }
+                    } catch (dlError) {
+                        console.error("Failed to download video asset, utilizing original URL:", dlError);
+                    }
+
                     const asset = await AssetModel.create({
                         name: `Video Generation ${jobId}`,
                         type: "video",
-                        url: result.videoUrl,
-                        thumbnailUrl: result.thumbnailUrl || result.videoUrl,
+                        url: permanentVideoUrl,
+                        thumbnailUrl: permanentThumbnailUrl,
                         userId: new mongoose.Types.ObjectId(userId),
                         metadata: { format: "mp4" },
                         tags: ["ai-video", "generated"]

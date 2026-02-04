@@ -63,8 +63,8 @@ export const adminApi = {
         axiosInstance.get<{ data: DashboardMetrics }>(`${API_BASE}/dashboard/metrics`),
 
     // Tenants
-    listTenants: (params?: { status?: string; planId?: string; type?: string; search?: string }) =>
-        axiosInstance.get<{ data: { tenants: Tenant[] } }>(`${API_BASE}/tenants`, { params }),
+    listTenants: (params?: { status?: string; planId?: string; type?: string; search?: string; limit?: number; page?: number }) =>
+        axiosInstance.get<{ data: { tenants: Tenant[]; total: number } }>(`${API_BASE}/tenants`, { params }),
 
     getTenantById: (id: string) =>
         axiosInstance.get<{ data: { tenant: Tenant } }>(`${API_BASE}/tenants/${id}`),

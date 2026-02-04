@@ -9,6 +9,8 @@ export interface TenantFilters {
     planId?: "FREE" | "PRO" | "TEAM" | "CUSTOM";
     type?: "INDIVIDUAL" | "ORGANIZATION";
     search?: string;
+    limit?: number;
+    skip?: number;
 }
 
 export interface CreateTenantDTO {
@@ -69,9 +71,12 @@ export const TenantService = {
             ];
         }
 
+        const total = await TenantModel.countDocuments(query);
         const tenants = await TenantModel.find(query)
             .populate("ownerUserId", "firstName lastName email")
             .sort({ createdAt: -1 })
+            .limit(filters.limit || 50)
+            .skip(filters.skip || 0)
             .lean();
 
         // Get user count for each tenant
@@ -88,7 +93,7 @@ export const TenantService = {
             })
         );
 
-        return tenantsWithStats;
+        return { tenants: tenantsWithStats, total };
     },
 
     /**

@@ -2,20 +2,41 @@ import { useEffect, useState } from 'react';
 import { adminApi } from '@/api/admin.api';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 import GSAPTransition from '@/components/ui/GSAPTransition';
+import Pagination from '@/components/ui/Pagination';
 
 const ErrorsPage = () => {
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const ITEMS_PER_PAGE = 20;
+
     useEffect(() => {
-        fetchLogs();
+        setCurrentPage(1);
+        fetchLogs(1);
     }, []);
 
-    const fetchLogs = async () => {
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        fetchLogs(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const fetchLogs = async (page = 1) => {
         setLoading(true);
         try {
-            const response = await adminApi.getErrorLogs({ limit: 50 });
+            const response = await adminApi.getErrorLogs({
+                page,
+                limit: ITEMS_PER_PAGE
+            });
             setLogs(response.data.data.logs);
+            // Handle pagination logic
+            const total = response?.data?.data?.total || 0;
+            setTotalItems(total);
+            setTotalPages(Math.ceil(total / ITEMS_PER_PAGE));
         } catch (error) {
             console.error(error);
         } finally {
@@ -82,6 +103,20 @@ const ErrorsPage = () => {
                     )}
                 </div>
             </GSAPTransition>
+
+            {/* Pagination Controls */}
+            {!loading && logs.length > 0 && (
+                <div className="mt-4 border-t border-white/5 pt-4">
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                    <div className="text-center mt-4 text-xs text-[#8E8E93]">
+                        Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} errors
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

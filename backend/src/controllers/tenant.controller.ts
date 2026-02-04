@@ -9,16 +9,22 @@ import { CreditService } from "../services/credit.service";
  */
 export const listTenants = controllerHandler(
     async (req) => {
-        const { status, planId, type, search } = req.query;
+        const { status, planId, type, search, limit, page } = req.query;
 
-        const tenants = await TenantService.listTenants({
+        const limitNum = limit ? parseInt(limit as string) : 50;
+        const pageNum = page ? parseInt(page as string) : 1;
+        const skip = (pageNum - 1) * limitNum;
+
+        const result = await TenantService.listTenants({
             status: status as any,
             planId: planId as any,
             type: type as any,
-            search: search as string
+            search: search as string,
+            limit: limitNum,
+            skip
         });
 
-        return { tenants };
+        return result;
     },
     {
         statusCode: 200,

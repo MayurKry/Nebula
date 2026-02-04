@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { aiService } from '@/services/ai.service';
 import { assetService } from '@/services/asset.service';
@@ -10,6 +10,7 @@ import { Sparkles } from 'lucide-react';
 
 const TextToVideoPage = () => {
     const { projectId } = useParams();
+    const location = useLocation();
     const { addJob } = useGeneration();
 
     // Workflow State
@@ -17,15 +18,19 @@ const TextToVideoPage = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [scenes, setScenes] = useState<any[]>([]);
     const [lastSettings, setLastSettings] = useState<any>(null);
+    const [initialPrompt, setInitialPrompt] = useState('');
 
-    // Auto-load if projectId is present (mocking this behavior for consistency with previous version)
+    // Auto-load if projectId is present
     useEffect(() => {
+        if (location.state?.initialPrompt) {
+            setInitialPrompt(location.state.initialPrompt);
+        }
         if (projectId) {
             // In a real scenario, fetch project by ID.
             // For now, we just reset to input or simulate a loaded state if needed.
             // decided to keep it simple: just show input unless we persist state.
         }
-    }, [projectId]);
+    }, [projectId, location.state]);
 
     const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -167,6 +172,7 @@ const TextToVideoPage = () => {
                 <TextToVideoInput
                     onGenerate={handleGenerate}
                     isGenerating={isGenerating}
+                    initialPrompt={initialPrompt}
                 />
             )}
 

@@ -2,21 +2,42 @@ import { useEffect, useState } from 'react';
 import { adminApi } from '@/api/admin.api';
 import { Square } from 'lucide-react';
 import GSAPTransition from '@/components/ui/GSAPTransition';
+import Pagination from '@/components/ui/Pagination';
 import { toast } from 'sonner';
 
 const CampaignsPage = () => {
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const ITEMS_PER_PAGE = 20;
+
     useEffect(() => {
-        fetchCampaigns();
+        setCurrentPage(1);
+        fetchCampaigns(1);
     }, []);
 
-    const fetchCampaigns = async () => {
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        fetchCampaigns(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const fetchCampaigns = async (page = 1) => {
         setLoading(true);
         try {
-            const response = await adminApi.listCampaigns({});
+            const response = await adminApi.listCampaigns({
+                page,
+                limit: ITEMS_PER_PAGE
+            });
             setCampaigns(response.data.data.campaigns);
+            // Handle pagination logic
+            const total = response?.data?.data?.total || 0;
+            setTotalItems(total);
+            setTotalPages(Math.ceil(total / ITEMS_PER_PAGE));
         } catch (error) {
             console.error(error);
         } finally {
@@ -30,7 +51,7 @@ const CampaignsPage = () => {
         try {
             await adminApi.stopCampaign(id, 'Stopped by Super Admin');
             toast.success('Campaign stopped');
-            fetchCampaigns();
+            fetchCampaigns(currentPage);
         } catch (error) {
             toast.error('Failed to stop campaign');
         }
@@ -103,6 +124,20 @@ const CampaignsPage = () => {
                     </div>
                 </div>
             </GSAPTransition>
+
+            {/* Pagination Controls */}
+            {!loading && campaigns.length > 0 && (
+                <div className="mt-4 border-t border-white/5 pt-4">
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                    <div className="text-center mt-4 text-xs text-[#8E8E93]">
+                        Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} campaigns
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,6 +1,6 @@
 import {
     Video, Image, Mic, Mic2,
-    Wand2, X, Download, Share2
+    Wand2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -8,7 +8,7 @@ import { useState, useRef } from 'react';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-import { aiService, type GenerateImageResponse } from '@/services/ai.service';
+import { aiService } from '@/services/ai.service';
 import GenerationGame from '@/components/game/GenerationGame';
 import PromptBar from '@/components/ui/PromptBar';
 
@@ -17,12 +17,9 @@ const DashboardPage = () => {
     const navigate = useNavigate();
     const [prompt, setPrompt] = useState('');
     const [generationMode, setGenerationMode] = useState<'image' | 'video' | 'voice'>('video');
-    const [selectedModel] = useState('Nebula Turbo');
 
     // Generation States
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [generatedImage, setGeneratedImage] = useState<GenerateImageResponse | null>(null);
-    const [showImageModal, setShowImageModal] = useState(false);
+    const [isGenerating] = useState(false);
     const [isEnhancing, setIsEnhancing] = useState(false);
 
     const container = useRef<HTMLDivElement>(null);
@@ -56,34 +53,15 @@ const DashboardPage = () => {
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
-        setIsGenerating(true);
 
-        try {
-            if (generationMode === 'video') {
-                const result = await aiService.generateVideoProject({
-                    prompt: prompt,
-                    style: selectedModel.toLowerCase().includes('turbo') ? 'cinematic' : 'documentary',
-                    duration: 5
-                });
-                navigate(`/app/editor/${result.projectId}`);
-            } else if (generationMode === 'voice') {
-                navigate('/app/create/ai-voices');
-            } else {
-                const result = await aiService.generateImage({
-                    prompt: prompt,
-                    style: 'cinematic',
-                    width: 1024,
-                    height: 576,
-                    aspectRatio: "16:9"
-                });
-                setGeneratedImage(result);
-                setShowImageModal(true);
-            }
-        } catch (error: any) {
-            console.error("Generation failed:", error);
-            alert("Failed to start generation. Please try again.");
-        } finally {
-            setIsGenerating(false);
+        // Instead of generating here, we navigate to the appropriate tool page
+        // with the prompt pre-filled. This is more stable and provides a better UX.
+        if (generationMode === 'video') {
+            navigate('/app/create/text-to-video', { state: { initialPrompt: prompt } });
+        } else if (generationMode === 'voice') {
+            navigate('/app/create/text-to-audio', { state: { initialPrompt: prompt } });
+        } else {
+            navigate('/app/create/text-to-image', { state: { initialPrompt: prompt } });
         }
     };
 
@@ -114,49 +92,7 @@ const DashboardPage = () => {
                 </div>
             )}
 
-            {/* Image Result Modal */}
-            {showImageModal && generatedImage && (
-                <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-lg flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
-                    <div className="bg-[#141414] border border-white/10 rounded-2xl max-w-4xl w-full overflow-hidden flex flex-col md:flex-row shadow-2xl relative max-h-[90vh] overflow-y-auto md:overflow-visible">
-                        <button
-                            onClick={() => setShowImageModal(false)}
-                            className="absolute top-4 right-4 p-2 bg-black/50 rounded-full text-white hover:bg-white/20 z-10"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-
-                        <div className="md:w-2/3 bg-black flex items-center justify-center p-2 min-h-[300px]">
-                            <img src={generatedImage.url} alt="Generated" className="max-h-[50vh] md:max-h-[80vh] w-auto object-contain rounded-lg" />
-                        </div>
-                        <div className="md:w-1/3 p-6 flex flex-col justify-between border-t md:border-t-0 md:border-l border-white/5">
-                            <div className="space-y-4">
-                                <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
-                                    Creation Ready
-                                </h3>
-                                <p className="text-sm text-gray-400 italic">"{generatedImage.prompt}"</p>
-                                <div className="flex gap-2 text-xs text-gray-500">
-                                    <span className="px-2 py-1 bg-white/5 rounded">16:9</span>
-                                    <span className="px-2 py-1 bg-white/5 rounded">Cinematic</span>
-                                </div>
-                            </div>
-
-                            <div className="space-y-3 mt-6 md:mt-0">
-                                <button className="w-full py-3 bg-[#00FF88] text-black font-bold rounded-lg hover:bg-[#00CC6A] flex items-center justify-center gap-2">
-                                    <Download className="w-4 h-4" /> Download
-                                </button>
-                                <button className="w-full py-3 bg-white/5 text-white font-semibold rounded-lg hover:bg-white/10 flex items-center justify-center gap-2">
-                                    <Video className="w-4 h-4" /> Animate this Image
-                                </button>
-                                <button className="w-full py-3 bg-white/5 text-white font-semibold rounded-lg hover:bg-white/10 flex items-center justify-center gap-2">
-                                    <Share2 className="w-4 h-4" /> Share
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Hero Section */}
+            {/* Dashboard Hero */}
             <GSAPTransition animation="fade-in-up" duration={1}>
                 <div className="text-center space-y-12 sm:space-y-16 py-8 sm:py-12">
                     <div className="space-y-4">
@@ -258,7 +194,7 @@ const DashboardPage = () => {
                                     key={suggestion.id}
                                     onClick={() => {
                                         setPrompt(suggestion.text);
-                                        setGenerationMode(suggestion.mode as 'image' | 'video');
+                                        setGenerationMode(suggestion.mode as any);
                                     }}
                                     className="dashboard-card bg-[#141414] border border-white/5 p-5 rounded-2xl cursor-pointer hover:bg-[#1A1A1A] group text-left transition-all hover:border-[#00FF88]/20 shadow-lg"
                                 >

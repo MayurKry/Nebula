@@ -2,20 +2,22 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
-    Search, Grid, List, Folder, FolderPlus, Upload,
-    Video, Image, Layers, Music, Filter, SortDesc, X, Play,
-    Download, Trash2, MoreHorizontal, Clock, Info, Loader2, Box
+    Search, LayoutGrid, List, Folder, FolderPlus, Upload,
+    Video, Image, Music, Layers, Info, MoreVertical,
+    Clock, X, Play, RotateCw, Loader2, Box, Filter, SortDesc, Download, Trash2
 } from 'lucide-react';
 import { assetService } from '@/services/asset.service';
+import Pagination from '@/components/ui/Pagination';
 
 // (keep folders if needed for fallback or type ref, but mostly unused now)
 
-const folders = [
-    { id: 'f1', name: 'Marketing', count: 12 },
-    { id: 'f2', name: 'Products', count: 8 },
-    { id: 'f3', name: 'Social Media', count: 24 },
-    { id: 'f4', name: 'Archive', count: 45 },
-];
+// Folders removed as per user request
+// const folders = [
+//     { id: 'f1', name: 'Marketing', count: 12 },
+//     { id: 'f2', name: 'Products', count: 8 },
+//     { id: 'f3', name: 'Social Media', count: 24 },
+//     { id: 'f4', name: 'Archive', count: 45 },
+// ];
 
 const typeIcons = {
     video: Video,
@@ -44,32 +46,62 @@ const AssetLibraryPage = () => {
     const [showFilters, setShowFilters] = useState(false);
     const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
 
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalAssets, setTotalAssets] = useState(0);
+    const ITEMS_PER_PAGE = 20;
+
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchAssets();
+        // Reset to page 1 when filters happen
+        setCurrentPage(1);
+        fetchAssets(1);
     }, [filterType, searchQuery, selectedFolder]);
 
-    const fetchAssets = async () => {
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        fetchAssets(page);
+        // Smooth scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const fetchAssets = async (page = 1) => {
         setIsLoading(true);
         setError(null);
         try {
-            const params: any = {};
+            const params: any = {
+                page,
+                limit: ITEMS_PER_PAGE
+            };
             if (filterType) params.type = filterType;
             if (searchQuery) params.search = searchQuery;
             if (selectedFolder) params.folderId = selectedFolder;
 
-            const result = await assetService.getAssets(params);
+            const result: any = await assetService.getAssets(params);
 
-            if (result && (Array.isArray(result) || Array.isArray(result.assets))) {
-                setAssets(Array.isArray(result) ? result : result.assets);
+            // Handle backend pagination structure
+            if (result && result.assets) {
+                setAssets(result.assets);
+                if (result.pagination) {
+                    setTotalPages(result.pagination.pages);
+                    setTotalAssets(result.pagination.total);
+                }
+            } else if (Array.isArray(result)) {
+                // Fallback for non-paginated response?
+                setAssets(result);
+                setTotalPages(1);
+                setTotalAssets(result.length);
             } else {
                 console.warn("Unexpected asset response format:", result);
                 setAssets([]);
+                setTotalPages(1);
+                setTotalAssets(0);
             }
         } catch (error: any) {
             console.error("Failed to fetch assets:", error);
-            setError(error.message || "Failed to load assets. Please try again.");
+            setError(error.message || "Failed to load assets.");
             setAssets([]);
         } finally {
             setIsLoading(false);
@@ -158,18 +190,6 @@ const AssetLibraryPage = () => {
                                 <span className="ml-auto text-xs text-gray-500">{assets.length}</span>
                             </button>
                         </li>
-                        {folders.map((folder) => (
-                            <li key={folder.id}>
-                                <button
-                                    onClick={() => handleFolderClick(folder.id)}
-                                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${selectedFolder === folder.id ? 'text-white bg-white/5' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-                                >
-                                    <Folder className={`w-4 h-4 ${selectedFolder === folder.id ? 'text-[#00FF88]' : ''}`} />
-                                    {folder.name}
-                                    <span className="ml-auto text-xs text-gray-500">{folder.count}</span>
-                                </button>
-                            </li>
-                        ))}
                     </ul>
                 </nav>
             </aside>
@@ -227,7 +247,7 @@ const AssetLibraryPage = () => {
                                     onClick={() => setViewMode('grid')}
                                     className={`p-2 rounded transition-colors ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-gray-500'}`}
                                 >
-                                    <Grid className="w-4 h-4" />
+                                    <LayoutGrid className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={() => setViewMode('list')}
@@ -298,26 +318,52 @@ const AssetLibraryPage = () => {
                                         className="group bg-[#141414] border border-white/10 rounded-xl overflow-hidden hover:border-[#00FF88]/30 transition-all cursor-pointer"
                                     >
                                         <div className="aspect-video relative overflow-hidden bg-[#1A1A1A]">
-                                            {asset.type === 'image' ? (
-                                                <img src={asset.thumbnailUrl || asset.url} alt={asset.name} className="w-full h-full object-cover" />
+                                            {/* Premium Fallback Layer (Visible when media fails) */}
+                                            <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#1A1A1A] to-[#0A0A0A]">
+                                                <div className={`p-3 rounded-full mb-2 ${asset.type === 'video' ? 'bg-purple-500/10' : 'bg-blue-500/10'}`}>
+                                                    <TypeIcon className={`w-6 h-6 ${asset.type === 'video' ? 'text-purple-500/40' : 'text-blue-500/40'}`} />
+                                                </div>
+                                                <span className="text-[10px] font-medium text-gray-600 uppercase tracking-widest">
+                                                    Media Archived
+                                                </span>
+                                            </div>
+
+                                            {asset.type === 'image' || asset.type === 'storyboard' ? (
+                                                <img
+                                                    src={asset.thumbnailUrl || asset.url}
+                                                    alt={asset.name}
+                                                    className="w-full h-full object-cover relative z-10"
+                                                    onError={(e) => {
+                                                        e.currentTarget.style.display = 'none';
+                                                    }}
+                                                />
                                             ) : asset.type === 'video' ? (
-                                                <div className="w-full h-full relative cursor-pointer">
+                                                <div className="w-full h-full relative cursor-pointer z-10">
                                                     <video
                                                         src={asset.url}
+                                                        poster={asset.thumbnailUrl && !asset.thumbnailUrl.endsWith('.mp4') ? asset.thumbnailUrl : undefined}
                                                         className="w-full h-full object-cover"
                                                         muted
+                                                        playsInline
+                                                        preload="metadata"
                                                         onMouseOver={(e) => e.currentTarget.play().catch(() => { })}
                                                         onMouseOut={(e) => {
                                                             e.currentTarget.pause();
                                                             e.currentTarget.currentTime = 0;
                                                         }}
+                                                        onError={(e) => {
+                                                            e.currentTarget.style.display = 'none';
+                                                            // Also hide the play button overlay if video fails
+                                                            const overlay = e.currentTarget.nextElementSibling as HTMLElement;
+                                                            if (overlay) overlay.style.display = 'none';
+                                                        }}
                                                     />
-                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors">
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors pointer-events-none">
                                                         <Play className="w-8 h-8 text-white drop-shadow-lg" />
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center">
+                                                <div className="w-full h-full flex items-center justify-center relative z-10">
                                                     {asset.type === 'audio' ? <Music className="w-12 h-12 text-gray-600" /> : <Layers className="w-12 h-12 text-gray-600" />}
                                                 </div>
                                             )}
@@ -361,11 +407,25 @@ const AssetLibraryPage = () => {
                                             </div>
                                         </div>
                                         <button className="p-2 text-gray-500 hover:text-white transition-colors">
-                                            <MoreHorizontal className="w-4 h-4" />
+                                            <MoreVertical className="w-4 h-4" />
                                         </button>
                                     </div>
                                 );
                             })}
+                        </div>
+                    )}
+
+                    {/* Pagination Controls */}
+                    {!isLoading && !error && assets.length > 0 && (
+                        <div className="mt-8 border-t border-white/5 pt-6 pb-12">
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                            />
+                            <div className="text-center mt-4 text-xs text-gray-500">
+                                Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalAssets)} of {totalAssets} assets
+                            </div>
                         </div>
                     )}
                 </div>
@@ -384,12 +444,28 @@ const AssetLibraryPage = () => {
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-4 border-b border-white/10">
                             <h3 className="text-lg font-semibold text-white">{selectedAsset.name}</h3>
-                            <button
-                                onClick={() => setSelectedAsset(null)}
-                                className="p-2 text-gray-400 hover:text-white transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => fetchAssets(currentPage)}
+                                    className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all group"
+                                    title="Refresh Library"
+                                    disabled={isLoading}
+                                >
+                                    <RotateCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                                    className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                                >
+                                    {viewMode === 'grid' ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
+                                </button>
+                                <button
+                                    onClick={() => setSelectedAsset(null)}
+                                    className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Preview Area */}

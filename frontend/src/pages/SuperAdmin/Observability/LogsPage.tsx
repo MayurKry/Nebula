@@ -1,31 +1,45 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '@/api/admin.api';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import GSAPTransition from '@/components/ui/GSAPTransition';
+import Pagination from '@/components/ui/Pagination';
 
 const LogsPage = () => {
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [total, setTotal] = useState(0);
-    const [page, setPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState('');
     const [tenantId] = useState('');
 
-    useEffect(() => {
-        fetchLogs();
-    }, [page, statusFilter]);
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const ITEMS_PER_PAGE = 20;
 
-    const fetchLogs = async () => {
+    useEffect(() => {
+        setCurrentPage(1);
+        fetchLogs(1);
+    }, [statusFilter]);
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        fetchLogs(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const fetchLogs = async (page = 1) => {
         setLoading(true);
         try {
             const response = await adminApi.getGenerationLogs({
                 page,
-                limit: 50,
+                limit: ITEMS_PER_PAGE,
                 status: statusFilter || undefined,
                 tenantId: tenantId || undefined
             });
             setLogs(response.data.data.logs);
-            setTotal(response.data.data.total);
+            // Handle pagination logic
+            const total = response?.data?.data?.total || 0;
+            setTotalItems(total);
+            setTotalPages(Math.ceil(total / ITEMS_PER_PAGE));
         } catch (error) {
             console.error(error);
         } finally {
@@ -115,27 +129,18 @@ const LogsPage = () => {
                     </div>
 
                     {/* Pagination */}
-                    <div className="p-4 border-t border-white/10 flex items-center justify-between">
-                        <span className="text-[#8E8E93] text-xs font-bold uppercase tracking-widest">
-                            Page {page} of {Math.ceil(total / 50)}
-                        </span>
-                        <div className="flex gap-2">
-                            <button
-                                disabled={page === 1}
-                                onClick={() => setPage(p => p - 1)}
-                                className="p-2 rounded bg-white/5 disabled:opacity-50 hover:bg-white/10 text-white"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <button
-                                disabled={page >= Math.ceil(total / 50)}
-                                onClick={() => setPage(p => p + 1)}
-                                className="p-2 rounded bg-white/5 disabled:opacity-50 hover:bg-white/10 text-white"
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
+                    {!loading && logs.length > 0 && (
+                        <div className="p-4 border-t border-white/10">
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                            />
+                            <div className="text-center mt-4 text-xs text-[#8E8E93]">
+                                Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} logs
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </GSAPTransition>
         </div>

@@ -5,6 +5,7 @@ import { aiService } from '@/services/ai.service';
 import type { HistoryItem } from '@/services/ai.service';
 import { useAuth } from '@/context/AuthContext';
 import { TokenStorage } from '@/api/tokenStorage';
+import Pagination from '@/components/ui/Pagination';
 
 const HistoryPage = () => {
     const { isAuthenticated } = useAuth();
@@ -16,11 +17,24 @@ const HistoryPage = () => {
     const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
     const [selectedResultIndex, setSelectedResultIndex] = useState(0);
 
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const ITEMS_PER_PAGE = 20;
+
     useEffect(() => {
-        fetchHistory();
+        setCurrentPage(1);
+        fetchHistory(1);
     }, [filterType]);
 
-    const fetchHistory = async () => {
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        fetchHistory(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const fetchHistory = async (page = 1) => {
         setLoading(true);
         setError(null);
 
@@ -35,9 +49,16 @@ const HistoryPage = () => {
         try {
             const response = await aiService.getHistory({
                 type: filterType === 'all' ? undefined : filterType,
-                limit: 50
+                limit: ITEMS_PER_PAGE,
+                skip: (page - 1) * ITEMS_PER_PAGE
             });
             setHistory(response.history);
+
+            // Calculate total pages
+            const total = response.total || 0;
+            setTotalItems(total);
+            setTotalPages(Math.ceil(total / ITEMS_PER_PAGE));
+
             setError(null);
         } catch (err: any) {
             console.error('Failed to fetch history:', err);
@@ -144,7 +165,7 @@ const HistoryPage = () => {
                     <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
                     <p className="text-red-400 text-lg font-medium mb-2">{error}</p>
                     <button
-                        onClick={fetchHistory}
+                        onClick={() => fetchHistory(currentPage)}
                         className="mt-4 px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
                     >
                         <RefreshCw className="w-4 h-4" /> Retry
@@ -237,6 +258,19 @@ const HistoryPage = () => {
                     {filteredHistory.length === 0 && (
                         <div className="text-center py-24 border border-dashed border-white/10 rounded-xl">
                             <p className="text-gray-500">No results found matching your filters.</p>
+                        </div>
+                    )}
+
+                    {!loading && !error && history.length > 0 && (
+                        <div className="mt-8 border-t border-white/5 pt-6 pb-12">
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                            />
+                            <div className="text-center mt-4 text-xs text-gray-500">
+                                Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} items
+                            </div>
                         </div>
                     )}
                 </>
