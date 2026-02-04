@@ -2,16 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 
 import {
     RefreshCw, AlertCircle, Loader2, CheckCircle2,
-    Clock, XCircle, Play, FileText, Image, Mic, ExternalLink,
+    Clock, XCircle, Play, Pause, FileText, Image, Mic, ExternalLink,
     Zap, Clock4, Gauge, History, Trash2, Search, RotateCcw, Download
 } from 'lucide-react';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 import { jobService, type Job, type JobModule, type JobStatus } from '@/services/job.service';
 import { toast } from 'sonner';
 import { TokenStorage } from '@/api/tokenStorage';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
 import Pagination from '@/components/ui/Pagination';
+import { assetService } from '@/services/asset.service';
 
 const getModuleIcon = (module: JobModule) => {
     switch (module) {
@@ -81,6 +80,16 @@ const JobHistoryPage = () => {
     const ITEMS_PER_PAGE = 20;
 
     const containerRef = useRef<HTMLDivElement>(null);
+    const [audioPlaying, setAudioPlaying] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    const getMediaUrl = (url?: string) => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/v1';
+        const serverBase = apiBase.replace('/v1', '');
+        return `${serverBase}${url}`;
+    };
 
     const openModal = (job: Job) => setSelectedJob(job);
     const closeModal = () => setSelectedJob(null);
@@ -88,7 +97,12 @@ const JobHistoryPage = () => {
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
         fetchJobs(false, page);
-        if (containerRef.current) {
+
+        // Find the scrollable container in AppLayout and scroll it
+        const mainContent = document.querySelector('main > div.overflow-y-auto');
+        if (mainContent) {
+            mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
@@ -167,16 +181,66 @@ const JobHistoryPage = () => {
         }
     };
 
-    const handleDownload = async (url: string, filename: string) => {
+    const handleDownload = async (url: string, filename: string, assetId?: string) => {
         try {
             toast.info('Preparing file for download...');
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
+            let blob;
 
+            if (assetId) {
+                // Use proxy service for reliable download
+                try {
+                    blob = await assetService.downloadAsset(assetId);
+                } catch (proxyError) {
+                    console.warn('Proxy download failed, trying direct fetch:', proxyError);
+                    // Fallback to direct fetch if proxy fails
+                    try {
+                        const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'include' });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        blob = await response.blob();
+                    } catch (fetchError) {
+                        // Retry without credentials (for external URLs causing CORS issues)
+                        const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'omit' });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        blob = await response.blob();
+                    }
+                }
+            } else {
+                // Direct fetch for metadata-less results
+                try {
+                    const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'include' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    blob = await response.blob();
+                } catch (fetchError) {
+                    // Retry without credentials (for external URLs causing CORS issues)
+                    const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'omit' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    blob = await response.blob();
+                }
+            }
+
+            // Determine file extension from blob type or URL
+            let extension = '';
+            if (blob.type) {
+                const mimeMap: Record<string, string> = {
+                    'image/png': '.png',
+                    'image/jpeg': '.jpg',
+                    'image/webp': '.webp',
+                    'video/mp4': '.mp4',
+                    'audio/mpeg': '.mp3',
+                    'audio/wav': '.wav'
+                };
+                extension = mimeMap[blob.type] || '';
+            }
+            if (!extension) {
+                // Try to get from URL
+                const urlExt = url.split('.').pop()?.split('?')[0];
+                if (urlExt && urlExt.length <= 4) extension = `.${urlExt}`;
+            }
+
+            const blobUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = blobUrl;
-            link.download = filename;
+            link.download = filename + extension;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -185,8 +249,7 @@ const JobHistoryPage = () => {
             toast.success('Download completed');
         } catch (error) {
             console.error('Download failed:', error);
-            window.open(url, '_blank');
-            toast.error('Direct download failed, opening in new tab');
+            toast.error('Download failed. Please try again or contact support.');
         }
     };
 
@@ -195,17 +258,7 @@ const JobHistoryPage = () => {
         job._id.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    useGSAP(() => {
-        if (!isLoading && filteredJobs.length > 0) {
-            gsap.from('.job-card', {
-                y: 20,
-                opacity: 0,
-                duration: 0.5,
-                stagger: 0.05,
-                ease: 'power2.out'
-            });
-        }
-    }, [isLoading, filteredJobs.length]);
+    // Animation removed for better UX - items now display immediately
 
     return (
         <div ref={containerRef} className="p-4 sm:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
@@ -472,14 +525,39 @@ const JobHistoryPage = () => {
                                     {selectedJob.status === 'completed' && selectedJob.output?.[0]?.url ? (
                                         selectedJob.output[0].type === 'video' ? (
                                             <video
-                                                src={selectedJob.output[0].url}
+                                                src={getMediaUrl(selectedJob.output[0].url)}
                                                 controls
                                                 autoPlay
                                                 className="w-full h-full object-contain"
                                             />
+                                        ) : selectedJob.output[0].type === 'audio' ? (
+                                            <div className="flex flex-col items-center gap-6 w-full h-full justify-center bg-gradient-to-br from-purple-500/10 to-blue-500/10">
+                                                <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${audioPlaying ? 'bg-[#00FF88] scale-110 shadow-[0_0_30px_rgba(0,255,136,0.4)]' : 'bg-white/5 border border-white/10'}`}>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (audioRef.current) {
+                                                                if (audioPlaying) audioRef.current.pause();
+                                                                else audioRef.current.play().catch(() => toast.error("Playback failed"));
+                                                            }
+                                                        }}
+                                                        className={`transition-colors ${audioPlaying ? 'text-black' : 'text-white hover:text-[#00FF88]'}`}
+                                                    >
+                                                        {audioPlaying ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
+                                                    </button>
+                                                </div>
+                                                <audio
+                                                    ref={audioRef}
+                                                    src={getMediaUrl(selectedJob.output[0].url)}
+                                                    onPlay={() => setAudioPlaying(true)}
+                                                    onPause={() => setAudioPlaying(false)}
+                                                    onEnded={() => setAudioPlaying(false)}
+                                                    className="hidden"
+                                                />
+                                                <p className="text-gray-400 text-xs font-bold font-pixel tracking-widest uppercase">Click to Play</p>
+                                            </div>
                                         ) : (
                                             <img
-                                                src={selectedJob.output[0].url}
+                                                src={getMediaUrl(selectedJob.output[0].url)}
                                                 className="w-full h-full object-contain"
                                                 alt="Result"
                                             />
@@ -537,13 +615,17 @@ const JobHistoryPage = () => {
                                 {selectedJob.status === 'completed' && selectedJob.output?.[0]?.url && (
                                     <div className="flex gap-3">
                                         <button
-                                            onClick={() => handleDownload(selectedJob.output![0].url!, `nebula-${selectedJob._id.slice(-8)}`)}
+                                            onClick={() => {
+                                                const output = selectedJob.output![0];
+                                                const assetId = output.metadata?.assetId;
+                                                handleDownload(output.url!, `nebula-${selectedJob._id.slice(-8)}`, assetId);
+                                            }}
                                             className="flex-1 bg-[#00FF88] text-black h-12 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#00CC6A] transition-all"
                                         >
                                             <Download className="w-4 h-4" /> Download Result
                                         </button>
                                         <button
-                                            onClick={() => window.open(selectedJob.output![0].url, '_blank')}
+                                            onClick={() => window.open(getMediaUrl(selectedJob.output![0].url), '_blank')}
                                             className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/10 transition-all"
                                         >
                                             <ExternalLink className="w-5 h-5 text-white" />

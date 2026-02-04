@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import {
     Sparkles,
     Loader2,
-    RotateCw, Folder, Wand2, Download, Palette, Ratio, Box, X
+    RotateCw, Folder, Wand2, Download, Palette, Ratio, Box, X, Check
 } from 'lucide-react';
 import { useGeneration } from '@/components/generation/GenerationContext';
 import GenerationQueue from '@/components/generation/GenerationQueue';
@@ -29,8 +29,16 @@ const TextToImagePage = () => {
     const [seed] = useState(42);
 
     const [isGenerating, setIsGenerating] = useState(false);
-    const [results, setResults] = useState<{ url: string; assetId?: string }[]>([]);
-    const [selectedResult, setSelectedResult] = useState<{ url: string; assetId?: string } | null>(null);
+    const [results, setResults] = useState<{ url: string; assetId?: string; type: string }[]>([]);
+    const [selectedResult, setSelectedResult] = useState<{ url: string; assetId?: string; type: string } | null>(null);
+
+    const getMediaUrl = (url?: string) => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/v1';
+        const serverBase = apiBase.replace('/v1', '');
+        return `${serverBase}${url}`;
+    };
 
     // Handle initial prompt from dashboard
     useEffect(() => {
@@ -41,7 +49,6 @@ const TextToImagePage = () => {
         }
     }, [location.state]);
     const [usedProvider, setUsedProvider] = useState<string | null>(null);
-    const [isEnhancing, setIsEnhancing] = useState(false);
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
@@ -77,7 +84,7 @@ const TextToImagePage = () => {
             );
 
             // Extract data from the response
-            const newResults = images.map(img => ({ url: img.url, assetId: img.assetId }));
+            const newResults = images.map(img => ({ url: img.url, assetId: img.assetId, type: 'image' }));
             setResults(newResults);
 
             // Set the provider used (from first image)
@@ -100,10 +107,6 @@ const TextToImagePage = () => {
     };
 
     const handleEnhance = async (imageUrl?: string) => {
-        setIsEnhancing(true);
-        // Simulate enhancement
-        await new Promise(r => setTimeout(r, 1500));
-        setIsEnhancing(false);
         if (imageUrl) {
             toast.success("Image Upscaled to 4K!");
         } else {
@@ -124,18 +127,56 @@ const TextToImagePage = () => {
 
     const handleDownload = async (imageUrl: string, assetId?: string) => {
         try {
-            toast.info('Preparing image for download...');
+            toast.info('Preparing file for download...');
             let blob;
+
             if (assetId) {
-                blob = await assetService.downloadAsset(assetId);
+                // Use proxy service for reliable download
+                try {
+                    blob = await assetService.downloadAsset(assetId);
+                } catch (proxyError) {
+                    console.warn('Proxy download failed, trying direct fetch:', proxyError);
+                    // Fallback to direct fetch if proxy fails
+                    try {
+                        const response = await fetch(getMediaUrl(imageUrl), { mode: 'cors', credentials: 'include' });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        blob = await response.blob();
+                    } catch (fetchError) {
+                        // Retry without credentials
+                        const response = await fetch(getMediaUrl(imageUrl), { mode: 'cors', credentials: 'omit' });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        blob = await response.blob();
+                    }
+                }
             } else {
-                const response = await fetch(imageUrl);
-                blob = await response.blob();
+                // Direct fetch for results without assetId
+                try {
+                    const response = await fetch(getMediaUrl(imageUrl), { mode: 'cors', credentials: 'include' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    blob = await response.blob();
+                } catch (fetchError) {
+                    // Retry without credentials
+                    const response = await fetch(getMediaUrl(imageUrl), { mode: 'cors', credentials: 'omit' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    blob = await response.blob();
+                }
             }
+
+            // Determine file extension
+            let extension = '.png'; // Default for this page
+            if (blob.type) {
+                const mimeMap: Record<string, string> = {
+                    'image/png': '.png',
+                    'image/jpeg': '.jpg',
+                    'image/webp': '.webp'
+                };
+                if (mimeMap[blob.type]) extension = mimeMap[blob.type];
+            }
+
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `nebula-image-${Date.now()}.png`;
+            link.download = `nebula-image-${Date.now()}${extension}`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -143,8 +184,7 @@ const TextToImagePage = () => {
             toast.success('Image downloaded successfully!');
         } catch (error) {
             console.error('Error downloading image:', error);
-            window.open(imageUrl, '_blank');
-            toast.error('Download failed, opening in new tab.');
+            toast.error('Download failed. Please try again or use direct save.');
         }
     };
 
@@ -241,12 +281,8 @@ const TextToImagePage = () => {
                         value={prompt}
                         onChange={setPrompt}
                         onGenerate={handleGenerate}
-                        onEnhance={() => handleEnhance()}
                         isGenerating={isGenerating}
-                        isEnhancing={isEnhancing}
                         placeholder="Describe your imagination..."
-                        settings={{ style, aspectRatio }}
-                        onSettingsChange={() => { }} // Handled by top styling
                     />
                 </GSAPTransition>
 
@@ -355,11 +391,17 @@ const TextToImagePage = () => {
                                 Download PNG
                             </button>
                             <button
-                                onClick={() => handleSaveToAssets()}
+                                onClick={() => {
+                                    if (selectedResult.assetId) {
+                                        toast.success("Already saved to library");
+                                    } else {
+                                        handleSaveToAssets();
+                                    }
+                                }}
                                 className="h-12 px-8 bg-[#00FF88] text-black font-bold rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-[#00FF88]/20"
                             >
-                                <Folder className="w-4 h-4" />
-                                Save to Assets
+                                {selectedResult.assetId ? <Check className="w-4 h-4" /> : <Folder className="w-4 h-4" />}
+                                {selectedResult.assetId ? 'Saved to Library' : 'Save to Library'}
                             </button>
                         </div>
                     </div>

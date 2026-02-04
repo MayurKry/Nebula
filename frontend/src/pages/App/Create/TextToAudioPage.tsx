@@ -45,9 +45,16 @@ const TextToAudioPage = () => {
     const [language] = useState(languages[0]);
     const [voice, setVoice] = useState(voices[0]);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [isEnhancing, setIsEnhancing] = useState(false);
     const [results, setResults] = useState<AudioResult[]>([]);
     const [activeAudio, setActiveAudio] = useState<string | null>(null);
+
+    const getMediaUrl = (url?: string) => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/v1';
+        const serverBase = apiBase.replace('/v1', '');
+        return `${serverBase}${url}`;
+    };
 
     useEffect(() => {
         if (location.state?.initialPrompt) {
@@ -111,19 +118,7 @@ const TextToAudioPage = () => {
         }
     };
 
-    const handleEnhance = async () => {
-        if (!prompt.trim()) return;
-        setIsEnhancing(true);
-        try {
-            const res = await aiService.enhancePrompt(prompt);
-            setPrompt(res.enhanced);
-            toast.success('Prompt enhanced!');
-        } catch (err) {
-            toast.error('Failed to enhance prompt');
-        } finally {
-            setIsEnhancing(false);
-        }
-    };
+
 
     const togglePlay = (id: string) => {
         setActiveAudio(activeAudio === id ? null : id);
@@ -135,25 +130,60 @@ const TextToAudioPage = () => {
 
             let blob;
             if (assetId) {
-                blob = await assetService.downloadAsset(assetId);
+                // Use proxy service for reliable download
+                try {
+                    blob = await assetService.downloadAsset(assetId);
+                } catch (proxyError) {
+                    console.warn('Proxy download failed, trying direct fetch:', proxyError);
+                    // Fallback to direct fetch if proxy fails
+                    try {
+                        const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'include' });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        blob = await response.blob();
+                    } catch (fetchError) {
+                        // Retry without credentials
+                        const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'omit' });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        blob = await response.blob();
+                    }
+                }
             } else {
-                const response = await fetch(url);
-                blob = await response.blob();
+                // Direct fetch for results without assetId
+                try {
+                    const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'include' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    blob = await response.blob();
+                } catch (fetchError) {
+                    // Retry without credentials
+                    const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'omit' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    blob = await response.blob();
+                }
+            }
+
+            // Determine file extension
+            let extension = '.mp3';
+            if (blob.type) {
+                const mimeMap: Record<string, string> = {
+                    'audio/mpeg': '.mp3',
+                    'audio/wav': '.wav',
+                    'audio/ogg': '.ogg'
+                };
+                if (mimeMap[blob.type]) extension = mimeMap[blob.type];
             }
 
             const blobUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = blobUrl;
-            link.download = filename || 'generated-audio.mp3';
+            link.download = filename ? `${filename}${extension}` : `nebula-audio-${Date.now()}${extension}`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(blobUrl);
-            toast.success("Download started");
+            toast.success("Download completed");
         } catch (e) {
             console.error("Download failed:", e);
-            window.open(url, '_blank');
-            toast.error("Download failed, opening in new tab");
+            toast.error("Download failed. Please try again or use direct save.");
         }
     };
 
@@ -230,13 +260,8 @@ const TextToAudioPage = () => {
                             value={prompt}
                             onChange={setPrompt}
                             onGenerate={handleGenerate}
-                            onEnhance={handleEnhance}
                             isGenerating={isGenerating}
-                            isEnhancing={isEnhancing}
                             placeholder="Describe the sound or music track you want to create..."
-                            settings={{ style: 'TTS', duration: 'Audio' }}
-                            onSettingsChange={() => { }}
-                            hideAspectRatio={true}
                         />
                     </div>
 

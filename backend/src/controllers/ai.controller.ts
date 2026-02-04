@@ -13,6 +13,8 @@ import { LoggingService } from "../services/logging.service";
 import { jobService } from "../services/job.service";
 import axios from "axios";
 import mongoose from "mongoose";
+import fs from 'fs';
+import path from 'path';
 
 // Extend Request type to include user (if not already globally defined, but here for safety/clarity in this file scope)
 interface AuthenticatedRequest extends Request {
@@ -70,30 +72,6 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
         const savedAssets: any[] = [];
 
         if (userId) {
-            // Synchronize with Job system for History/Activity visibility
-            try {
-                const { JobModel } = await import("../models/job.model");
-                await JobModel.create({
-                    userId: new mongoose.Types.ObjectId(userId),
-                    module: "text_to_image",
-                    status: "completed",
-                    input: {
-                        prompt,
-                        config: { style, width, height, seed, aspectRatio }
-                    },
-                    output: results.map(r => ({
-                        type: "image",
-                        url: r.url,
-                        metadata: { width: r.width, height: r.height, provider: "nebula-locked" }
-                    })),
-                    queuedAt: new Date(startTime),
-                    startedAt: new Date(startTime),
-                    completedAt: new Date(),
-                    creditsUsed: results.length
-                });
-            } catch (err) {
-                console.warn("[Image Generation] Job sync failed:", err);
-            }
             const { downloadAndSaveFile } = await import("../utils/fileDownloader");
 
             const assetPromises = results.map(async result => {
@@ -120,8 +98,39 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
                     tags: ["ai-generated", style || "default", "nebular-locked"]
                 });
             });
+
             const assets = await Promise.all(assetPromises);
             savedAssets.push(...assets);
+
+            // Synchronize with Job system for History/Activity visibility
+            try {
+                const { JobModel } = await import("../models/job.model");
+                await JobModel.create({
+                    userId: new mongoose.Types.ObjectId(userId),
+                    module: "text_to_image",
+                    status: "completed",
+                    input: {
+                        prompt,
+                        config: { style, width, height, seed, aspectRatio }
+                    },
+                    output: assets.map(a => ({
+                        type: "image",
+                        url: a.url,
+                        metadata: {
+                            width: a.metadata?.width,
+                            height: a.metadata?.height,
+                            provider: "nebula-locked",
+                            assetId: a._id
+                        }
+                    })),
+                    queuedAt: new Date(startTime),
+                    startedAt: new Date(startTime),
+                    completedAt: new Date(),
+                    creditsUsed: results.length
+                });
+            } catch (err) {
+                console.warn("[Image Generation] Job sync failed:", err);
+            }
 
             // Save to generation history
             await GenerationHistoryModel.create({
@@ -139,14 +148,14 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
                     count: imageCount,
                     model: intentAnalysis.model
                 },
-                results: results.map((result, index) => ({
-                    assetId: savedAssets[index]?._id,
-                    url: result.url,
-                    thumbnailUrl: result.url,
-                    provider: result.provider
+                results: savedAssets.map(a => ({
+                    assetId: a._id,
+                    url: a.url,
+                    thumbnailUrl: a.url,
+                    status: 'completed'
                 })),
-                provider: results[0]?.provider,
-                status: "completed"
+                status: "completed",
+                provider: "nebula-locked"
             });
 
             // Log activity
@@ -482,11 +491,14 @@ export const checkVideoStatus = asyncHandler(async (req: Request, res: Response)
             }
         }
 
+        const asset = (userId && result.status === 'succeeded') ? await AssetModel.findOne({ url: result.videoUrl, userId }) : null;
+
         return responseHandler(res, 200, "Video status retrieved", {
             jobId: result.jobId,
             status: result.status,
             videoUrl: result.videoUrl,
             thumbnailUrl: result.thumbnailUrl,
+            assetId: asset?._id,
             error: result.error
         });
     } catch (error: any) {
@@ -980,7 +992,9 @@ export const getHistory = asyncHandler(async (req: Request, res: Response) => {
     }
 });
 
-// Get Single History Item Details
+/**
+ * Get Single History Item Details
+ */
 export const getHistoryItem = asyncHandler(async (req: Request, res: Response) => {
     const userId = (req as AuthenticatedRequest).user?._id;
     const { id } = req.params;
@@ -1003,6 +1017,34 @@ export const getHistoryItem = asyncHandler(async (req: Request, res: Response) =
     } catch (error: any) {
         console.error("Failed to fetch history item:", error);
         return responseHandler(res, 500, "Failed to fetch history item");
+    }
+});
+
+/**
+ * Delete History Item
+ */
+export const deleteHistoryItem = asyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as AuthenticatedRequest).user?._id || (req as AuthenticatedRequest).user?.id || (req as AuthenticatedRequest).user?.userId;
+    const { id } = req.params;
+
+    if (!userId) {
+        return responseHandler(res, 401, "Unauthorized");
+    }
+
+    try {
+        const result = await GenerationHistoryModel.findOneAndDelete({
+            _id: new mongoose.Types.ObjectId(id),
+            userId: new mongoose.Types.ObjectId(userId)
+        });
+
+        if (!result) {
+            return responseHandler(res, 404, "History item not found or unauthorized");
+        }
+
+        return responseHandler(res, 200, "History item deleted successfully");
+    } catch (error: any) {
+        console.error("Failed to delete history item:", error);
+        return responseHandler(res, 500, "Failed to delete history item");
     }
 });
 
@@ -1138,6 +1180,7 @@ export const checkAudioStatus = asyncHandler(async (req: Request, res: Response)
  */
 export const downloadAsset = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
+    console.log(`[AssetController] Download request for asset ID: ${id}`);
     const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
 
     const asset = await AssetModel.findOne({ _id: id, userId });
@@ -1147,23 +1190,49 @@ export const downloadAsset = asyncHandler(async (req: Request, res: Response) =>
     }
 
     try {
-        const response = await axios({
-            method: 'get',
-            url: asset.url.startsWith('/') ? `${req.protocol}://${req.get('host')}${asset.url}` : asset.url,
-            responseType: 'stream'
-        });
-
-        // Set headers to force download
-        const filename = asset.name || `nebula-asset-${id}`;
+        const filename = asset.name ? asset.name.replace(/[^a-z0-9]/gi, '_').toLowerCase() : `nebula-asset-${id}`;
         const extension = asset.url.split('.').pop()?.split('?')[0] || (asset.type === 'video' ? 'mp4' : asset.type === 'audio' ? 'mp3' : 'png');
 
+        // If it's a local file, stream it directly from disk
+        if (asset.url.startsWith('/public/uploads/')) {
+            const filePath = path.join(process.cwd(), asset.url);
+            if (fs.existsSync(filePath)) {
+                const stat = fs.statSync(filePath);
+                res.setHeader('Content-Length', stat.size);
+                res.setHeader('Content-Type', asset.type === 'image' ? 'image/png' : asset.type === 'video' ? 'video/mp4' : 'audio/mpeg');
+                res.setHeader('Content-Disposition', `attachment; filename="${filename}.${extension}"`);
+
+                const readStream = fs.createReadStream(filePath);
+                readStream.pipe(res);
+                return;
+            }
+        }
+
+        const response = await axios({
+            method: 'get',
+            url: asset.url,
+            responseType: 'stream',
+            timeout: 30000,
+            headers: { 'User-Agent': 'NebulaProxy/1.0' }
+        });
+
+        const contentType = response.headers['content-type'] || (asset.type === 'image' ? 'image/png' : asset.type === 'video' ? 'video/mp4' : 'audio/mpeg');
+
         res.setHeader('Content-Disposition', `attachment; filename="${filename}.${extension}"`);
-        res.setHeader('Content-Type', response.headers['content-type']);
+
+        if (response.headers['content-length']) {
+            res.setHeader('Content-Length', response.headers['content-length']);
+        }
 
         response.data.pipe(res);
+        response.data.on('error', (err: any) => {
+            console.error('[AssetController] Stream error:', err);
+            if (!res.headersSent) res.status(500).send('Stream error');
+        });
     } catch (error: any) {
         console.error(`[AssetController] Download proxy failed: ${error.message}`);
-        // Fallback to direct redirect if proxy fails
-        res.redirect(asset.url);
+        if (!res.headersSent) {
+            return responseHandler(res, 500, `Failed to proxy download: ${error.message}`);
+        }
     }
 });

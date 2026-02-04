@@ -39,6 +39,14 @@ const ImageToVideoPage = () => {
     const [generationProgress, setGenerationProgress] = useState(0);
     const [results, setResults] = useState<{ thumbnail: string; url: string; assetId?: string }[]>([]);
 
+    const getMediaUrl = (url?: string) => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/v1';
+        const serverBase = apiBase.replace('/v1', '');
+        return `${serverBase}${url}`;
+    };
+
     useEffect(() => {
         if (location.state?.sourceImage) {
             setSourceImage(location.state.sourceImage);
@@ -124,24 +132,60 @@ const ImageToVideoPage = () => {
             toast.info("Preparing video for download...");
             let blob;
             if (assetId) {
-                blob = await assetService.downloadAsset(assetId);
+                // Use proxy service for reliable download
+                try {
+                    blob = await assetService.downloadAsset(assetId);
+                } catch (proxyError) {
+                    console.warn('Proxy download failed, trying direct fetch:', proxyError);
+                    // Fallback to direct fetch if proxy fails
+                    try {
+                        const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'include' });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        blob = await response.blob();
+                    } catch (fetchError) {
+                        // Retry without credentials
+                        const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'omit' });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        blob = await response.blob();
+                    }
+                }
             } else {
-                const response = await fetch(url);
-                blob = await response.blob();
+                // Direct fetch for results without assetId
+                try {
+                    const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'include' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    blob = await response.blob();
+                } catch (fetchError) {
+                    // Retry without credentials
+                    const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'omit' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    blob = await response.blob();
+                }
             }
+
+            // Determine file extension
+            let extension = '.mp4';
+            if (blob.type) {
+                const mimeMap: Record<string, string> = {
+                    'video/mp4': '.mp4',
+                    'video/quicktime': '.mov',
+                    'video/webm': '.webm'
+                };
+                if (mimeMap[blob.type]) extension = mimeMap[blob.type];
+            }
+
             const blobUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = blobUrl;
-            link.download = `nebula-video-${Date.now()}.mp4`;
+            link.download = `nebula-video-${Date.now()}${extension}`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(blobUrl);
-            toast.success("Download started");
+            toast.success("Download completed");
         } catch (e) {
             console.error("Download failed:", e);
-            window.open(url, '_blank');
-            toast.error("Download failed, opening in new tab");
+            toast.error("Download failed. Please try again or use direct save.");
         }
     };
 
@@ -223,14 +267,6 @@ const ImageToVideoPage = () => {
                             onGenerate={handleGenerate}
                             isGenerating={isGenerating}
                             placeholder="Describe how parts of the image should move..."
-                            onFileSelect={(file) => {
-                                const reader = new FileReader();
-                                reader.onload = () => {
-                                    setSourceImage(reader.result as string);
-                                    toast.success('Frame attached successfully');
-                                };
-                                reader.readAsDataURL(file);
-                            }}
                         />
                     </div>
 

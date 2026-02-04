@@ -11,6 +11,7 @@ import {
     getAIProviders,
     getHistory,
     getHistoryItem,
+    deleteHistoryItem, // Ensure deleteHistoryItem is imported
     enhancePrompt,
     generateAudio,
     checkAudioStatus
@@ -36,6 +37,7 @@ router.post("/generate-storyboard", generateStoryboard);
 router.get("/providers", getAIProviders);
 router.get("/history", getHistory); // Get all history
 router.get("/history/:id", getHistoryItem); // Get single history item
+router.delete("/history/:id", deleteHistoryItem); // Delete history item
 router.post("/enhance-prompt", enhancePrompt);
 router.post("/generate-audio", requireFeature("TEXT_TO_AUDIO"), generateAudio); // Audio Generation
 router.get("/audio-status/:jobId", checkAudioStatus); // Audio Status

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import GSAPTransition from '@/components/ui/GSAPTransition';
-import { Video, Image, Search, Calendar, Download, X, ExternalLink, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
-import { aiService } from '@/services/ai.service';
-import type { HistoryItem } from '@/services/ai.service';
+import { Video, Image, Search, Calendar, Download, X, Loader2, AlertCircle, RefreshCw, Check, Copy, Folder, Trash2 } from 'lucide-react';
+import { aiService, type HistoryItem } from '@/services/ai.service';
 import { useAuth } from '@/context/AuthContext';
 import { TokenStorage } from '@/api/tokenStorage';
 import Pagination from '@/components/ui/Pagination';
+import { assetService } from '@/services/asset.service';
+import { toast } from 'sonner';
 
 const HistoryPage = () => {
     const { isAuthenticated } = useAuth();
@@ -83,21 +84,141 @@ const HistoryPage = () => {
         return matchesSearch;
     });
 
-    const handleDownload = async (url: string, prompt: string) => {
+    const getMediaUrl = (url?: string) => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/v1';
+        const serverBase = apiBase.replace('/v1', '');
+        return `${serverBase}${url}`;
+    };
+
+    const handleDownload = async (url: string, prompt: string, assetId?: string) => {
         try {
-            const response = await fetch(url);
-            const blob = await response.blob();
+            toast.info('Preparing file for download...');
+            let blob;
+
+            if (assetId) {
+                // Use proxy service for reliable download
+                try {
+                    blob = await assetService.downloadAsset(assetId);
+                } catch (proxyError) {
+                    console.warn('Proxy download failed, trying direct fetch:', proxyError);
+                    // Fallback to direct fetch if proxy fails
+                    try {
+                        const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'include' });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        blob = await response.blob();
+                    } catch (fetchError) {
+                        // Retry without credentials
+                        const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'omit' });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        blob = await response.blob();
+                    }
+                }
+            } else {
+                // Direct fetch for results without assetId
+                try {
+                    const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'include' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    blob = await response.blob();
+                } catch (fetchError) {
+                    // Retry without credentials
+                    const response = await fetch(getMediaUrl(url), { mode: 'cors', credentials: 'omit' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    blob = await response.blob();
+                }
+            }
+
+            // Determine file extension
+            let extension = '.png';
+            if (blob.type) {
+                const mimeMap: Record<string, string> = {
+                    'image/png': '.png',
+                    'image/jpeg': '.jpg',
+                    'image/webp': '.webp',
+                    'video/mp4': '.mp4',
+                    'audio/mpeg': '.mp3',
+                    'audio/wav': '.wav'
+                };
+                if (mimeMap[blob.type]) extension = mimeMap[blob.type];
+            } else {
+                // Fallback heuristic
+                extension = url.toLowerCase().includes('.mp4') ? '.mp4' :
+                    url.toLowerCase().includes('.mp3') ? '.mp3' : '.png';
+            }
+
             const downloadUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = `${prompt.slice(0, 30)}.${url.includes('.mp4') ? 'mp4' : 'png'}`;
+            link.download = `nebula-${prompt.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}-${Date.now()}${extension}`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(downloadUrl);
+            toast.success('Download completed');
         } catch (error) {
             console.error('Download failed:', error);
+            toast.error('Download failed. Please try again or use direct save.');
         }
+    };
+
+    const handleSaveToAssets = async (item: HistoryItem, resultIndex: number) => {
+        const result = item.results[resultIndex];
+        if (!result || result.assetId) {
+            toast.success("Already saved to library");
+            return;
+        }
+
+        try {
+            const newAsset = await assetService.createAsset({
+                name: item.prompt.slice(0, 50),
+                type: item.type === 'video' || item.type === 'video-project' ? 'video' :
+                    item.type === 'audio' ? 'audio' : 'image',
+                url: result.url,
+                thumbnailUrl: result.thumbnailUrl,
+                tags: ['history-import']
+            });
+
+            // Update history state to show it's saved
+            setHistory(prev => prev.map(h => {
+                if (h.id === item.id) {
+                    const newResults = [...h.results];
+                    newResults[resultIndex] = { ...newResults[resultIndex], assetId: newAsset._id };
+                    return { ...h, results: newResults };
+                }
+                return h;
+            }));
+
+            if (selectedItem && selectedItem.id === item.id) {
+                const newResults = [...selectedItem.results];
+                newResults[resultIndex] = { ...newResults[resultIndex], assetId: newAsset._id };
+                setSelectedItem({ ...selectedItem, results: newResults });
+            }
+
+            toast.success("Saved to Assets Library!");
+        } catch (error) {
+            console.error("Failed to save to library:", error);
+            toast.error("Failed to save to library");
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!window.confirm('Are you sure you want to delete this generation from history?')) return;
+
+        try {
+            await aiService.deleteHistoryItem(id);
+            setHistory(prev => prev.filter(item => item.id !== id));
+            toast.success('Deleted from history');
+            if (selectedItem?.id === id) closeModal();
+        } catch (error) {
+            console.error('Delete failed:', error);
+            toast.error('Failed to delete item');
+        }
+    };
+
+    const copyPrompt = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast.info('Prompt copied to clipboard');
     };
 
     const openModal = (item: HistoryItem, resultIndex: number = 0) => {
@@ -215,12 +336,22 @@ const HistoryPage = () => {
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        if (displayUrl) handleDownload(displayUrl, item.prompt);
+                                                        if (displayUrl) handleDownload(displayUrl, item.prompt, firstResult?.assetId);
                                                     }}
                                                     className="p-2 bg-black/60 rounded-lg text-white hover:bg-white hover:text-black transition-colors"
                                                     title="Download"
                                                 >
                                                     <Download className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(item.id);
+                                                    }}
+                                                    className="p-2 bg-black/60 rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </div>
 
@@ -310,6 +441,7 @@ const HistoryPage = () => {
                                             <video
                                                 src={selectedItem.results[selectedResultIndex].url}
                                                 controls
+                                                autoPlay
                                                 className="w-full rounded-lg"
                                             />
                                         ) : (
@@ -319,11 +451,20 @@ const HistoryPage = () => {
                                             </div>
                                         )
                                     ) : (
-                                        <img
-                                            src={selectedItem.results[selectedResultIndex].url}
-                                            alt={selectedItem.prompt}
-                                            className="w-full rounded-lg"
-                                        />
+                                        <div className="relative group/main">
+                                            <img
+                                                src={selectedItem.results[selectedResultIndex].url}
+                                                alt={selectedItem.prompt}
+                                                className="w-full rounded-lg"
+                                            />
+                                            <button
+                                                onClick={() => copyPrompt(selectedItem.prompt)}
+                                                className="absolute top-4 right-4 p-3 bg-black/50 backdrop-blur-md rounded-xl text-white opacity-0 group-hover/main:opacity-100 transition-all hover:bg-white hover:text-black flex items-center gap-2"
+                                            >
+                                                <Copy className="w-4 h-4" />
+                                                <span className="text-xs font-bold">Copy Prompt</span>
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -364,26 +505,29 @@ const HistoryPage = () => {
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-semibold text-gray-400 mb-2">Actions</h3>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-wrap gap-2">
                                         <button
                                             onClick={() => {
                                                 const result = selectedItem.results[selectedResultIndex];
-                                                if (result?.url) handleDownload(result.url, selectedItem.prompt);
+                                                if (result?.url) handleDownload(result.url, selectedItem.prompt, result.assetId);
                                             }}
                                             className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                                         >
                                             <Download className="w-4 h-4" /> Download
                                         </button>
-                                        {selectedItem.results[selectedResultIndex]?.url && (
-                                            <a
-                                                href={selectedItem.results[selectedResultIndex].url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                                            >
-                                                <ExternalLink className="w-4 h-4" /> Open
-                                            </a>
-                                        )}
+                                        <button
+                                            onClick={() => handleSaveToAssets(selectedItem, selectedResultIndex)}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${selectedItem.results[selectedResultIndex]?.assetId ? 'bg-[#00FF88]/10 text-[#00FF88] border border-[#00FF88]/20' : 'bg-[#00FF88] text-black hover:bg-[#00FF88]/90'}`}
+                                        >
+                                            {selectedItem.results[selectedResultIndex]?.assetId ? <Check className="w-4 h-4" /> : <Folder className="w-4 h-4" />}
+                                            {selectedItem.results[selectedResultIndex]?.assetId ? 'Saved to Library' : 'Save to Library'}
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(selectedItem.id)}
+                                            className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                                        >
+                                            <Trash2 className="w-4 h-4" /> Delete
+                                        </button>
                                     </div>
                                 </div>
                             </div>

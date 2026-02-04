@@ -401,6 +401,10 @@ class AIService {
         return response.data.data;
     }
 
+    async deleteHistoryItem(id: string): Promise<void> {
+        await axiosInstance.delete(`/ai/history/${id}`);
+    }
+
     /**
      * Enhance a prompt using AI
      */
