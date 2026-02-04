@@ -195,12 +195,18 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
                             value={prompt}
                             onChange={setPrompt}
                             onGenerate={handleGenerate}
-                            onEnhance={handleEnhance}
                             isGenerating={isGenerating}
-                            isEnhancing={isEnhancing}
                             placeholder="Describe your scene (e.g., 'A cyberpunk street in rain, 4k')..."
-                            settings={settings}
-                            onSettingsChange={(newSettings) => setSettings(prev => ({ ...prev, ...newSettings }))}
+                            extraActions={
+                                <button
+                                    onClick={handleEnhance}
+                                    disabled={isEnhancing || !prompt.trim()}
+                                    className={`p-2 rounded-xl transition-all ${isEnhancing ? 'text-[#00FF88] animate-pulse' : 'text-gray-400 hover:text-[#00FF88] hover:bg-white/5'}`}
+                                    title="Enhance Prompt"
+                                >
+                                    <Sparkles className="w-5 h-5" />
+                                </button>
+                            }
                         />
                         {/* Cost Badge */}
                         <div className="absolute -top-3 right-8 px-3 py-1 bg-[#1A1A1A] border border-white/10 rounded-full flex items-center gap-2 shadow-xl z-20">
