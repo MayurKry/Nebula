@@ -14,6 +14,11 @@ const ThemeSwitcher = () => {
         if (theme !== 'default') {
             document.body.classList.add(`theme-${theme}`);
         }
+
+        // Cleanup on unmount
+        return () => {
+            document.body.classList.remove('theme-lagoon', 'theme-carina');
+        };
     }, [theme]);
 
     return (
@@ -26,8 +31,8 @@ const ThemeSwitcher = () => {
                 <button
                     onClick={() => setTheme('default')}
                     className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${theme === 'default'
-                            ? 'bg-[var(--marketing-accent)] text-black'
-                            : 'text-white/70 hover:text-white hover:bg-white/10'
+                        ? 'bg-[var(--marketing-accent)] text-black'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
                         }`}
                 >
                     Default
@@ -35,8 +40,8 @@ const ThemeSwitcher = () => {
                 <button
                     onClick={() => setTheme('lagoon')}
                     className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${theme === 'lagoon'
-                            ? 'bg-[#B5FFF6] text-[#010B19]'
-                            : 'text-white/70 hover:text-[#B5FFF6] hover:bg-white/10'
+                        ? 'bg-[#B5FFF6] text-[#010B19]'
+                        : 'text-white/70 hover:text-[#B5FFF6] hover:bg-white/10'
                         }`}
                 >
                     Lagoon
@@ -44,8 +49,8 @@ const ThemeSwitcher = () => {
                 <button
                     onClick={() => setTheme('carina')}
                     className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${theme === 'carina'
-                            ? 'bg-[#F2A766] text-[#120806]'
-                            : 'text-white/70 hover:text-[#F2A766] hover:bg-white/10'
+                        ? 'bg-[#F2A766] text-[#120806]'
+                        : 'text-white/70 hover:text-[#F2A766] hover:bg-white/10'
                         }`}
                 >
                     Carina

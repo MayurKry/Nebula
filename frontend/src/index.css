@@ -623,6 +623,20 @@
   --marketing-gradient-end: #B5FFF6;
 }
 
+/* Theme: Carina Nebula */
+.theme-carina {
+  --marketing-bg: #0F0505;
+  --marketing-fg: #FFEEE6;
+  --marketing-accent: #F2A766;
+  --marketing-accent-hover: #FFC088;
+  --marketing-muted: #8C6A5D;
+  --marketing-card: rgba(40, 15, 10, 0.6);
+  --marketing-card-hover: rgba(40, 15, 10, 0.9);
+  --marketing-border: rgba(180, 100, 80, 0.2);
+  --marketing-gradient-start: #D95555;
+  --marketing-gradient-end: #F2A766;
+}
+
 /* Premium Utilities */
 .premium-card {
   background: var(--nebula-gradient-dark);
