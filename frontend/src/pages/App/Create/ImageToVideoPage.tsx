@@ -1,32 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-    Loader2, Move, Wind, ZoomIn, Eye,
-    Layers, RotateCw, Folder, Play, Download,
-    Camera, Maximize
+    Loader2, Move, Wind,
+    RotateCw, Folder, Play, Download,
+    Maximize
 } from 'lucide-react';
 import { useGeneration } from '@/components/generation/GenerationContext';
 import { aiService } from '@/services/ai.service';
+import { assetService } from '@/services/asset.service';
 import GenerationQueue from '@/components/generation/GenerationQueue';
 import PromptBar from '@/components/ui/PromptBar';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 import { toast } from 'sonner';
-
-const sceneEffects = [
-    { id: 'wind', label: 'Wind', icon: Wind },
-    { id: 'parallax', label: 'Parallax', icon: Layers },
-    { id: 'zoom', label: 'Ken Burns', icon: ZoomIn },
-    { id: 'ambient', label: 'Ambience', icon: Eye },
-];
-
-const cameraMoves = [
-    { id: 'static', label: 'Static' },
-    { id: 'zoom-in', label: 'Zoom In' },
-    { id: 'zoom-out', label: 'Zoom Out' },
-    { id: 'pan-left', label: 'Pan Left' },
-    { id: 'pan-right', label: 'Pan Right' },
-    { id: 'orbit', label: 'Orbit' },
-];
 
 const ImageToVideoPage = () => {
     const { addJob } = useGeneration();
@@ -40,8 +25,6 @@ const ImageToVideoPage = () => {
         duration: 4,
         motionLevel: 50
     });
-    const [cameraMove, setCameraMove] = useState('zoom-in');
-    const [sceneEffect, setSceneEffect] = useState('parallax');
     const [prompt, setPrompt] = useState('');
 
     const handleModelChange = (model: string) => {
@@ -54,7 +37,7 @@ const ImageToVideoPage = () => {
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [generationProgress, setGenerationProgress] = useState(0);
-    const [results, setResults] = useState<{ thumbnail: string; url: string }[]>([]);
+    const [results, setResults] = useState<{ thumbnail: string; url: string; assetId?: string }[]>([]);
 
     useEffect(() => {
         if (location.state?.sourceImage) {
@@ -90,13 +73,12 @@ const ImageToVideoPage = () => {
             const result = await aiService.animateScene(sourceImage, prompt, {
                 model: settings.model,
                 duration: settings.duration,
-                motionLevel: settings.motionLevel,
-                cameraPath: cameraMove
+                motionLevel: settings.motionLevel
             } as any);
 
             addJob({
                 type: 'image-to-video',
-                prompt: prompt || `Animate image with ${sceneEffect} effect`,
+                prompt: prompt || `Animate image`,
                 settings: {
                     model: settings.model,
                     duration: settings.duration,
@@ -109,10 +91,11 @@ const ImageToVideoPage = () => {
             let attempts = 0;
             const maxAttempts = 50; // 100 seconds
 
+            let statusRes: any = null;
             while (status === 'processing' && attempts < maxAttempts) {
                 setGenerationProgress(Math.min((attempts / maxAttempts) * 100 + 10, 95));
                 await new Promise(r => setTimeout(r, 2000));
-                const statusRes = await aiService.checkVideoStatus(result.jobId);
+                statusRes = await aiService.checkVideoStatus(result.jobId);
                 status = statusRes.status;
                 videoUrl = statusRes.videoUrl || '';
                 attempts++;
@@ -121,7 +104,7 @@ const ImageToVideoPage = () => {
             if (status === 'completed' && videoUrl) {
                 setGenerationProgress(100);
                 setResults([
-                    { thumbnail: sourceImage, url: videoUrl },
+                    { thumbnail: sourceImage, url: videoUrl, assetId: statusRes?.assetId },
                 ]);
                 toast.success('Video animated successfully!');
             } else {
@@ -133,6 +116,32 @@ const ImageToVideoPage = () => {
             toast.error('Failed to animate image.');
         } finally {
             setIsGenerating(false);
+        }
+    };
+
+    const handleDownload = async (url: string, assetId?: string) => {
+        try {
+            toast.info("Preparing video for download...");
+            let blob;
+            if (assetId) {
+                blob = await assetService.downloadAsset(assetId);
+            } else {
+                const response = await fetch(url);
+                blob = await response.blob();
+            }
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = `nebula-video-${Date.now()}.mp4`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+            toast.success("Download started");
+        } catch (e) {
+            console.error("Download failed:", e);
+            window.open(url, '_blank');
+            toast.error("Download failed, opening in new tab");
         }
     };
 
@@ -148,7 +157,7 @@ const ImageToVideoPage = () => {
                         onClick={() => navigate('/app/assets')}
                         className="absolute left-0 top-12 flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-sm font-medium"
                     >
-                        <RotateCw className="w-4 h-4 rotate-180" /> Back to Library
+                        <RotateCw className="w-4 h-4" /> Back to Library
                     </button>
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-full mb-4">
                         <Move className="w-3 h-3 text-orange-400" />
@@ -200,49 +209,7 @@ const ImageToVideoPage = () => {
                             ))}
                         </div>
 
-                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
 
-                        {/* Camera Selector */}
-                        <div className="relative group">
-                            <button className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all border text-gray-500 border-transparent hover:text-white hover:bg-white/5 min-w-[140px]">
-                                <Camera className="w-3.5 h-3.5" />
-                                <div className="flex flex-col text-left">
-                                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Camera</span>
-                                    <span className="text-xs font-bold text-white truncate max-w-[100px]">
-                                        {cameraMoves.find(c => c.id === cameraMove)?.label || 'Static'}
-                                    </span>
-                                </div>
-                            </button>
-                            <select
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                value={cameraMove}
-                                onChange={(e) => setCameraMove(e.target.value)}
-                            >
-                                {cameraMoves.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-                            </select>
-                        </div>
-
-                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
-
-                        {/* Effect Selector */}
-                        <div className="relative group">
-                            <button className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all border text-gray-500 border-transparent hover:text-white hover:bg-white/5 min-w-[140px]">
-                                <Wind className="w-3.5 h-3.5" />
-                                <div className="flex flex-col text-left">
-                                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Effect</span>
-                                    <span className="text-xs font-bold text-white truncate max-w-[100px]">
-                                        {sceneEffects.find(e => e.id === sceneEffect)?.label || 'Parallax'}
-                                    </span>
-                                </div>
-                            </button>
-                            <select
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                value={sceneEffect}
-                                onChange={(e) => setSceneEffect(e.target.value)}
-                            >
-                                {sceneEffects.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
-                            </select>
-                        </div>
                     </div>
                 </div>
 
@@ -270,7 +237,7 @@ const ImageToVideoPage = () => {
                     {/* Prompt Pills / Suggestions (Outside Glow) */}
                     <div className="flex flex-wrap items-center justify-center gap-2.5 px-4">
                         {[
-                            { label: 'Cinematic Pan', onClick: () => setPrompt('A slow cinematic pan across the landscape with volumetric fog moving'), icon: <Camera className="w-3 h-3" /> },
+                            { label: 'Cinematic Pan', onClick: () => setPrompt('A slow cinematic pan across the landscape with volumetric fog moving'), icon: <RotateCw className="w-3 h-3" /> },
                             { label: 'Fluid Motion', onClick: () => setPrompt('Make the water flow realistically with subtle sunlight reflections'), icon: <Wind className="w-3 h-3" /> },
                         ].map((action, idx) => (
                             <button
@@ -344,7 +311,12 @@ const ImageToVideoPage = () => {
                                     </div>
                                     <div className="p-5 flex items-center justify-between border-t border-white/5">
                                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">MOTION CLIP {i + 1}</span>
-                                        <button className="p-2 text-gray-500 hover:text-white transition-colors bg-white/5 rounded-lg"><Download className="w-4 h-4" /></button>
+                                        <button
+                                            onClick={() => handleDownload(video.url, video.assetId)}
+                                            className="p-2 text-gray-500 hover:text-white transition-colors bg-white/5 rounded-lg"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
                             ))}

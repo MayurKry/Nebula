@@ -126,13 +126,18 @@ const AssetLibraryPage = () => {
     const handleDownload = async (asset: any) => {
         try {
             toast.info(`Preparing ${asset.name} for download...`);
-            const response = await fetch(asset.url);
-            const blob = await response.blob();
+
+            const assetId = asset._id || asset.id;
+            const blob = await assetService.downloadAsset(assetId);
             const blobUrl = window.URL.createObjectURL(blob);
 
             const link = document.createElement('a');
             link.href = blobUrl;
-            link.download = asset.name || 'nebula-asset';
+
+            // Get extension from URL or type
+            const extension = asset.url.split('.').pop()?.split('?')[0] || (asset.type === 'video' ? 'mp4' : asset.type === 'audio' ? 'mp3' : 'png');
+            link.download = `${asset.name}${asset.name.includes('.') ? '' : `.${extension}`}`;
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -141,9 +146,9 @@ const AssetLibraryPage = () => {
             toast.success(`Downloaded ${asset.name} successfully`);
         } catch (error) {
             console.error('Download failed:', error);
-            // Fallback to direct link if fetch fails
+            // Fallback to direct link if proxy fails
             window.open(asset.url, '_blank');
-            toast.error('Direct download failed, opening in new tab');
+            toast.error('Download failed, opening original link in new tab');
         }
     };
 

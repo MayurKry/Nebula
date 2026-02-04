@@ -137,7 +137,7 @@ const TextToVideoInput: React.FC<TextToVideoInputProps> = ({ onGenerate, isGener
 
                         {/* Aspect Ratio Selector */}
                         <div className="flex items-center gap-1">
-                            {['16:9', '9:16', '1:1', '21:9'].map(r => (
+                            {['16:9', '9:16'].map(r => (
                                 <button
                                     key={r}
                                     onClick={() => setSettings(prev => ({ ...prev, aspectRatio: r }))}

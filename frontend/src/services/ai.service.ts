@@ -18,6 +18,7 @@ export interface GenerateImageResponse {
     height: number;
     seed?: number;
     provider?: string;
+    assetId?: string;
     generatedAt: string;
 }
 
@@ -28,6 +29,7 @@ export interface GenerateImagesResponse {
         height: number;
         seed?: number;
         provider?: string;
+        assetId?: string;
     }>;
     prompt: string;
     style?: string;
@@ -253,6 +255,7 @@ class AIService {
             height: img.height,
             seed: img.seed,
             provider: img.provider,
+            assetId: img.assetId,
             generatedAt: response.data.data.generatedAt,
         }));
     }

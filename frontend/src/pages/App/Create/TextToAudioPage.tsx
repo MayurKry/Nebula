@@ -3,62 +3,28 @@ import { useLocation } from 'react-router-dom';
 import {
     Music,
     Loader2,
-    RotateCw, Download,
-    Volume2, Play, Pause,
-    Share2, Layers, Disc, Wand2
+    Download, Volume2, Play, Pause,
+    Wand2, RotateCw, Share2
 } from 'lucide-react';
 import { useGeneration } from '@/components/generation/GenerationContext';
 import { aiService } from '@/services/ai.service';
+import { assetService } from '@/services/asset.service';
 import { toast } from 'sonner';
 import PromptBar from '@/components/ui/PromptBar';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 
-const audioStyles = [
-    'Cinematic Orchestral', 'Cyberpunk Synth', 'Lo-Fi Chill',
-    'Epic Hybrid', 'Ambient Space', 'Fast Action',
-    'Horror Suspense', 'Cheerful Pop', 'Acoustic Folk'
-];
+
 
 const languages = [
     { name: 'English (US)', code: 'en-US' },
-    { name: 'English (UK)', code: 'en-GB' },
-    { name: 'English (Australia)', code: 'en-AU' },
-    { name: 'Spanish', code: 'es' },
-    { name: 'French', code: 'fr' },
-    { name: 'German', code: 'de' },
-    { name: 'Italian', code: 'it' },
-    { name: 'Portuguese', code: 'pt' },
-    { name: 'Hindi', code: 'hi' },
-    { name: 'Tamil', code: 'ta' },
-    { name: 'Japanese', code: 'ja' },
-    { name: 'Chinese (Mandarin)', code: 'zh' },
-    { name: 'Korean', code: 'ko' },
-    { name: 'Arabic', code: 'ar' },
-    { name: 'Russian', code: 'ru' },
-    { name: 'Turkish', code: 'tr' },
-    { name: 'Dutch', code: 'nl' },
-    { name: 'Polish', code: 'pl' },
-    { name: 'Swedish', code: 'sv' },
-    { name: 'Danish', code: 'da' },
-    { name: 'Finnish', code: 'fi' },
-    { name: 'Norwegian', code: 'no' },
-    { name: 'Greek', code: 'el' },
-    { name: 'Czech', code: 'cs' },
-    { name: 'Hungarian', code: 'hu' },
-    { name: 'Romanian', code: 'ro' },
-    { name: 'Bulgarian', code: 'bg' },
-    { name: 'Indonesian', code: 'id' },
-    { name: 'Malay', code: 'ms' },
-    { name: 'Thai', code: 'th' },
-    { name: 'Vietnamese', code: 'vi' }
 ];
 
 const voices = [
-    { name: 'Leslie (Professional)', id: 'Leslie' },
-    { name: 'Neutral (Balanced)', id: 'Neutral' },
-    { name: 'Messenger (Narrative)', id: 'Messenger' },
-    { name: 'Aria (Expressive)', id: 'Aria' },
-    { name: 'Ben (Deep)', id: 'Ben' },
+    { name: 'Maya (Gentle)', id: 'Maya' },
+    { name: 'Arjun (Professional)', id: 'Arjun' },
+    { name: 'Serene (Calm)', id: 'Serene' },
+    { name: 'Bernard (Deep)', id: 'Bernard' },
+    { name: 'Leslie (Cheerful)', id: 'Leslie' },
 ];
 
 interface AudioResult {
@@ -67,6 +33,7 @@ interface AudioResult {
     title: string;
     duration: string;
     style: string;
+    assetId?: string;
     isPlaying?: boolean;
 }
 
@@ -75,9 +42,7 @@ const TextToAudioPage = () => {
     const location = useLocation();
 
     const [prompt, setPrompt] = useState('');
-    const [style, setStyle] = useState('Epic Hybrid');
-    const [duration, setDuration] = useState('30s');
-    const [language, setLanguage] = useState(languages[0]);
+    const [language] = useState(languages[0]);
     const [voice, setVoice] = useState(voices[0]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isEnhancing, setIsEnhancing] = useState(false);
@@ -106,12 +71,13 @@ const TextToAudioPage = () => {
             let audioUrl = '';
             let attempts = 0;
             const maxAttempts = 30; // 60 seconds
+            let statusResponse: any = null;
 
             while (status === 'processing' && attempts < maxAttempts) {
                 await new Promise(r => setTimeout(r, 2000));
-                const statusRes = await aiService.checkAudioStatus(result.jobId);
-                status = statusRes.status;
-                audioUrl = statusRes.audioUrl || '';
+                statusResponse = await aiService.checkAudioStatus(result.jobId);
+                status = statusResponse.status;
+                audioUrl = statusResponse.audioUrl || '';
                 attempts++;
             }
 
@@ -120,8 +86,9 @@ const TextToAudioPage = () => {
                     id: result.jobId,
                     url: audioUrl,
                     title: prompt.substring(0, 30) + '...',
-                    duration: duration,
-                    style: style,
+                    duration: 'Audio',
+                    style: 'TTS',
+                    assetId: statusResponse?.assetId,
                 };
 
                 setResults([newResult, ...results]);
@@ -131,7 +98,7 @@ const TextToAudioPage = () => {
                 addJob({
                     type: 'audio' as any,
                     prompt: prompt,
-                    settings: { style, voiceId: voice.id, language: language.code },
+                    settings: { voiceId: voice.id, language: language.code },
                 });
             } else {
                 throw new Error("Generation timed out or failed on provider");
@@ -162,10 +129,18 @@ const TextToAudioPage = () => {
         setActiveAudio(activeAudio === id ? null : id);
     };
 
-    const handleDownload = async (url: string, filename: string) => {
+    const handleDownload = async (url: string, filename: string, assetId?: string) => {
         try {
-            const response = await fetch(url);
-            const blob = await response.blob();
+            toast.info(`Preparing audio for download...`);
+
+            let blob;
+            if (assetId) {
+                blob = await assetService.downloadAsset(assetId);
+            } else {
+                const response = await fetch(url);
+                blob = await response.blob();
+            }
+
             const blobUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = blobUrl;
@@ -177,7 +152,8 @@ const TextToAudioPage = () => {
             toast.success("Download started");
         } catch (e) {
             console.error("Download failed:", e);
-            toast.error("Failed to download audio");
+            window.open(url, '_blank');
+            toast.error("Download failed, opening in new tab");
         }
     };
 
@@ -186,9 +162,7 @@ const TextToAudioPage = () => {
         toast.success("Link copied to clipboard!");
     };
 
-    const handleAddToStudio = () => {
-        toast.info("Adding to Studio... This feature will be available in the next release.");
-    };
+
 
     return (
         <div className="min-h-screen bg-[#0A0A0A] p-4 flex flex-col items-center relative overflow-hidden">
@@ -221,67 +195,6 @@ const TextToAudioPage = () => {
                                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Model</span>
                                 <span className="text-xs font-semibold text-gray-300">Nebula Audio 2.0</span>
                             </div>
-                        </div>
-
-                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
-
-                        {/* Duration Selector */}
-                        <div className="flex items-center gap-2">
-                            {['15s', '30s', '60s'].map(d => (
-                                <button
-                                    key={d}
-                                    onClick={() => setDuration(d)}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${duration === d
-                                        ? 'bg-[#00FF88] text-black border-[#00FF88] shadow-[0_0_15px_rgba(0,255,136,0.3)]'
-                                        : 'bg-transparent text-gray-500 border-transparent hover:bg-white/5 hover:text-white'
-                                        }`}
-                                >
-                                    {d}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
-
-                        {/* Style Selector */}
-                        <div className="relative group">
-                            <button className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all border text-gray-500 border-transparent hover:text-white hover:bg-white/5 min-w-[140px]">
-                                <Disc className="w-3.5 h-3.5" />
-                                <div className="flex flex-col text-left">
-                                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Musical Style</span>
-                                    <span className="text-xs font-bold text-white truncate max-w-[100px]">{style}</span>
-                                </div>
-                            </button>
-                            <select
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                value={style}
-                                onChange={(e) => setStyle(e.target.value)}
-                            >
-                                {audioStyles.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                        </div>
-
-                        <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
-
-                        {/* Language Selector */}
-                        <div className="relative group">
-                            <button className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all border text-gray-500 border-transparent hover:text-white hover:bg-white/5 min-w-[120px]">
-                                <Volume2 className="w-3.5 h-3.5" />
-                                <div className="flex flex-col text-left">
-                                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Language</span>
-                                    <span className="text-xs font-bold text-white truncate max-w-[80px]">{language.name}</span>
-                                </div>
-                            </button>
-                            <select
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                value={language.code}
-                                onChange={(e) => {
-                                    const selected = languages.find(l => l.code === e.target.value);
-                                    if (selected) setLanguage(selected);
-                                }}
-                            >
-                                {languages.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
-                            </select>
                         </div>
 
                         <div className="w-px h-8 bg-white/5 mx-2 hidden md:block" />
@@ -321,7 +234,7 @@ const TextToAudioPage = () => {
                             isGenerating={isGenerating}
                             isEnhancing={isEnhancing}
                             placeholder="Describe the sound or music track you want to create..."
-                            settings={{ style, duration }}
+                            settings={{ style: 'TTS', duration: 'Audio' }}
                             onSettingsChange={() => { }}
                             hideAspectRatio={true}
                         />
@@ -401,18 +314,11 @@ const TextToAudioPage = () => {
                                 <div className="flex items-center justify-between mt-6 pt-6 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <div className="flex items-center gap-2">
                                         <button
-                                            onClick={() => handleDownload(audio.url, `nebula - audio - ${audio.id}.mp3`)}
+                                            onClick={() => handleDownload(audio.url, `nebula-audio-${audio.id}.mp3`, audio.assetId)}
                                             className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
                                             title="Download"
                                         >
                                             <Download className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={handleAddToStudio}
-                                            className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                                            title="Add to Studio"
-                                        >
-                                            <Layers className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => handleShare(audio.url)}

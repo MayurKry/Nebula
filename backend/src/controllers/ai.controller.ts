@@ -11,6 +11,7 @@ import { GenerationHistoryModel } from "../models/generation-history.model";
 import { intentService } from "../services/intent.service";
 import { LoggingService } from "../services/logging.service";
 import { jobService } from "../services/job.service";
+import axios from "axios";
 import mongoose from "mongoose";
 
 // Extend Request type to include user (if not already globally defined, but here for safety/clarity in this file scope)
@@ -185,12 +186,13 @@ export const generateImage = asyncHandler(async (req: Request, res: Response) =>
         }
 
         return responseHandler(res, 200, "Images generated successfully", {
-            images: results.map(result => ({
+            images: results.map((result, index) => ({
                 url: result.url,
                 width: result.width,
                 height: result.height,
                 seed: result.seed,
                 provider: result.provider,
+                assetId: savedAssets[index]?._id
             })),
             prompt,
             style,
@@ -1079,12 +1081,41 @@ export const checkAudioStatus = asyncHandler(async (req: Request, res: Response)
         const result = await aiAudioService.checkStatus(jobId);
 
         if (userId && (result.status === 'succeeded' || result.status === 'failed')) {
+            let assetId;
+            if (result.status === 'succeeded' && result.audioUrl) {
+                // Check if already saved
+                const existingAsset = await AssetModel.findOne({ url: result.audioUrl });
+                if (!existingAsset) {
+                    const { downloadAndSaveFile } = await import("../utils/fileDownloader");
+                    let permanentAudioUrl = result.audioUrl;
+
+                    try {
+                        permanentAudioUrl = await downloadAndSaveFile(result.audioUrl, 'audio');
+                    } catch (dlError) {
+                        console.error("Failed to download audio asset, utilizing original URL:", dlError);
+                    }
+
+                    const asset = await AssetModel.create({
+                        name: `Audio Generation ${jobId}`,
+                        type: "audio",
+                        url: permanentAudioUrl,
+                        userId: new mongoose.Types.ObjectId(userId),
+                        metadata: { format: "mp3" },
+                        tags: ["ai-audio", "generated"]
+                    });
+                    assetId = asset._id;
+                } else {
+                    assetId = existingAsset._id;
+                }
+            }
+
             await GenerationHistoryModel.findOneAndUpdate(
                 { userId: new mongoose.Types.ObjectId(userId), "results.jobId": jobId },
                 {
                     $set: {
                         status: result.status === 'succeeded' ? "completed" : "failed",
                         "results.$.url": result.audioUrl,
+                        "results.$.assetId": assetId,
                         "results.$.status": result.status,
                         error: result.error
                     }
@@ -1092,9 +1123,47 @@ export const checkAudioStatus = asyncHandler(async (req: Request, res: Response)
             );
         }
 
-        return responseHandler(res, 200, "Audio status retrieved", result);
+        return responseHandler(res, 200, "Audio status retrieved", {
+            ...result,
+            assetId: (userId && result.status === 'succeeded') ? (await AssetModel.findOne({ url: result.audioUrl, userId }))?._id : undefined
+        });
     } catch (error: any) {
         console.error("Failed to check audio status:", error);
         return responseHandler(res, 500, "Failed to check audio status");
+    }
+});
+
+/**
+ * Proxy download for assets to bypass CORS and force download
+ */
+export const downloadAsset = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const userId = (req as any).user?.userId || (req as any).user?.id || (req as any).user?._id;
+
+    const asset = await AssetModel.findOne({ _id: id, userId });
+
+    if (!asset) {
+        return responseHandler(res, 404, "Asset not found");
+    }
+
+    try {
+        const response = await axios({
+            method: 'get',
+            url: asset.url.startsWith('/') ? `${req.protocol}://${req.get('host')}${asset.url}` : asset.url,
+            responseType: 'stream'
+        });
+
+        // Set headers to force download
+        const filename = asset.name || `nebula-asset-${id}`;
+        const extension = asset.url.split('.').pop()?.split('?')[0] || (asset.type === 'video' ? 'mp4' : asset.type === 'audio' ? 'mp3' : 'png');
+
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}.${extension}"`);
+        res.setHeader('Content-Type', response.headers['content-type']);
+
+        response.data.pipe(res);
+    } catch (error: any) {
+        console.error(`[AssetController] Download proxy failed: ${error.message}`);
+        // Fallback to direct redirect if proxy fails
+        res.redirect(asset.url);
     }
 });

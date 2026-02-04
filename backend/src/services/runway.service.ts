@@ -285,7 +285,7 @@ class RunwayService {
                 `${this.baseUrl}/text_to_speech`,
                 {
                     model: "eleven_multilingual_v2",
-                    text: params.prompt,
+                    promptText: params.prompt,
                     voice: {
                         type: "runway-preset",
                         presetId: presetId

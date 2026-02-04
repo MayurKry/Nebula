@@ -8,6 +8,7 @@ import {
 import { useGeneration } from '@/components/generation/GenerationContext';
 import GenerationQueue from '@/components/generation/GenerationQueue';
 import { aiService } from '@/services/ai.service';
+import { assetService } from '@/services/asset.service';
 import { toast } from 'sonner';
 import PromptBar from '@/components/ui/PromptBar';
 import GSAPTransition from '@/components/ui/GSAPTransition';
@@ -28,8 +29,8 @@ const TextToImagePage = () => {
     const [seed] = useState(42);
 
     const [isGenerating, setIsGenerating] = useState(false);
-    const [results, setResults] = useState<string[]>([]);
-    const [selectedResult, setSelectedResult] = useState<string | null>(null);
+    const [results, setResults] = useState<{ url: string; assetId?: string }[]>([]);
+    const [selectedResult, setSelectedResult] = useState<{ url: string; assetId?: string } | null>(null);
 
     // Handle initial prompt from dashboard
     useEffect(() => {
@@ -61,10 +62,13 @@ const TextToImagePage = () => {
                 },
             });
 
+            // Combine prompt and style for generation
+            const finalPrompt = style && style !== 'None' ? `${prompt}, ${style} style` : prompt;
+
             // Generate 2 images using the AI service
             const images = await aiService.generateImages(
                 {
-                    prompt,
+                    prompt: finalPrompt,
                     style,
                     aspectRatio,
                     seed: seedEnabled ? seed : undefined,
@@ -72,9 +76,9 @@ const TextToImagePage = () => {
                 1
             );
 
-            // Extract URLs from the response and track provider
-            const imageUrls = images.map(img => img.url);
-            setResults(imageUrls);
+            // Extract data from the response
+            const newResults = images.map(img => ({ url: img.url, assetId: img.assetId }));
+            setResults(newResults);
 
             // Set the provider used (from first image)
             if (images.length > 0 && images[0].provider) {
@@ -118,14 +122,20 @@ const TextToImagePage = () => {
         handleGenerate();
     };
 
-    const handleDownload = async (imageUrl: string, index?: number) => {
+    const handleDownload = async (imageUrl: string, assetId?: string) => {
         try {
-            const response = await fetch(imageUrl);
-            const blob = await response.blob();
+            toast.info('Preparing image for download...');
+            let blob;
+            if (assetId) {
+                blob = await assetService.downloadAsset(assetId);
+            } else {
+                const response = await fetch(imageUrl);
+                blob = await response.blob();
+            }
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `nebula-image-${index !== undefined ? index + 1 : Date.now()}.png`;
+            link.download = `nebula-image-${Date.now()}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -133,7 +143,8 @@ const TextToImagePage = () => {
             toast.success('Image downloaded successfully!');
         } catch (error) {
             console.error('Error downloading image:', error);
-            toast.error('Failed to download image. Please try again.');
+            window.open(imageUrl, '_blank');
+            toast.error('Download failed, opening in new tab.');
         }
     };
 
@@ -257,14 +268,14 @@ const TextToImagePage = () => {
                         </div>
 
                         <div className="grid grid-cols-1 max-w-2xl mx-auto gap-8 px-4 pb-20">
-                            {results.map((url, i) => (
+                            {results.map((img, i) => (
                                 <div
                                     key={i}
-                                    onClick={() => setSelectedResult(url)}
+                                    onClick={() => setSelectedResult(img)}
                                     className="group relative aspect-video bg-[#141414] border border-white/5 rounded-[2rem] overflow-hidden cursor-pointer hover:border-blue-500/40 transition-all shadow-2xl"
                                 >
                                     <img
-                                        src={url}
+                                        src={img.url}
                                         alt={`Generated ${i + 1}`}
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                     />
@@ -272,7 +283,7 @@ const TextToImagePage = () => {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleEnhance(url);
+                                                handleEnhance(img.url);
                                             }}
                                             className="h-10 px-4 bg-white/10 backdrop-blur-md rounded-full text-white text-xs font-bold hover:bg-white/20 transition-all border border-white/10 flex items-center gap-2"
                                         >
@@ -282,7 +293,7 @@ const TextToImagePage = () => {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleDownload(url, i);
+                                                handleDownload(img.url, img.assetId);
                                             }}
                                             className="h-10 w-10 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 flex items-center justify-center"
                                         >
@@ -323,7 +334,8 @@ const TextToImagePage = () => {
                     <div className="max-w-6xl w-full flex flex-col items-center gap-6" onClick={e => e.stopPropagation()}>
                         <div className="relative group w-full flex justify-center">
                             <img
-                                src={selectedResult}
+                                id="preview-image"
+                                src={selectedResult.url}
                                 alt="Selected"
                                 className="w-auto h-auto max-h-[70vh] max-w-full object-contain rounded-2xl shadow-2xl border border-white/10"
                             />
@@ -336,7 +348,7 @@ const TextToImagePage = () => {
                         </div>
                         <div className="flex items-center gap-3">
                             <button
-                                onClick={() => handleDownload(selectedResult)}
+                                onClick={() => handleDownload(selectedResult.url, selectedResult.assetId)}
                                 className="h-12 px-6 bg-[#1A1A1A] border border-white/10 rounded-xl text-white font-bold hover:bg-white/10 transition-all flex items-center gap-2"
                             >
                                 <Download className="w-4 h-4" />

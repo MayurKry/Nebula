@@ -63,6 +63,13 @@ class AssetService {
         const response = await axiosInstance.get('/assets/search', { params: { q: query } });
         return response.data;
     }
+
+    async downloadAsset(id: string): Promise<Blob> {
+        const response = await axiosInstance.get(`/assets/download/${id}`, {
+            responseType: 'blob'
+        });
+        return response.data;
+    }
 }
 
 export const assetService = new AssetService();

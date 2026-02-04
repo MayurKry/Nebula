@@ -82,7 +82,8 @@ const TextToVideoPage = () => {
                             description: data.prompt,
                             imageUrl: statusRes.thumbnailUrl || statusRes.videoUrl,
                             videoUrl: statusRes.videoUrl,
-                            duration: data.settings.duration
+                            duration: data.settings.duration,
+                            assetId: (statusRes as any).assetId
                         };
 
                         setScenes(prev => [...prev, newScene]);

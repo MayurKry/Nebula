@@ -4,6 +4,7 @@ import GSAPTransition from '@/components/ui/GSAPTransition';
 import { toast } from 'sonner';
 import TrimmerModal from './TrimmerModal';
 import NLEEditor from '@/components/editor/NLEEditor';
+import { assetService } from '@/services/asset.service';
 
 interface Scene {
     id: string;
@@ -11,6 +12,7 @@ interface Scene {
     imageUrl: string;
     videoUrl?: string;
     duration: number;
+    assetId?: string;
 }
 
 interface TextToVideoResultProps {
@@ -40,10 +42,16 @@ const TextToVideoResult: React.FC<TextToVideoResultProps> = ({ project, onBack, 
         setIsTrimmerOpen(false);
     };
 
-    const handleDownload = async (url: string, filename: string) => {
+    const handleDownload = async (url: string, filename: string, assetId?: string) => {
         try {
-            const response = await fetch(url);
-            const blob = await response.blob();
+            toast.info("Preparing video for download...");
+            let blob;
+            if (assetId) {
+                blob = await assetService.downloadAsset(assetId);
+            } else {
+                const response = await fetch(url);
+                blob = await response.blob();
+            }
             const blobUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = blobUrl;
@@ -55,7 +63,8 @@ const TextToVideoResult: React.FC<TextToVideoResultProps> = ({ project, onBack, 
             toast.success("Download started");
         } catch (e) {
             console.error("Download failed:", e);
-            toast.error("Failed to download video");
+            window.open(url, '_blank');
+            toast.error("Download failed, opening in new tab");
         }
     };
 
@@ -203,7 +212,7 @@ const TextToVideoResult: React.FC<TextToVideoResultProps> = ({ project, onBack, 
                                     Regenerate
                                 </button>
                                 <button
-                                    onClick={() => handleDownload(scene.videoUrl || scene.imageUrl, `nebula-video-${scene.id}.mp4`)}
+                                    onClick={() => handleDownload(scene.videoUrl || scene.imageUrl, `nebula-video-${scene.id}.mp4`, scene.assetId)}
                                     className="py-3 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-all border border-white/5"
                                 >
                                     <Download className="w-4 h-4" />
