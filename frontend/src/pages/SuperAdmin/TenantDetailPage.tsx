@@ -1,15 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    CreditCard, Users, Settings, ArrowLeft,
+    CreditCard, Users, ArrowLeft,
     Ban, CheckCircle, Shield, Activity,
     Zap, Gem, History
 } from 'lucide-react';
 import { adminApi, type Tenant } from '@/api/admin.api';
-import CreditAdjustmentModal from '@/components/admin/CreditAdjustmentModal';
 import ConfirmActionModal from '@/components/admin/ConfirmActionModal';
-import PlanConfiguration from '@/components/admin/PlanConfiguration';
-import FeatureOverrides from '@/components/admin/FeatureOverrides';
 import { toast } from 'sonner';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 import { useGSAP } from '@gsap/react';
@@ -20,11 +17,10 @@ const TenantDetailPage = () => {
     const navigate = useNavigate();
     const [tenant, setTenant] = useState<Tenant | null>(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'overview' | 'credits' | 'users' | 'config'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'credits' | 'users'>('overview');
     const container = useRef<HTMLDivElement>(null);
 
     // Modal states
-    const [showCreditModal, setShowCreditModal] = useState(false);
     const [showSuspendModal, setShowSuspendModal] = useState(false);
     const [showActivateModal, setShowActivateModal] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
@@ -56,21 +52,6 @@ const TenantDetailPage = () => {
             toast.error('Failed to load tenant details');
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleCreditAdjustment = async (amount: number, reason: string, type: 'grant' | 'deduct') => {
-        try {
-            if (type === 'grant') {
-                await adminApi.grantCredits(id!, amount, reason);
-                toast.success(`Successfully granted ${amount} credits`);
-            } else {
-                await adminApi.deductCredits(id!, amount, reason);
-                toast.success(`Successfully deducted ${amount} credits`);
-            }
-            await fetchTenant(); // Refresh data
-        } catch (error: any) {
-            throw error; // Let modal handle the error
         }
     };
 
@@ -129,7 +110,6 @@ const TenantDetailPage = () => {
         { id: 'overview', label: 'Overview', icon: Shield },
         { id: 'credits', label: 'Credits', icon: CreditCard },
         { id: 'users', label: 'Users', icon: Users },
-        { id: 'config', label: 'Configuration', icon: Settings },
     ];
 
     const getStatusColor = (status: string) => {
@@ -248,12 +228,6 @@ const TenantDetailPage = () => {
                                     </div>
                                     <h3 className="text-white font-black text-lg uppercase tracking-tight">Credit Repository</h3>
                                 </div>
-                                <button
-                                    onClick={() => setShowCreditModal(true)}
-                                    className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white text-[10px] font-black uppercase tracking-widest transition-all"
-                                >
-                                    Adjust Fuel
-                                </button>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 pt-2">
                                 <div>
@@ -286,12 +260,6 @@ const TenantDetailPage = () => {
                                     </div>
                                     <h3 className="text-white font-black text-lg uppercase tracking-tight">Transaction Ledger</h3>
                                 </div>
-                                <button
-                                    onClick={() => setShowCreditModal(true)}
-                                    className="px-6 py-3 bg-[#00FF88] text-black rounded-2xl font-black text-[10px] uppercase tracking-widest hover:shadow-[0_10px_20px_-5px_rgba(0,255,136,0.3)] transition-all"
-                                >
-                                    Modify Fuel Levels
-                                </button>
                             </div>
                             <div className="space-y-4 relative z-10">
                                 {tenant.recentTransactions && tenant.recentTransactions.length > 0 ? (
@@ -299,8 +267,8 @@ const TenantDetailPage = () => {
                                         <div key={index} className="flex items-center justify-between p-6 bg-white/[0.02] hover:bg-white/[0.04] rounded-[1.5rem] border border-white/5 transition-all group">
                                             <div className="flex items-center gap-5">
                                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${txn.type === 'CONSUMPTION' || txn.type === 'DEDUCT'
-                                                        ? 'bg-red-500/5 border-red-500/10 text-red-400'
-                                                        : 'bg-[#00FF88]/5 border-[#00FF88]/10 text-[#00FF88]'
+                                                    ? 'bg-red-500/5 border-red-500/10 text-red-400'
+                                                    : 'bg-[#00FF88]/5 border-[#00FF88]/10 text-[#00FF88]'
                                                     }`}>
                                                     {txn.type === 'CONSUMPTION' || txn.type === 'DEDUCT' ? <Zap className="w-5 h-5 rotate-180" /> : <Zap className="w-5 h-5" />}
                                                 </div>
@@ -363,24 +331,9 @@ const TenantDetailPage = () => {
                         </div>
                     </div>
                 )}
-
-                {activeTab === 'config' && (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <PlanConfiguration tenant={tenant} onUpdate={fetchTenant} />
-                        <FeatureOverrides tenant={tenant} onUpdate={fetchTenant} />
-                    </div>
-                )}
             </div>
 
             {/* Modals */}
-            <CreditAdjustmentModal
-                isOpen={showCreditModal}
-                onClose={() => setShowCreditModal(false)}
-                onSubmit={handleCreditAdjustment}
-                tenantName={tenant.name}
-                currentBalance={tenant.credits.balance}
-            />
-
             <ConfirmActionModal
                 isOpen={showSuspendModal}
                 onClose={() => setShowSuspendModal(false)}
@@ -409,4 +362,3 @@ const TenantDetailPage = () => {
 };
 
 export default TenantDetailPage;
-

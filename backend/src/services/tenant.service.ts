@@ -131,25 +131,36 @@ export const TenantService = {
      * Create a new tenant
      */
     async createTenant(data: CreateTenantDTO) {
+        // 1. Check for duplicate tenant name
+        const existingTenantName = await TenantModel.findOne({ name: data.name });
+        if (existingTenantName) {
+            throw new Error(`Tenant with name "${data.name}" already exists.`);
+        }
+
         let ownerUserId = data.ownerUserId;
 
-        // If no ID provided, try to find or create user
+        // 2. Identify or Create Owner User
         if (!ownerUserId && data.ownerUserData) {
             const { email, firstName, lastName } = data.ownerUserData;
 
             let user = await UserModel.findOne({ email });
 
-            if (!user) {
+            if (user) {
+                // Check if user is already in a tenant
+                if (user.tenantId) {
+                    const existingUserTenant = await TenantModel.findById(user.tenantId);
+                    const tenantName = existingUserTenant ? existingUserTenant.name : 'Unknown Organization';
+                    throw new Error(`User ${email} is already associated with "${tenantName}". Users cannot belong to multiple tenants.`);
+                }
+            } else {
                 // Create new user
-                // NOTE: Password hashing should normally happen here. 
-                // For MVP/Demo we set a default. In prod, send invite email.
                 user = await UserModel.create({
                     firstName,
                     lastName,
                     email,
-                    password: "$2b$10$EpOppp9iM7V7i.h1/t3dUOq1.q1/t3dUOq1.q1/t3dUOq1.q1", // Hash for 'password123' (example placeholder)
+                    password: "$2b$10$EpOppp9iM7V7i.h1/t3dUOq1.q1/t3dUOq1.q1/t3dUOq1.q1", // Default 'password123'
                     role: "tenant_owner",
-                    isEmailVerified: true // Auto-verify for admin created
+                    isEmailVerified: true
                 });
             }
 
@@ -160,6 +171,12 @@ export const TenantService = {
             throw new Error("Owner User ID or User Data is required");
         }
 
+        // 3. Final Validation on Owner
+        const ownerCheck = await UserModel.findById(ownerUserId);
+        if (!ownerCheck) throw new Error("Specified owner user not found.");
+        if (ownerCheck.tenantId) throw new Error(`User ${ownerCheck.email} is already assigned to a tenant.`);
+
+        // 4. Create Tenant
         const tenant = await TenantModel.create({
             name: data.name,
             type: data.type,
@@ -176,17 +193,17 @@ export const TenantService = {
             status: "ACTIVE"
         });
 
-        // Create initial credit transaction
+        // 5. Initialize Ledger
         await CreditTransactionModel.create({
             tenantId: tenant._id,
             type: "GRANT",
             amount: data.initialCredits || 100,
             balanceBefore: 0,
             balanceAfter: data.initialCredits || 100,
-            reason: "Initial tenant creation"
+            reason: "Initial tenant infrastructure provisioning"
         });
 
-        // Update user to link to this tenant
+        // 6. Link User to Tenant
         await UserModel.findByIdAndUpdate(ownerUserId, {
             tenantId: tenant._id,
             role: "tenant_owner"
@@ -263,6 +280,24 @@ export const TenantService = {
 
         if (!tenant) {
             throw new Error("Tenant not found");
+        }
+
+        // Validate custom limits
+        if (data.customLimits.maxUsers < 1) {
+            throw new Error("Max users must be at least 1");
+        }
+
+        if (data.customLimits.monthlyCredits < 100 || data.customLimits.monthlyCredits > 1000000) {
+            throw new Error("Monthly credits must be between 100 and 1,000,000");
+        }
+
+        if (!data.customLimits.features || data.customLimits.features.length === 0) {
+            throw new Error("At least one feature must be specified");
+        }
+
+        // Validate expiration date
+        if (data.customLimits.expiresAt && new Date(data.customLimits.expiresAt) <= new Date()) {
+            throw new Error("Expiration date must be in the future");
         }
 
         // Validate: Cannot reduce max users below current user count

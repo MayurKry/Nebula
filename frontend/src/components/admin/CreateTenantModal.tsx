@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
     X, Building, Mail, User, ShieldCheck,
     ChevronRight, ChevronLeft, Sparkles,
-    CreditCard, CheckCircle2
+    CheckCircle2
 } from 'lucide-react';
 import { adminApi, type Tenant } from '@/api/admin.api';
 import { toast } from 'sonner';
@@ -23,7 +23,6 @@ const CreateTenantModal = ({ isOpen, onClose, onSuccess }: CreateTenantModalProp
     const [ownerEmail, setOwnerEmail] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
-    const [credits, setCredits] = useState('100');
     const [isLoading, setIsLoading] = useState(false);
 
     const modalRef = useRef<HTMLDivElement>(null);
@@ -92,7 +91,6 @@ const CreateTenantModal = ({ isOpen, onClose, onSuccess }: CreateTenantModalProp
                 ownerEmail,
                 firstName,
                 lastName,
-                initialCredits: parseInt(credits)
             });
 
             toast.success('Tenant authorized and initialized');
@@ -189,7 +187,7 @@ const CreateTenantModal = ({ isOpen, onClose, onSuccess }: CreateTenantModalProp
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 gap-6">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Account Scope</label>
                                             <div className="grid grid-cols-2 gap-2 p-1 bg-[#141414] border border-white/5 rounded-2xl">
@@ -207,20 +205,6 @@ const CreateTenantModal = ({ isOpen, onClose, onSuccess }: CreateTenantModalProp
                                                 >
                                                     IND
                                                 </button>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Initial Fuel (CP)</label>
-                                            <div className="relative group">
-                                                <CreditCard className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 group-focus-within:text-[#00FF88] transition-colors" />
-                                                <input
-                                                    type="number"
-                                                    value={credits}
-                                                    onChange={(e) => setCredits(e.target.value)}
-                                                    className="w-full pl-14 pr-6 py-4 bg-[#141414] border border-white/5 rounded-2xl text-white focus:outline-none focus:border-[#00FF88]/30 transition-all text-sm font-black tabular-nums"
-                                                    required
-                                                />
                                             </div>
                                         </div>
                                     </div>

@@ -1,9 +1,10 @@
 import {
     Video, Image, Mic, Mic2,
-    Wand2, Download, X, Check, Play, Pause, Folder
+    Wand2, Download, X, Check, Play, Pause, Folder, Zap
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import GSAPTransition from '@/components/ui/GSAPTransition';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -259,7 +260,16 @@ const DashboardPage = () => {
                         <h1 className="text-5xl md:text-6xl font-black text-white tracking-tight">
                             Prompt. Direct. <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00FF88] to-[#00CC6A]">Render.</span>
                         </h1>
-                        <p className="text-gray-500 text-lg sm:text-xl font-medium max-w-2xl mx-auto italic">Transform your raw ideas into cinematic video projects with AI-driven choreography.</p>
+                        <p className="text-gray-500 text-lg sm:text-xl font-medium max-w-2xl mx-auto italic mb-4">Transform your raw ideas into cinematic video projects with AI-driven choreography.</p>
+                        <div className="flex justify-center">
+                            <Link
+                                to="/app/buy-credits"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-[#00FF88]/10 border border-[#00FF88]/20 rounded-full text-[#00FF88] text-xs font-black uppercase tracking-widest hover:bg-[#00FF88]/20 transition-all group"
+                            >
+                                <Zap className="w-3 h-3 fill-current group-hover:animate-pulse" />
+                                Get Extra Credits
+                            </Link>
+                        </div>
                     </div>
 
                     <div className="max-w-3xl mx-auto relative">

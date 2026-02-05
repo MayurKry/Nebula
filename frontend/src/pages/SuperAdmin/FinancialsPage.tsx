@@ -1,9 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { DollarSign, TrendingUp, AlertOctagon, Activity } from 'lucide-react';
 import { adminApi, type DashboardMetrics } from '@/api/admin.api';
-import GSAPTransition from '@/components/ui/GSAPTransition';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
 
 // Static cost assumption: $0.002 per credit
 const COST_PER_CREDIT = 0.002;
@@ -11,19 +8,6 @@ const COST_PER_CREDIT = 0.002;
 const FinancialsPage = () => {
     const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
     const [loading, setLoading] = useState(true);
-    const container = useRef<HTMLDivElement>(null);
-
-    useGSAP(() => {
-        if (!loading && metrics) {
-            gsap.from('.stat-card', {
-                y: 20,
-                opacity: 0,
-                duration: 0.5,
-                stagger: 0.1,
-                ease: 'power2.out'
-            });
-        }
-    }, { scope: container, dependencies: [loading, metrics] });
 
     useEffect(() => {
         const fetchMetrics = async () => {
@@ -46,14 +30,12 @@ const FinancialsPage = () => {
     const estimatedTotalCost = metrics.credits.totalConsumed * COST_PER_CREDIT;
 
     return (
-        <div ref={container} className="space-y-10 max-w-7xl mx-auto pb-12">
+        <div className="space-y-10 max-w-7xl mx-auto pb-12">
             {/* Header */}
-            <GSAPTransition animation="fade-in-up" duration={0.8}>
-                <div className="space-y-2">
-                    <h1 className="text-4xl font-black text-white tracking-tight">Financial Overview</h1>
-                    <p className="text-[#8E8E93] text-lg font-medium">Infrastructure cost monitoring and burn rate analysis</p>
-                </div>
-            </GSAPTransition>
+            <div className="space-y-2">
+                <h1 className="text-4xl font-black text-white tracking-tight">Financial Overview</h1>
+                <p className="text-[#8E8E93] text-lg font-medium">Infrastructure cost monitoring and burn rate analysis</p>
+            </div>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -96,34 +78,32 @@ const FinancialsPage = () => {
 
             {/* High Velocity Warning */}
             {metrics.highVelocityTenants.length > 0 && (
-                <GSAPTransition animation="fade-in-up" duration={1} delay={0.2}>
-                    <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-8">
-                        <div className="flex items-start gap-4">
-                            <AlertOctagon className="w-8 h-8 text-red-500 shrink-0" />
-                            <div>
-                                <h3 className="text-xl font-black text-white tracking-tight mb-2">Cost Spike Detected</h3>
-                                <p className="text-gray-400 mb-6 max-w-2xl">
-                                    {metrics.highVelocityTenants.length} tenants are consuming credits at an abnormal rate (&gt;500/day).
-                                    Review these accounts immediately to prevent cost overruns.
-                                </p>
+                <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-8">
+                    <div className="flex items-start gap-4">
+                        <AlertOctagon className="w-8 h-8 text-red-500 shrink-0" />
+                        <div>
+                            <h3 className="text-xl font-black text-white tracking-tight mb-2">Cost Spike Detected</h3>
+                            <p className="text-gray-400 mb-6 max-w-2xl">
+                                {metrics.highVelocityTenants.length} tenants are consuming credits at an abnormal rate (&gt;500/day).
+                                Review these accounts immediately to prevent cost overruns.
+                            </p>
 
-                                <div className="space-y-4">
-                                    {metrics.highVelocityTenants.map((item, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-4 bg-[#0A0A0A] rounded-xl border border-white/5">
-                                            <div>
-                                                <span className="text-white font-bold">{item.tenant?.name || 'Unknown Tenant'}</span>
-                                                <span className="text-gray-500 text-sm ml-2">({item.transactionCount} txns)</span>
-                                            </div>
-                                            <div className="text-red-400 font-bold font-mono">
-                                                -${(item.consumption24h * COST_PER_CREDIT).toFixed(2)}
-                                            </div>
+                            <div className="space-y-4">
+                                {metrics.highVelocityTenants.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-4 bg-[#0A0A0A] rounded-xl border border-white/5">
+                                        <div>
+                                            <span className="text-white font-bold">{item.tenant?.name || 'Unknown Tenant'}</span>
+                                            <span className="text-gray-500 text-sm ml-2">({item.transactionCount} txns)</span>
                                         </div>
-                                    ))}
-                                </div>
+                                        <div className="text-red-400 font-bold font-mono">
+                                            -${(item.consumption24h * COST_PER_CREDIT).toFixed(2)}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
-                </GSAPTransition>
+                </div>
             )}
         </div>
     );

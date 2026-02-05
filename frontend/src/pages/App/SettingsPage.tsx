@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { CreditCard, Zap, Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { tenantsService } from '@/services/tenants.service';
 import { toast } from 'sonner';
 import PlanSelectionModal from '@/components/settings/PlanSelectionModal';
 
 const SettingsPage = () => {
+    const navigate = useNavigate();
     const { user } = useAuth();
     const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
 
@@ -136,7 +138,10 @@ const SettingsPage = () => {
                             </div>
                         </div>
 
-                        <button className="w-full py-2.5 border border-white/10 hover:bg-white/5 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <button
+                            onClick={() => navigate('/app/buy-credits')}
+                            className="w-full py-2.5 border border-white/10 hover:bg-white/5 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
                             <Zap className="w-4 h-4" />
                             Buy More Credits
                         </button>

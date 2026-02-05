@@ -56,14 +56,35 @@ export const createTenant = controllerHandler(
     async (req) => {
         const { name, type, ownerUserId, ownerEmail, firstName, lastName, planId, initialCredits } = req.body;
 
+        // Input validation
+        if (!name || name.trim().length < 3 || name.trim().length > 100) {
+            throw new Error("Tenant name must be between 3 and 100 characters");
+        }
+
+        if (!type || !['INDIVIDUAL', 'ORGANIZATION'].includes(type)) {
+            throw new Error("Type must be either INDIVIDUAL or ORGANIZATION");
+        }
+
+        if (!ownerUserId && !ownerEmail) {
+            throw new Error("Either ownerUserId or ownerEmail must be provided");
+        }
+
+        if (ownerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail)) {
+            throw new Error("Invalid email format");
+        }
+
+        if (initialCredits !== undefined && (initialCredits < 0 || initialCredits > 100000)) {
+            throw new Error("Initial credits must be between 0 and 100,000");
+        }
+
         const tenant = await TenantService.createTenant({
-            name,
+            name: name.trim(),
             type,
             ownerUserId,
             ownerUserData: ownerEmail ? {
-                email: ownerEmail,
-                firstName: firstName || 'Tenant',
-                lastName: lastName || 'Owner'
+                email: ownerEmail.toLowerCase().trim(),
+                firstName: firstName?.trim() || 'Tenant',
+                lastName: lastName?.trim() || 'Owner'
             } : undefined,
             planId,
             initialCredits
@@ -165,11 +186,20 @@ export const grantCredits = controllerHandler(
         const { amount, reason } = req.body;
         const adminUserId = (req as any).user._id.toString();
 
+        // Input validation
+        if (!amount || amount <= 0 || amount > 100000) {
+            throw new Error("Credit amount must be between 1 and 100,000");
+        }
+
+        if (!reason || reason.trim().length < 5) {
+            throw new Error("Reason must be at least 5 characters");
+        }
+
         const result = await CreditService.grantCredits({
             tenantId: id,
             amount,
             adminUserId,
-            reason
+            reason: reason.trim()
         });
 
         return result;
@@ -190,11 +220,20 @@ export const deductCredits = controllerHandler(
         const { amount, reason } = req.body;
         const adminUserId = (req as any).user._id.toString();
 
+        // Input validation
+        if (!amount || amount <= 0 || amount > 100000) {
+            throw new Error("Credit amount must be between 1 and 100,000");
+        }
+
+        if (!reason || reason.trim().length < 5) {
+            throw new Error("Reason must be at least 5 characters");
+        }
+
         const result = await CreditService.deductCredits({
             tenantId: id,
             amount,
             adminUserId,
-            reason
+            reason: reason.trim()
         });
 
         return result;
@@ -266,16 +305,22 @@ export const removeFeatureOverride = controllerHandler(
 );
 
 /**
- * Switch plan for the authenticated user's tenant
- * POST /v1/tenants/switch-plan
+ * Switch plan for a tenant
+ * POST /v1/admin/tenants/:id/switch-plan (admin)
+ * POST /v1/tenants/switch-plan (user)
  */
 export const switchPlan = controllerHandler(
     async (req) => {
-        const tenantId = (req as any).user.tenantId;
+        // Check if this is an admin request (has :id param) or user request
+        const tenantId = req.params.id || (req as any).user.tenantId;
         const { planId } = req.body;
 
         if (!tenantId) {
             throw new Error("User is not associated with any tenant");
+        }
+
+        if (!planId || !['FREE', 'PRO', 'TEAM'].includes(planId)) {
+            throw new Error("Invalid plan ID. Must be FREE, PRO, or TEAM");
         }
 
         const tenant = await TenantService.switchPlan(tenantId, planId);

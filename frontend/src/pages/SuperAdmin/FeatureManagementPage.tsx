@@ -1,11 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Power, PowerOff, AlertTriangle, ShieldAlert, Zap, Lock } from 'lucide-react';
 import { adminApi, type Feature } from '@/api/admin.api';
 import ConfirmActionModal from '@/components/admin/ConfirmActionModal';
 import { toast } from 'sonner';
-import GSAPTransition from '@/components/ui/GSAPTransition';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
 
 const FeatureManagementPage = () => {
     const [features, setFeatures] = useState<Feature[]>([]);
@@ -13,19 +10,6 @@ const FeatureManagementPage = () => {
     const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
-    const container = useRef<HTMLDivElement>(null);
-
-    useGSAP(() => {
-        if (!loading && features.length > 0) {
-            gsap.from('.feature-card', {
-                y: 20,
-                opacity: 0,
-                duration: 0.6,
-                stagger: 0.1,
-                ease: 'power3.out'
-            });
-        }
-    }, { scope: container, dependencies: [loading, features] });
 
     useEffect(() => {
         fetchFeatures();
@@ -71,38 +55,34 @@ const FeatureManagementPage = () => {
     };
 
     return (
-        <div ref={container} className="space-y-10 max-w-7xl mx-auto pb-12">
+        <div className="space-y-10 max-w-7xl mx-auto pb-12">
             {/* Header */}
-            <GSAPTransition animation="fade-in-up" duration={0.8}>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="space-y-2">
-                        <h1 className="text-4xl font-black text-white tracking-tight">Feature Control</h1>
-                        <p className="text-[#8E8E93] text-lg font-medium">Global governance and emergency protocols</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <div className="px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2">
-                            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                            <span className="text-red-500 text-[10px] font-black uppercase tracking-widest text-right">Emergency Mode Available</span>
-                        </div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-2">
+                    <h1 className="text-4xl font-black text-white tracking-tight">Feature Control</h1>
+                    <p className="text-[#8E8E93] text-lg font-medium">Global governance and emergency protocols</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2">
+                        <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                        <span className="text-red-500 text-[10px] font-black uppercase tracking-widest text-right">Emergency Mode Available</span>
                     </div>
                 </div>
-            </GSAPTransition>
+            </div>
 
             {/* Warning Banner */}
-            <GSAPTransition animation="fade-in-up" duration={1} delay={0.2}>
-                <div className="bg-gradient-to-r from-yellow-500/10 via-yellow-500/5 to-transparent border border-yellow-500/20 rounded-2xl p-8 flex flex-col md:flex-row items-center gap-6 shadow-2xl relative overflow-hidden group">
-                    <div className="absolute right-0 top-0 w-32 h-32 bg-yellow-500/10 blur-[80px] -mr-16 -mt-16 group-hover:bg-yellow-500/20 transition-all duration-1000" />
-                    <div className="p-4 bg-yellow-500/10 rounded-2xl border border-yellow-500/20 relative z-10">
-                        <AlertTriangle className="w-8 h-8 text-yellow-500" />
-                    </div>
-                    <div className="relative z-10 text-center md:text-left">
-                        <p className="text-yellow-500 font-black text-2xl tracking-tight">Global Infrastructure Override</p>
-                        <p className="text-yellow-400/60 mt-2 font-medium max-w-2xl leading-relaxed">
-                            These controls exercise immediate privilege over all tenant configurations. Disabling a core feature will terminate all active processes platform-wide. Use with extreme caution.
-                        </p>
-                    </div>
+            <div className="bg-gradient-to-r from-yellow-500/10 via-yellow-500/5 to-transparent border border-yellow-500/20 rounded-2xl p-8 flex flex-col md:flex-row items-center gap-6 shadow-2xl relative overflow-hidden group">
+                <div className="absolute right-0 top-0 w-32 h-32 bg-yellow-500/10 blur-[80px] -mr-16 -mt-16 group-hover:bg-yellow-500/20 transition-all duration-1000" />
+                <div className="p-4 bg-yellow-500/10 rounded-2xl border border-yellow-500/20 relative z-10">
+                    <AlertTriangle className="w-8 h-8 text-yellow-500" />
                 </div>
-            </GSAPTransition>
+                <div className="relative z-10 text-center md:text-left">
+                    <p className="text-yellow-500 font-black text-2xl tracking-tight">Global Infrastructure Override</p>
+                    <p className="text-yellow-400/60 mt-2 font-medium max-w-2xl leading-relaxed">
+                        These controls exercise immediate privilege over all tenant configurations. Disabling a core feature will terminate all active processes platform-wide. Use with extreme caution.
+                    </p>
+                </div>
+            </div>
 
             {/* Features Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

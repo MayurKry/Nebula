@@ -4,8 +4,7 @@ import { Search, Filter, Shield, Box, MoreVertical, Plus } from 'lucide-react';
 import { adminApi, type Tenant } from '@/api/admin.api';
 import { toast } from 'sonner';
 import GSAPTransition from '@/components/ui/GSAPTransition';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
+
 import CreateTenantModal from '@/components/admin/CreateTenantModal';
 import Pagination from '@/components/ui/Pagination';
 
@@ -25,17 +24,7 @@ const TenantListPage = () => {
     const [totalItems, setTotalItems] = useState(0);
     const ITEMS_PER_PAGE = 10;
 
-    useGSAP(() => {
-        if (!loading && tenants.length > 0) {
-            gsap.from('.tenant-row', {
-                y: 10,
-                opacity: 0,
-                duration: 0.4,
-                stagger: 0.05,
-                ease: 'power2.out'
-            });
-        }
-    }, { scope: container, dependencies: [loading, tenants] });
+
 
     useEffect(() => {
         setCurrentPage(1);
@@ -175,102 +164,102 @@ const TenantListPage = () => {
             </GSAPTransition>
 
             {/* Table */}
-            <GSAPTransition animation="fade-in-up" duration={1} delay={0.4}>
-                <div className="bg-[#141414] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-                    <div className="overflow-x-auto">
-                        <table className="w-full border-collapse">
-                            <thead>
-                                <tr className="border-b border-white/10 bg-white/[0.02]">
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em] w-[40%]">Tenant Entity</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em]">Package</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em]">Balance</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em]">Scale</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em]">Security</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em] w-[50px]"></th>
+            <div className="bg-[#141414] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="border-b border-white/10 bg-white/[0.02]">
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em] w-[40%]">Tenant Entity</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em]">Package</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em]">Balance</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em]">Scale</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em]">Security</th>
+                                <th className="px-6 py-5 text-left text-[10px] font-black text-[#8E8E93] uppercase tracking-[0.2em] w-[50px]"></th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-20 text-center">
+                                        <div className="inline-flex items-center gap-3 text-[#8E8E93] font-medium animate-pulse">
+                                            <div className="w-2 h-2 bg-[#00FF88] rounded-full animate-ping" />
+                                            Synchronizing tenant data...
+                                        </div>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan={6} className="px-6 py-20 text-center">
-                                            <div className="inline-flex items-center gap-3 text-[#8E8E93] font-medium animate-pulse">
-                                                <div className="w-2 h-2 bg-[#00FF88] rounded-full animate-ping" />
-                                                Synchronizing tenant data...
+                            ) : tenants.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-20 text-center text-[#8E8E93] font-medium bg-white/[0.01]">
+                                        No platform entities found matching your criteria.
+                                    </td>
+                                </tr>
+                            ) : (
+                                tenants.map((tenant) => (
+                                    <tr
+                                        key={tenant._id}
+                                        onClick={() => navigate(`/admin/tenants/${tenant._id}`)}
+                                        className="tenant-row group hover:bg-white/5 cursor-pointer transition-all duration-300"
+                                    >
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] border border-white/10 flex items-center justify-center group-hover:border-[#00FF88]/30 group-hover:shadow-[0_0_15px_rgba(0,255,136,0.1)] transition-all">
+                                                    <Shield className="w-5 h-5 text-[#8E8E93] group-hover:text-[#00FF88] transition-colors" />
+                                                </div>
+                                                <div>
+                                                    <div className="text-white font-black text-lg group-hover:text-[#00FF88] transition-colors tracking-tight">{tenant.name}</div>
+                                                    <div className="text-[#8E8E93] text-[10px] font-black font-mono tracking-tighter uppercase mt-0.5">{tenant._id}</div>
+                                                </div>
                                             </div>
                                         </td>
-                                    </tr>
-                                ) : tenants.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={6} className="px-6 py-20 text-center text-[#8E8E93] font-medium bg-white/[0.01]">
-                                            No platform entities found matching your criteria.
+                                        <td className="px-6 py-5">
+                                            {getPlanBadge(tenant.plan)}
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-white font-black text-lg tabular-nums tracking-tight">{tenant.credits.balance.toLocaleString()}</span>
+                                                <span className="text-[10px] font-black text-[#8E8E93] uppercase tracking-widest mt-1">CP</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-2 text-[#8E8E93] font-bold">
+                                                <Box className="w-4 h-4 text-[#8E8E93]" />
+                                                <span>{tenant.userCount} users</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full border shadow-sm ${getStatusColor(tenant.status)}`}>
+                                                {tenant.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <button className="p-2 text-[#8E8E93] hover:text-white transition-colors">
+                                                <MoreVertical className="w-5 h-5" />
+                                            </button>
                                         </td>
                                     </tr>
-                                ) : (
-                                    tenants.map((tenant) => (
-                                        <tr
-                                            key={tenant._id}
-                                            onClick={() => navigate(`/admin/tenants/${tenant._id}`)}
-                                            className="tenant-row group hover:bg-white/5 cursor-pointer transition-all duration-300"
-                                        >
-                                            <td className="px-6 py-5">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] border border-white/10 flex items-center justify-center group-hover:border-[#00FF88]/30 group-hover:shadow-[0_0_15px_rgba(0,255,136,0.1)] transition-all">
-                                                        <Shield className="w-5 h-5 text-[#8E8E93] group-hover:text-[#00FF88] transition-colors" />
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-white font-black text-lg group-hover:text-[#00FF88] transition-colors tracking-tight">{tenant.name}</div>
-                                                        <div className="text-[#8E8E93] text-[10px] font-black font-mono tracking-tighter uppercase mt-0.5">{tenant._id}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                {getPlanBadge(tenant.plan)}
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-white font-black text-lg tabular-nums tracking-tight">{tenant.credits.balance.toLocaleString()}</span>
-                                                    <span className="text-[10px] font-black text-[#8E8E93] uppercase tracking-widest mt-1">CP</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <div className="flex items-center gap-2 text-[#8E8E93] font-bold">
-                                                    <Box className="w-4 h-4 text-[#8E8E93]" />
-                                                    <span>{tenant.userCount} users</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full border shadow-sm ${getStatusColor(tenant.status)}`}>
-                                                    {tenant.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <button className="p-2 text-[#8E8E93] hover:text-white transition-colors">
-                                                    <MoreVertical className="w-5 h-5" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
-            </GSAPTransition>
+            </div>
 
             {/* Pagination Controls */}
-            {!loading && tenants.length > 0 && (
-                <div className="mt-4 border-t border-white/5 pt-4">
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                    />
-                    <div className="text-center mt-4 text-xs text-[#8E8E93]">
-                        Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} tenants
+            {
+                !loading && tenants.length > 0 && (
+                    <div className="mt-4 border-t border-white/5 pt-4">
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
+                        <div className="text-center mt-4 text-xs text-[#8E8E93]">
+                            Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} tenants
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

@@ -239,6 +239,13 @@ const AppSidebar = ({ isOpen: isOpenProp, onClose: onCloseProp }: AppSidebarProp
                   <Zap className="w-4 h-4 text-yellow-400" />
                   <span className="text-sm font-medium text-white">{user?.credits || 0} Credits</span>
                 </div>
+                <Link
+                  to="/app/buy-credits"
+                  onClick={onClose}
+                  className="p-1 px-2 bg-[#00FF88] text-black text-[10px] font-black rounded uppercase tracking-widest hover:bg-[#00CC6A] transition-colors"
+                >
+                  Buy
+                </Link>
               </div>
               <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <div

@@ -33,7 +33,7 @@ export interface ITenant extends Document {
 
 const tenantSchema = new Schema<ITenant>(
     {
-        name: { type: String, required: true },
+        name: { type: String, required: true, unique: true },
         type: {
             type: String,
             enum: ["INDIVIDUAL", "ORGANIZATION"],

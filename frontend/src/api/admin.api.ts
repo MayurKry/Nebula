@@ -81,18 +81,10 @@ export const adminApi = {
     activateTenant: (id: string) =>
         axiosInstance.post<{ data: { tenant: Tenant } }>(`${API_BASE}/tenants/${id}/activate`),
 
-    assignCustomPlan: (id: string, data: { basePlanId: string; customLimits: any }) =>
-        axiosInstance.post<{ data: { tenant: Tenant } }>(`${API_BASE}/tenants/${id}/assign-plan`, data),
-
     // Credits
-    grantCredits: (id: string, amount: number, reason: string) =>
-        axiosInstance.post<{ data: any }>(`${API_BASE}/tenants/${id}/credits/grant`, { amount, reason }),
-
-    deductCredits: (id: string, amount: number, reason: string) =>
-        axiosInstance.post<{ data: any }>(`${API_BASE}/tenants/${id}/credits/deduct`, { amount, reason }),
-
     getCreditTransactions: (id: string, params?: { limit?: number; offset?: number }) =>
         axiosInstance.get<{ data: any }>(`${API_BASE}/tenants/${id}/credits/transactions`, { params }),
+
 
     // Features
     getAllFeatures: () =>
@@ -100,12 +92,6 @@ export const adminApi = {
 
     toggleGlobalFeature: (featureId: string, enabled: boolean, reason?: string) =>
         axiosInstance.post<{ data: { feature: Feature } }>(`${API_BASE}/features/${featureId}/toggle`, { enabled, reason }),
-
-    addFeatureOverride: (tenantId: string, featureId: string) =>
-        axiosInstance.post<{ data: { tenant: Tenant } }>(`${API_BASE}/tenants/${tenantId}/features/add`, { featureId }),
-
-    removeFeatureOverride: (tenantId: string, featureId: string) =>
-        axiosInstance.post<{ data: { tenant: Tenant } }>(`${API_BASE}/tenants/${tenantId}/features/remove`, { featureId }),
 
     // Observability - Analytics
     getUsageAnalytics: (period: '24h' | '7d' | 'cycle') =>

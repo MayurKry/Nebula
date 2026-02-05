@@ -16,6 +16,7 @@ import LibraryPage from "@/pages/App/LibraryPage";
 import PaymentPage from "@/pages/App/PaymentPage";
 import NotFoundPage from "@/pages/Shared/NotFoundPage";
 import AssetLibraryPage from "@/pages/App/AssetLibraryPage";
+import BuyCreditsPage from "@/pages/App/BuyCreditsPage";
 import VideoEditorPreviewPage from "@/pages/App/VideoEditorPreviewPage";
 import DesignSystemPage from "@/pages/DesignSystemPage";
 import MarketingRoutes from "./MarketingRoute";
@@ -32,6 +33,7 @@ function AppRoutes() {
 
       <Route path="/app" element={<AppLayout />}>
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="buy-credits" element={<BuyCreditsPage />} />
         <Route path="create/text-to-image" element={<TextToImagePage />} />
         <Route path="create/text-to-video" element={<TextToVideoPage />} />
         <Route path="create/text-to-audio" element={<TextToAudioPage />} />

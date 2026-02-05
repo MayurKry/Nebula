@@ -34,8 +34,23 @@ export const CreditService = {
             throw new Error("Tenant not found");
         }
 
+        // Validate tenant status
+        if (tenant.status === "SUSPENDED") {
+            throw new Error("Cannot grant credits to a suspended tenant. Activate the tenant first.");
+        }
+
+        // Validate amount
+        if (data.amount <= 0) {
+            throw new Error("Credit amount must be positive");
+        }
+
         const balanceBefore = tenant.credits.balance;
         const balanceAfter = balanceBefore + data.amount;
+
+        // Prevent unrealistic credit balances
+        if (balanceAfter > 10000000) {
+            throw new Error("Credit balance cannot exceed 10,000,000");
+        }
 
         // Update tenant credits
         tenant.credits.balance = balanceAfter;
@@ -69,13 +84,24 @@ export const CreditService = {
             throw new Error("Tenant not found");
         }
 
+        // Validate tenant status
+        if (tenant.status === "SUSPENDED") {
+            throw new Error("Cannot deduct credits from a suspended tenant");
+        }
+
+        // Validate amount
+        if (data.amount <= 0) {
+            throw new Error("Deduction amount must be positive");
+        }
+
         const balanceBefore = tenant.credits.balance;
         const balanceAfter = balanceBefore - data.amount;
 
         if (balanceAfter < 0) {
             throw new Error(
-                `Insufficient credits. Current balance: ${balanceBefore}, ` +
-                `attempting to deduct: ${data.amount}`
+                `Insufficient credits. Current balance: ${balanceBefore.toLocaleString()}, ` +
+                `attempting to deduct: ${data.amount.toLocaleString()}. ` +
+                `Shortfall: ${Math.abs(balanceAfter).toLocaleString()} credits.`
             );
         }
 
@@ -118,13 +144,24 @@ export const CreditService = {
             throw new Error("Tenant is locked due to payment failure.");
         }
 
+        // Validate amount
+        if (data.amount <= 0) {
+            throw new Error("Consumption amount must be positive");
+        }
+
+        // Validate feature
+        if (!data.feature || data.feature.trim().length === 0) {
+            throw new Error("Feature name is required for credit consumption");
+        }
+
         const balanceBefore = tenant.credits.balance;
         const balanceAfter = balanceBefore - data.amount;
 
         if (balanceAfter < 0) {
             throw new Error(
-                `Insufficient credits. Current balance: ${balanceBefore}, ` +
-                `required: ${data.amount}`
+                `Insufficient credits for ${data.feature}. ` +
+                `Current balance: ${balanceBefore.toLocaleString()}, ` +
+                `required: ${data.amount.toLocaleString()}`
             );
         }
 

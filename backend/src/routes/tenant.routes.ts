@@ -25,15 +25,12 @@ router.post("/:id/suspend", tenantController.suspendTenant);
 router.post("/:id/activate", tenantController.activateTenant);
 
 // Plan management
-router.post("/:id/assign-plan", tenantController.assignCustomPlan);
+// Removed direct assignment and switching for admins
 
 // Credit management
-router.post("/:id/credits/grant", tenantController.grantCredits);
-router.post("/:id/credits/deduct", tenantController.deductCredits);
 router.get("/:id/credits/transactions", tenantController.getCreditTransactions);
 
 // Feature overrides
-router.post("/:id/features/add", tenantController.addFeatureOverride);
-router.post("/:id/features/remove", tenantController.removeFeatureOverride);
+// Removed direct feature manipulation for admins
 
 export default router;
