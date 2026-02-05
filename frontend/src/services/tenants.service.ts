@@ -35,24 +35,7 @@ export const tenantsService = {
         return response.data.data.tenant;
     },
 
-    /**
-     * Assign custom plan
-     */
-    async assignCustomPlan(id: string, data: { basePlanId: string; customLimits: any }) {
-        const response = await adminApi.assignCustomPlan(id, data);
-        return response.data.data.tenant;
-    },
 
-    /**
-     * Grant/Deduct credits
-     */
-    async adjustCredits(id: string, amount: number, reason: string, type: 'grant' | 'deduct') {
-        if (type === 'grant') {
-            await adminApi.grantCredits(id, amount, reason);
-        } else {
-            await adminApi.deductCredits(id, amount, reason);
-        }
-    },
 
     /**
      * Get credit transactions
@@ -62,18 +45,6 @@ export const tenantsService = {
         return response.data.data;
     },
 
-    /**
-     * Feature overrides
-     */
-    async addFeatureOverride(tenantId: string, featureId: string) {
-        const response = await adminApi.addFeatureOverride(tenantId, featureId);
-        return response.data.data.tenant;
-    },
-
-    async removeFeatureOverride(tenantId: string, featureId: string) {
-        const response = await adminApi.removeFeatureOverride(tenantId, featureId);
-        return response.data.data.tenant;
-    },
 
     /**
      * Switch plan (Self-service)
